@@ -157,7 +157,7 @@ void main() {
       );
       expect(
         container.read(loopSessionProvider).errorMessage,
-        '本地会话已退出，但 LOOP 后端会话撤销尚未确认。',
+        'You\'re signed out on this device, but LOOP hasn\'t confirmed the server session was revoked.',
       );
     },
   );

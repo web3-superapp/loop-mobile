@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_tab_segments.dart';
@@ -39,7 +40,10 @@ class IntelScreen extends ConsumerStatefulWidget {
   final String? sub;
   final String? inviteCode;
 
-  static const segments = <String>['算力', '行情'];
+  static List<String> get segments => <String>[
+    LoopL10n.current.common_power,
+    LoopL10n.current.common_market,
+  ];
 
   /// Where a promotion card goes (decision 0100 §13). `/intel` is this page:
   /// it opens the 算力 segment. `/square` and `/meme` are tabs and are
@@ -119,7 +123,7 @@ class _IntelScreenState extends ConsumerState<IntelScreen> {
     return LoopSegmentedTabPage(
       key: const ValueKey<String>('intel-screen'),
       tabKey: 'intel',
-      title: '情报',
+      title: context.l10n.intel_screenIntelScreenTitle,
       // Decision 0221: the wall under 情报, its own fog placing.
       backdrop: const LoopWallBackdrop(
         key: ValueKey<String>('intel-atmo-backdrop'),
@@ -145,7 +149,7 @@ class _IntelScreenState extends ConsumerState<IntelScreen> {
               LoopIconButton(
                 key: const ValueKey<String>('intel-alerts-action'),
                 icon: 'alarm',
-                label: '价格提醒',
+                label: context.l10n.common_priceAlerts,
                 framed: true,
                 onPressed: () => onNavigate(MarketAssetRoute.alertsPath),
               ),

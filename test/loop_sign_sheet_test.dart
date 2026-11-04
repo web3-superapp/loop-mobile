@@ -52,13 +52,13 @@ void main() {
         expect(find.text(fact.label), findsOneWidget);
         expect(find.text(fact.value), findsOneWidget);
       }
-      expect(find.text('待确认'), findsOneWidget);
+      expect(find.text('Pending confirmation'), findsOneWidget);
       // Prototype `#sign-title` / `#sign-confirm` defaults.
-      expect(find.text('确认交易'), findsOneWidget);
+      expect(find.text('Confirm transaction'), findsOneWidget);
       expect(
-        _button(tester, '确认签名'),
+        _button(tester, 'Confirm signature'),
         matchesSemantics(
-          label: '确认签名',
+          label: 'Confirm signature',
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -67,8 +67,8 @@ void main() {
           isFocusable: true,
         ),
       );
-      await tester.tap(find.text('确认签名'));
-      await tester.tap(find.text('取消'));
+      await tester.tap(find.text('Confirm signature'));
+      await tester.tap(find.text('Cancel'));
       expect(confirmed, 1);
       expect(cancelled, 1);
       semantics.dispose();
@@ -94,18 +94,18 @@ void main() {
         onCancel: () {},
       ),
     );
-    expect(find.text('模拟失败'), findsOneWidget);
+    expect(find.text('Simulation failed'), findsOneWidget);
     expect(find.text('失败 · 无法预演'), findsOneWidget);
     expect(
-      _button(tester, '确认签名'),
+      _button(tester, 'Confirm signature'),
       matchesSemantics(
-        label: '确认签名',
+        label: 'Confirm signature',
         isButton: true,
         hasEnabledState: true,
         isEnabled: false,
       ),
     );
-    await tester.tap(find.text('确认签名'), warnIfMissed: false);
+    await tester.tap(find.text('Confirm signature'), warnIfMissed: false);
     expect(confirmed, 0);
 
     await _pump(
@@ -122,18 +122,18 @@ void main() {
         onAdjustPolicy: () => adjusted += 1,
       ),
     );
-    expect(find.text('被策略拒绝'), findsOneWidget);
-    expect(find.text('关闭'), findsOneWidget);
+    expect(find.text('Rejected by policy'), findsOneWidget);
+    expect(find.text('Close'), findsOneWidget);
     expect(
-      _button(tester, '确认签名'),
+      _button(tester, 'Confirm signature'),
       matchesSemantics(
-        label: '确认签名',
+        label: 'Confirm signature',
         isButton: true,
         hasEnabledState: true,
         isEnabled: false,
       ),
     );
-    await tester.tap(find.text('调整策略'));
+    await tester.tap(find.text('Adjust policy'));
     expect(adjusted, 1);
     expect(confirmed, 0);
     semantics.dispose();
@@ -152,21 +152,21 @@ void main() {
         onCancel: () {},
       ),
     );
-    expect(find.text('正在签名并广播'), findsOneWidget);
-    expect(find.text('请勿关闭 App'), findsOneWidget);
+    expect(find.text('Signing and broadcasting'), findsOneWidget);
+    expect(find.text('Don\'t close the app'), findsOneWidget);
     expect(
-      _button(tester, '取消'),
+      _button(tester, 'Cancel'),
       matchesSemantics(
-        label: '取消',
+        label: 'Cancel',
         isButton: true,
         hasEnabledState: true,
         isEnabled: false,
       ),
     );
     expect(
-      _button(tester, '签名中'),
+      _button(tester, 'Signing'),
       matchesSemantics(
-        label: '签名中',
+        label: 'Signing',
         isButton: true,
         hasEnabledState: true,
         isEnabled: false,
@@ -185,10 +185,10 @@ void main() {
     );
     // Decision 0089: the badge says what happened — a broadcast — and never
     // that the operation is done.
-    expect(find.text('已广播'), findsOneWidget);
+    expect(find.text('Broadcast'), findsOneWidget);
     expect(find.text('已完成'), findsNothing);
-    expect(find.bySemanticsLabel('确认签名'), findsNothing);
-    await tester.tap(find.text('关闭'));
+    expect(find.bySemanticsLabel('Confirm signature'), findsNothing);
+    await tester.tap(find.text('Close'));
     expect(closed, 1);
     semantics.dispose();
   });
@@ -228,7 +228,7 @@ void main() {
       tester.widget<ModalBarrier>(find.byType(ModalBarrier).last).color,
       LoopColors.veil,
     );
-    await tester.tap(find.text('取消'));
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('loop-sheet')), findsNothing);
   });

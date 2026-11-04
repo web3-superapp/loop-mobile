@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_tab_strip.dart';
 
 /// The three sections a person's page splits into (decision 0218): what they
@@ -8,13 +9,16 @@ import 'package:loop_mobile/widgets/loop_tab_strip.dart';
 /// Another account's page (`user-profile`) and 我的 (S349 · decision 0271
 /// Amendment) draw the same bar, so the two pages read as one structure.
 enum LoopProfileSection {
-  holdings('持仓'),
-  trades('交易'),
-  communities('社区');
+  holdings,
+  trades,
+  communities;
 
-  const LoopProfileSection(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    LoopProfileSection.holdings => LoopL10n.current.common_holdings,
+    LoopProfileSection.trades => LoopL10n.current.widgets_profileSectionTrades,
+    LoopProfileSection.communities =>
+      LoopL10n.current.widgets_profileSectionCommunities,
+  };
 }
 
 /// 持仓 / 交易 / 社区 under a person's head.

@@ -394,11 +394,11 @@ void main() {
     // S278 · decision 0236: the provenance line is a (i) row on the same
     // gutter.
     expect(
-      tester.getTopLeft(findProvenanceContaining('来源 LOOP')).dx,
+      tester.getTopLeft(findProvenanceContaining('Source LOOP')).dx,
       greaterThanOrEqualTo(LoopSpacing.page),
     );
     expect(
-      tester.getTopLeft(findProvenanceContaining('来源 LOOP')).dx,
+      tester.getTopLeft(findProvenanceContaining('Source LOOP')).dx,
       lessThan(LoopSpacing.page + 1),
     );
     expect(tester.getTopLeft(find.text('内容')).dx, LoopSpacing.page);

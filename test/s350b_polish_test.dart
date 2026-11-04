@@ -49,7 +49,7 @@ void main() {
       // The place and the crown are the way in.
       expect(
         tester.widget<Text>(_key('mining-summary-hero-rank')).data,
-        '第 12 名',
+        'Rank #12',
       );
       expect(
         find.descendant(
@@ -137,14 +137,17 @@ void main() {
         final chips = tester.widgetList<LoopFilterChip>(
           find.descendant(of: tabs, matching: find.byType(LoopFilterChip)),
         );
-        expect(chips.map((chip) => chip.label), <String>['邀请列表', '邀请加成']);
+        expect(chips.map((chip) => chip.label), <String>[
+          'Invite list',
+          'Invite boost',
+        ]);
         expect(ReferralSubTabs.filterHeight, LoopTouch.chipHeight);
         expect(LoopSegBar.capsuleHeight, LoopTouch.chipHeight);
         expect(chips.first.selected, isTrue);
         // 分享邀请链接 on one line.
         final share = find.descendant(
           of: _key('referral-share-link'),
-          matching: find.text('分享邀请链接'),
+          matching: find.text('Share link'),
         );
         expect(_cut(tester, share), isFalse);
         expect(
@@ -152,7 +155,7 @@ void main() {
           lessThan(LoopType.button.fontSize! * 2),
         );
 
-        await s350bSubTab(tester, '邀请加成');
+        await s350bSubTab(tester, 'Invite boost');
         expect(_key('referral-tab-boost'), findsOneWidget);
       });
     }

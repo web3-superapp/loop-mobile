@@ -223,7 +223,7 @@ void main() {
       // the query goes out, and what is on screen afterwards is the query's
       // own answer — not the connection sentence again.
       connection.opens = true;
-      await tester.tap(find.text('重试'));
+      await tester.tap(find.text('Retry'));
       await tester.pump();
       await tester.pump();
 
@@ -266,7 +266,7 @@ void main() {
         },
       );
 
-      await tester.tap(find.text('重试'));
+      await tester.tap(find.text('Retry'));
       await tester.pump();
       await tester.pump();
 

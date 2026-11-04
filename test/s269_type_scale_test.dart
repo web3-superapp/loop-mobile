@@ -209,7 +209,7 @@ void main() {
     await drainS269(tester);
 
     await pumpS269IntelRank(tester);
-    expect(_size(tester, find.text('前三名')), LoopType.headline.fontSize);
+    expect(_size(tester, find.text('Podium')), LoopType.headline.fontSize);
     _expectNothingUnder12(tester, '算力榜');
   });
 

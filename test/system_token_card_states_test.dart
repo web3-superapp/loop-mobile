@@ -65,7 +65,7 @@ void main() {
       tester,
       find.byKey(const ValueKey<String>('loop-token-card-risk-facts')),
     );
-    expect(find.textContaining('来源 GoPlus'), findsOneWidget);
+    expect(find.textContaining('source GoPlus'), findsOneWidget);
     // The risk card lists facts only; the word appears solely in the
     // explanatory notice that says verdicts are never given.
     expect(

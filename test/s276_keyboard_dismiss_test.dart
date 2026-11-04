@@ -343,7 +343,7 @@ void main() {
       final bar = tester.getRect(_key('loop-keyboard-done-bar'));
       expect(bar.bottom, moreOrLessEquals(_device.height - _keyboard));
       expect(bar.height, LoopKeyboardDoneBar.height);
-      expect(find.text('完成'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
       // The field was scrolled clear of the bar, not hidden under it.
       expect(
         tester.getRect(_key('launch2-trade-amount')).bottom,

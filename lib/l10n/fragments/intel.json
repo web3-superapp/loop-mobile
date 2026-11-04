@@ -1,0 +1,408 @@
+{
+  "intel_rankBoardAlias": {
+    "en": "Anonymous",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:425",
+    "zh": "匿名"
+  },
+  "intel_rankBoardBuild": {
+    "en": "Not ranked yet",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:766",
+    "zh": "暂未上榜"
+  },
+  "intel_rankBoardBuild2": {
+    "en": "Leaderboard updates live",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:819",
+    "zh": "榜单实时更新"
+  },
+  "intel_rankBoardCaption": {
+    "en": "{participants, plural, =1{1 person has power} other{{participants} people have power}}",
+    "placeholders": {
+      "participants": {
+        "example": "row.participants",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:280",
+    "zh": "{participants} 人有算力"
+  },
+  "intel_rankBoardCaption2": {
+    "en": "Direct invites",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:303, lib/features/intel/intel_rank_board.dart:1272, lib/features/intel/intel_rank_board.dart:1504",
+    "zh": "直接邀请"
+  },
+  "intel_rankBoardCaption3": {
+    "en": "Others see an anonymous member",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:372",
+    "zh": "其他人看到的是匿名成员"
+  },
+  "intel_rankBoardEmptyMessage": {
+    "en": "Couldn't load Power Ranking",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:177",
+    "zh": "没有读到算力榜"
+  },
+  "intel_rankBoardEmptyReason": {
+    "en": "Ranking data can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:178",
+    "zh": "暂时读不到排行数据。"
+  },
+  "intel_rankBoardFigure": {
+    "en": "Only visible to you",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:376",
+    "zh": "仅本人可见"
+  },
+  "intel_rankBoardIf": {
+    "en": "Members with power: {vString}.",
+    "placeholders": {
+      "vString": {
+        "example": "<String>[for (final row in ranking.items) '${row.community.name} ${row.participants} 人'].join('、')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:500",
+    "zh": "有算力的成员：{vString}。"
+  },
+  "intel_rankBoardIf2": {
+    "en": "{intelRankLedgerKickerBase}, live",
+    "placeholders": {
+      "intelRankLedgerKickerBase": {
+        "example": "intelRankLedgerKickerBase",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:515",
+    "zh": "{intelRankLedgerKickerBase}，实时"
+  },
+  "intel_rankBoardIf3": {
+    "en": "Community {name}, weight {weight}",
+    "placeholders": {
+      "name": {
+        "example": "row.community.name",
+        "type": "Object"
+      },
+      "weight": {
+        "example": "row.weight",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:591",
+    "zh": "社区 {name} 权重 {weight}"
+  },
+  "intel_rankBoardIf4": {
+    "en": "Invite your first friend to get ranked",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:609",
+    "zh": "邀请到第一位好友后上榜"
+  },
+  "intel_rankBoardIf5": {
+    "en": "Direct invites {me}",
+    "placeholders": {
+      "me": {
+        "example": "me.value",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:612",
+    "zh": "直接邀请 {me} 人"
+  },
+  "intel_rankBoardIf6": {
+    "en": "Power {powerFigure}",
+    "placeholders": {
+      "powerFigure": {
+        "example": "loopPowerFigure(me.value)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:612",
+    "zh": "算力 {powerFigure}"
+  },
+  "intel_rankBoardIf7": {
+    "en": "My communities",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:1475",
+    "zh": "我的社区"
+  },
+  "intel_rankBoardIntelRankBoardTitle": {
+    "en": "Power Ranking",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:145, lib/features/intel/intel_rank_board.dart:508",
+    "zh": "算力榜"
+  },
+  "intel_rankBoardIntelRankCapabilityBlockTitle": {
+    "en": "Power Ranking isn't available right now",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:163",
+    "zh": "算力榜当前不可用"
+  },
+  "intel_rankBoardIntelRankEmptyInviteLabel": {
+    "en": "Invite",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:252",
+    "zh": "去邀请"
+  },
+  "intel_rankBoardIntelRankEmptyMessage": {
+    "en": "Once you invite your first friend, this ranks by direct invites",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:247",
+    "zh": "邀请到第一位好友后，这里按直接邀请人数排名"
+  },
+  "intel_rankBoardIntelRankEmptyMessage2": {
+    "en": "Check back after the next power snapshot",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:247",
+    "zh": "下一次算力快照后再来看看"
+  },
+  "intel_rankBoardIntelRankEmptyTitle": {
+    "en": "No one has invited a friend yet",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:246",
+    "zh": "还没有人邀请到好友"
+  },
+  "intel_rankBoardIntelRankEmptyTitle2": {
+    "en": "No entries ranked this time",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:246",
+    "zh": "这一次还没有条目上榜"
+  },
+  "intel_rankBoardIntelRankGapToNext": {
+    "en": "{figure} more to reach Rank #{above}",
+    "placeholders": {
+      "above": {
+        "example": "above",
+        "type": "Object"
+      },
+      "figure": {
+        "example": "figure",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:573",
+    "zh": "距第 {above} 名还差 {figure} 人"
+  },
+  "intel_rankBoardIntelRankLedgerHeading": {
+    "en": "My rank\nNot ranked yet",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:534",
+    "zh": "我的名次\n还没有名次"
+  },
+  "intel_rankBoardIntelRankMeLoadingHeading": {
+    "en": "Loading my rank",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:121",
+    "zh": "我的名次读取中"
+  },
+  "intel_rankBoardIntelRankPodiumLabel": {
+    "en": "Podium",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:332",
+    "zh": "前三名"
+  },
+  "intel_rankBoardIntelRankProvenancePrefix": {
+    "en": "By direct invites",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:439",
+    "zh": "按直接邀请人数"
+  },
+  "intel_rankBoardIntelRankUnavailableMessage": {
+    "en": "Leaderboard can't be loaded right now · {launchReasonCodeText}",
+    "placeholders": {
+      "launchReasonCodeText": {
+        "example": "launchReasonCodeText(reasonCode)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:232",
+    "zh": "榜单暂时读不到 · {launchReasonCodeText}"
+  },
+  "intel_rankBoardIntelReferralLedgerTitle": {
+    "en": "My live rank",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:719",
+    "zh": "我的实时排名"
+  },
+  "intel_rankBoardLabel": {
+    "en": "Rank #{place}, open",
+    "placeholders": {
+      "place": {
+        "example": "place",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:1236",
+    "zh": "第 {place} 名，虚位以待"
+  },
+  "intel_rankBoardLoopProvenanceLine": {
+    "en": "LOOP invite relations",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:444",
+    "zh": "LOOP 邀请关系"
+  },
+  "intel_rankBoardLoopProvenanceLine2": {
+    "en": "The invite board ranks by current active direct invites; ties share a rank. Invite relations are read live, without waiting for a power snapshot.",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:453",
+    "zh": "推广榜按当前有效的直接邀请人数排名，人数相同名次相同；邀请关系实时读取，不等待算力快照。"
+  },
+  "intel_rankBoardLoopProvenanceLine3": {
+    "en": "Ranks come from the latest power snapshot; power changes on other accounts or communities change ranks. Nothing is calculated on this device.",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:455",
+    "zh": "名次来自最近一次算力快照，其他账号或社区的算力变化会改变名次；不会在这台设备上计算。"
+  },
+  "intel_rankBoardLoopProvenanceLine4": {
+    "en": "{miningRuleKeyText} Anonymous entries show \"{miningRuleKeyText2}\".",
+    "placeholders": {
+      "miningRuleKeyText": {
+        "example": "miningRuleKeyText(rank.display.ruleKey)",
+        "type": "Object"
+      },
+      "miningRuleKeyText2": {
+        "example": "miningRuleKeyText(rank.display.anonymousMemberKey)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:456",
+    "zh": "{miningRuleKeyText}匿名时显示「{miningRuleKeyText2}」。"
+  },
+  "intel_rankBoardMiningFormulaEffective": {
+    "en": "By the current power formula",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:441",
+    "zh": "按当前生效的算力公式"
+  },
+  "intel_rankBoardMiningFormulaPending": {
+    "en": "Power formula not yet in effect",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:442",
+    "zh": "算力公式待生效"
+  },
+  "intel_rankBoardMiningSnapshotComputed": {
+    "en": "{intelRankLedgerKickerBase}, snapshot {intelRankMonthDayClock}",
+    "placeholders": {
+      "intelRankLedgerKickerBase": {
+        "example": "intelRankLedgerKickerBase",
+        "type": "Object"
+      },
+      "intelRankMonthDayClock": {
+        "example": "intelRankMonthDayClock(computedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:519",
+    "zh": "{intelRankLedgerKickerBase}，快照 {intelRankMonthDayClock}"
+  },
+  "intel_rankBoardNull": {
+    "en": "Community {name}",
+    "placeholders": {
+      "name": {
+        "example": "name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:596",
+    "zh": "社区 {name}"
+  },
+  "intel_rankBoardParticipantEntry": {
+    "en": "{name} ({count})",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:500",
+    "zh": "{name} {count} 人"
+  },
+  "intel_rankBoardReferrals": {
+    "en": "Invitation",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:40",
+    "zh": "邀请"
+  },
+  "intel_rankBoardS": {
+    "en": "LOOP power snapshot",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:444",
+    "zh": "LOOP 算力快照"
+  },
+  "intel_rankBoardS2": {
+    "en": "My rank\nRank #{rank}",
+    "placeholders": {
+      "rank": {
+        "example": "me.rank",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:534",
+    "zh": "我的名次\n第 {rank} 名"
+  },
+  "intel_rankBoardS3": {
+    "en": "{figure} to reach Rank #{above}",
+    "placeholders": {
+      "above": {
+        "example": "above",
+        "type": "Object"
+      },
+      "figure": {
+        "example": "figure",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:574",
+    "zh": "距第 {above} 名还差 {figure}"
+  },
+  "intel_rankBoardS4": {
+    "en": "Once you have power, you'll be ranked at the next snapshot",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:609",
+    "zh": "有算力后，下一次算力快照上榜"
+  },
+  "intel_rankBoardSpoken": {
+    "en": "Invites",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:307, lib/features/intel/intel_rank_board.dart:1507",
+    "zh": "邀请人数"
+  },
+  "intel_rankBoardText3": {
+    "en": "Not ranked",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:954, lib/features/intel/intel_rank_board.dart:1370, lib/features/intel/intel_rank_board.dart:1430",
+    "zh": "未上榜"
+  },
+  "intel_rankBoardText4": {
+    "en": "Rank #{position}",
+    "placeholders": {
+      "position": {
+        "example": "position",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:954",
+    "zh": "第 {position} 名"
+  },
+  "intel_rankBoardText5": {
+    "en": "Weight {weight}",
+    "placeholders": {
+      "weight": {
+        "example": "weight",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/intel/intel_rank_board.dart:958, lib/features/intel/intel_rank_board.dart:1211, lib/features/intel/intel_rank_board.dart:1350, lib/features/intel/intel_rank_board.dart:1434",
+    "zh": "权重 {weight}"
+  },
+  "intel_rankBoardText6": {
+    "en": "Open",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_rank_board.dart:1250",
+    "zh": "虚位以待"
+  },
+  "intel_screenIntelScreenTitle": {
+    "en": "Intelligence",
+    "placeholders": {},
+    "where": "lib/features/intel/intel_screen.dart:122",
+    "zh": "情报"
+  }
+}

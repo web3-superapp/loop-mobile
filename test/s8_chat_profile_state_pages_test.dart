@@ -311,7 +311,7 @@ void main() {
         find.byKey(const ValueKey<String>('group-channel-offline')),
         findsNothing,
       );
-      expect(find.text('重试'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
     });
 
     testWidgets('an offline token call pauses instead of erroring', (
@@ -334,7 +334,7 @@ void main() {
         find.byKey(const ValueKey<String>('group-channel-error')),
         findsNothing,
       );
-      expect(find.textContaining('已暂停'), findsOneWidget);
+      expect(find.textContaining('Paused'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('loop-stream-message-composer')),
         findsNothing,

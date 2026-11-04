@@ -1601,10 +1601,10 @@ void main() {
       expect(dynamicPool.claimRounds.single, BigInt.two);
       expect(_key('launch2-sign-sheet'), findsOneWidget);
       expect(find.text('Confirm DEX pool reward claim'), findsOneWidget);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(wallet.handed.single.kind, IntentKind.launchPurchase);
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(dynamicPool.reports.single, '2:$l2IntentId:$_txHash');
       expect(_key('launch2-dyn-claim-pending'), findsOneWidget);
@@ -1626,9 +1626,9 @@ void main() {
       await openRewards(tester, dynamicPool, wallet: _RecordingWallet());
       await tester.tap(_key('launch2-dyn-claim-2'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Claim submitted'), findsOneWidget);
       expect(
@@ -1651,9 +1651,9 @@ void main() {
       await openRewards(tester, dynamicPool, wallet: _RecordingWallet());
       await tester.tap(_key('launch2-dyn-claim-2'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('关闭'));
+      await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       expect(
         find.text('DEX pool rewards claimed and confirmed on-chain.'),

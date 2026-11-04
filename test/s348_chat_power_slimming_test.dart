@@ -348,7 +348,7 @@ void main() {
         tester.widget(_key('mining-composition-token-empty')),
         isA<LoopInlineUnavailable>(),
       );
-      expect(find.text('暂无代币算力'), findsOneWidget);
+      expect(find.text('No token power yet'), findsOneWidget);
       expect(_key('mining-composition-token-$s7CakeAssetId'), findsNothing);
       await _tab(tester, 'mining-power-tabs', 'NFT');
       expect(
@@ -387,7 +387,7 @@ void main() {
       // S350b · decision 0275: the sub tabs are the filter step, a level
       // under the page's capsules.
       final bar = tester.widget<ReferralSubTabs>(_key('referral-tabs'));
-      expect(bar.labels, <String>['邀请列表', '邀请加成']);
+      expect(bar.labels, <String>['Invite list', 'Invite boost']);
       expect(bar.selectedIndex, 0);
       expect(_key('referral-tab-invitees'), findsOneWidget);
       expect(_key('referral-invitee-0'), findsOneWidget);
@@ -399,17 +399,17 @@ void main() {
       final card = tester.getRect(_key('referral-hero'));
       final tabs = tester.getRect(_key('referral-tabs'));
       expect(tabs.top, greaterThanOrEqualTo(card.bottom));
-      final inviter = find.text('我的邀请人');
+      final inviter = find.text('My inviter');
       expect(inviter, findsOneWidget);
       expect(
         tester.getRect(inviter).top,
         greaterThan(tester.getRect(_key('referral-tab-invitees')).bottom - 1),
       );
 
-      await _tab(tester, 'referral-tabs', '邀请加成');
+      await _tab(tester, 'referral-tabs', 'Invite boost');
       expect(_key('referral-tab-boost'), findsOneWidget);
       expect(_key('referral-invitee-0'), findsNothing);
-      expect(find.text('我的邀请人'), findsOneWidget);
+      expect(find.text('My inviter'), findsOneWidget);
     });
 
     testWidgets('邀请加成: the total, then only the depths with something', (
@@ -424,7 +424,7 @@ void main() {
       );
       final total = _key('referral-boost-total');
       expect(
-        find.descendant(of: total, matching: find.text('总加成')),
+        find.descendant(of: total, matching: find.text('Total boost')),
         findsOneWidget,
       );
       expect(
@@ -440,8 +440,8 @@ void main() {
           reason: 'L$level',
         );
       }
-      expect(find.text('L1 · 10% · 有效成员 4 人'), findsOneWidget);
-      expect(find.text('L3 · 3% · 有效成员 0 人'), findsOneWidget);
+      expect(find.text('L1 · 10% · 4 active members'), findsOneWidget);
+      expect(find.text('L3 · 3% · 0 active members'), findsOneWidget);
       expect(find.textContaining('USD'), findsNothing);
     });
 
@@ -527,7 +527,7 @@ void main() {
         invitees: _invitees(),
         size: const Size(390, 1500),
       );
-      await _tab(tester, 'referral-tabs', '邀请加成');
+      await _tab(tester, 'referral-tabs', 'Invite boost');
       await _shot(tester, 'invite-boost');
     });
 
@@ -538,7 +538,7 @@ void main() {
         page: IntelScreen(onNavigate: (_) {}, sub: 'invite'),
         size: const Size(390, 1400),
       );
-      await _tab(tester, 'referral-tabs', '邀请加成');
+      await _tab(tester, 'referral-tabs', 'Invite boost');
       await _shot(tester, 'invite-boost-unapproved');
     });
   });

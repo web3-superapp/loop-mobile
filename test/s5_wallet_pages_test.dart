@@ -1344,7 +1344,7 @@ void main() {
       expect(chain.status.resolves, 1);
 
       // 重试 must issue a new read, and the read that answers must render.
-      await tester.tap(find.text('重试'));
+      await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(chain.status.resolves, 2);
       expect(block, findsNothing);
@@ -1384,7 +1384,7 @@ void main() {
       expect(find.textContaining("don't submit again"), findsNothing);
       expect(find.textContaining("The action didn't finish"), findsNothing);
 
-      await tester.tap(find.text('重试'));
+      await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(chain.status.resolves, 3);
       expect(find.text('1 / 1 healthy'), findsOneWidget);

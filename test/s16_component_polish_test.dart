@@ -127,8 +127,8 @@ void main() {
       );
       // A skeleton claims nothing: no copy, only shapes.
       expect(find.byType(Text), findsNothing);
-      expect(find.bySemanticsLabel('卡片加载中'), findsOneWidget);
-      expect(find.bySemanticsLabel('数字加载中'), findsOneWidget);
+      expect(find.bySemanticsLabel('Loading card'), findsOneWidget);
+      expect(find.bySemanticsLabel('Loading figures'), findsOneWidget);
       // Two rows of two blocks, three card lines, two figure lines.
       expect(find.byType(LoopSkeletonBlock), findsNWidgets(2 * 2 + 3 + 2));
       semantics.dispose();
@@ -215,7 +215,7 @@ void main() {
         ),
       );
 
-      expect(find.text('更新中'), findsNWidgets(2));
+      expect(find.text('Updating'), findsNWidgets(2));
       expect(
         find.byKey(const ValueKey<String>('loop-skeleton-list')),
         findsNothing,

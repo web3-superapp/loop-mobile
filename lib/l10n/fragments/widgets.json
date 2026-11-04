@@ -1,0 +1,721 @@
+{
+  "widgets_assetsBuild": {
+    "en": "{slot} avatar",
+    "placeholders": {
+      "slot": {
+        "example": "widget.slot",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_assets.dart:686",
+    "zh": "{slot} 头像"
+  },
+  "widgets_atmosphereLabel": {
+    "en": "{title}, view all",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_atmosphere.dart:807",
+    "zh": "{title} 全部"
+  },
+  "widgets_avatarStackBuild": {
+    "en": "{remaining} more",
+    "placeholders": {
+      "remaining": {
+        "example": "remaining",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_avatar_stack.dart:218",
+    "zh": "另外 {remaining} 人"
+  },
+  "widgets_blocksUnread": {
+    "en": "Not loaded",
+    "placeholders": {},
+    "where": "lib/widgets/loop_blocks.dart:145",
+    "zh": "未读取"
+  },
+  "widgets_clauseJoin": {
+    "en": "; ",
+    "placeholders": {},
+    "where": "lib/widgets/loop_token_card.dart:651",
+    "zh": "；"
+  },
+  "widgets_componentsBuild": {
+    "en": "Trace ID {traceId}",
+    "placeholders": {
+      "traceId": {
+        "example": "traceId",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:4405",
+    "zh": "追踪号 {traceId}"
+  },
+  "widgets_componentsBuild2": {
+    "en": "Source {source}",
+    "placeholders": {
+      "source": {
+        "example": "source",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:4406",
+    "zh": "来源 {source}"
+  },
+  "widgets_componentsCacheStale": {
+    "en": "Cached values may be out of date.",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4491",
+    "zh": "缓存值可能已过期。"
+  },
+  "widgets_componentsCachedHeadline": {
+    "en": "Offline · Showing cache",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4463",
+    "zh": "离线 · 显示缓存"
+  },
+  "widgets_componentsCachedTimeoutHeadline": {
+    "en": "LOOP timed out · Showing cache",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4464",
+    "zh": "LOOP 响应超时 · 显示缓存"
+  },
+  "widgets_componentsCard": {
+    "en": "Loading card",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:3752",
+    "zh": "卡片加载中"
+  },
+  "widgets_componentsChart": {
+    "en": "Loading chart",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:3751",
+    "zh": "图表加载中"
+  },
+  "widgets_componentsConnectionHeadline": {
+    "en": "Can't reach LOOP",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4465",
+    "zh": "连不上 LOOP"
+  },
+  "widgets_componentsDetail": {
+    "en": "Loading details",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:3750",
+    "zh": "详情加载中"
+  },
+  "widgets_componentsFigure": {
+    "en": "Loading figures",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:3753",
+    "zh": "数字加载中"
+  },
+  "widgets_componentsHintText": {
+    "en": "Send a message",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:3318",
+    "zh": "发送消息"
+  },
+  "widgets_componentsLabel": {
+    "en": "{title}, {trailing}, can't be changed",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      },
+      "trailing": {
+        "example": "trailing ?? ''",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:1868, lib/widgets/loop_components.dart:1996",
+    "zh": "{title}，{trailing}，不可更改"
+  },
+  "widgets_componentsLabel2": {
+    "en": "What happened",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:2276",
+    "zh": "发生了什么"
+  },
+  "widgets_componentsLabel3": {
+    "en": "What's affected",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:2281",
+    "zh": "影响什么"
+  },
+  "widgets_componentsLabel4": {
+    "en": "Updating",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4127",
+    "zh": "更新中"
+  },
+  "widgets_componentsLabel5": {
+    "en": "Other options",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4418",
+    "zh": "其他方式"
+  },
+  "widgets_componentsLabel6": {
+    "en": "Reconnect",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4541",
+    "zh": "重试连接"
+  },
+  "widgets_componentsLoopOfflineCachedAt": {
+    "en": "Cached {cachedAt}",
+    "placeholders": {
+      "cachedAt": {
+        "example": "cachedAt",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:4530",
+    "zh": "缓存 {cachedAt}"
+  },
+  "widgets_componentsLoopOfflineCachedAtSemanticsLabel": {
+    "en": "Cached at {cachedAt}",
+    "placeholders": {
+      "cachedAt": {
+        "example": "cachedAt",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:4533",
+    "zh": "缓存时间 {cachedAt}"
+  },
+  "widgets_componentsNoCacheBody": {
+    "en": "This read didn't finish and there's no cache to show yet.",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4467",
+    "zh": "这次读取没有完成，还没有可显示的缓存。"
+  },
+  "widgets_componentsPriceRow": {
+    "en": "Loading list",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:3749",
+    "zh": "列表加载中"
+  },
+  "widgets_componentsRetryFailedMessage": {
+    "en": "Still couldn't connect. Try again once the network is back.",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4200",
+    "zh": "刚才这次还是没连上。等网络恢复后再试一次。"
+  },
+  "widgets_componentsRetryingLabel": {
+    "en": "Retrying…",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4199",
+    "zh": "正在重试…"
+  },
+  "widgets_componentsS": {
+    "en": "Paused: {pausedActions}.",
+    "placeholders": {
+      "pausedActions": {
+        "example": "pausedActions.join('、')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:4490",
+    "zh": "已暂停：{pausedActions}。"
+  },
+  "widgets_componentsSettingsLabel": {
+    "en": "Open system settings",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4563",
+    "zh": "前往系统设置"
+  },
+  "widgets_componentsSwitch": {
+    "en": "What happened: {happened}",
+    "placeholders": {
+      "happened": {
+        "example": "happened",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:2227",
+    "zh": "发生了什么：{happened}"
+  },
+  "widgets_componentsSwitch2": {
+    "en": "What's affected: {impact}",
+    "placeholders": {
+      "impact": {
+        "example": "impact",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:2228",
+    "zh": "影响什么：{impact}"
+  },
+  "widgets_componentsSwitch3": {
+    "en": "Next: {next}",
+    "placeholders": {
+      "next": {
+        "example": "next",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_components.dart:2229",
+    "zh": "下一步：{next}"
+  },
+  "widgets_componentsTimeoutHeadline": {
+    "en": "LOOP timed out",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4466",
+    "zh": "LOOP 响应超时"
+  },
+  "widgets_componentsTitle": {
+    "en": "Couldn't complete right now",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4345",
+    "zh": "暂时无法完成"
+  },
+  "widgets_componentsUnreachableMessage": {
+    "en": "Nothing was loaded on this page and nothing was submitted. Check your network and retry.",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4194",
+    "zh": "这一页没有读到任何内容，也没有提交任何操作。请检查网络后重试。"
+  },
+  "widgets_componentsUnreachableTitle": {
+    "en": "Can't reach LOOP right now",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4190",
+    "zh": "现在连不上 LOOP"
+  },
+  "widgets_enumerationSeparator": {
+    "en": ", ",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4490",
+    "zh": "、"
+  },
+  "widgets_environmentTagLabel": {
+    "en": "Server {label}",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_environment_tag.dart:22",
+    "zh": "服务端 {label}"
+  },
+  "widgets_flatLoopStepDotsLabel": {
+    "en": "Step {step} of {total}, {label}",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      },
+      "step": {
+        "example": "step",
+        "type": "Object"
+      },
+      "total": {
+        "example": "total",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_flat.dart:79",
+    "zh": "第 {step} 步，共 {total} 步，{label}"
+  },
+  "widgets_infoSheetBarrierLabel": {
+    "en": "Close details",
+    "placeholders": {},
+    "where": "lib/widgets/loop_info_sheet.dart:50, lib/widgets/loop_provenance_scope.dart:331",
+    "zh": "关闭说明"
+  },
+  "widgets_infoSheetLabel": {
+    "en": "About {title}",
+    "placeholders": {
+      "title": {
+        "example": "title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_info_sheet.dart:118",
+    "zh": "关于{title}"
+  },
+  "widgets_inlineStatesLabel": {
+    "en": "Scope",
+    "placeholders": {},
+    "where": "lib/widgets/loop_inline_states.dart:355",
+    "zh": "范围"
+  },
+  "widgets_inlineStatesLabel2": {
+    "en": "Source",
+    "placeholders": {},
+    "where": "lib/widgets/loop_inline_states.dart:357, lib/widgets/loop_inline_states.dart:397, lib/widgets/loop_provenance_scope.dart:400",
+    "zh": "来源"
+  },
+  "widgets_inlineStatesLabel3": {
+    "en": "Observed at",
+    "placeholders": {},
+    "where": "lib/widgets/loop_inline_states.dart:363, lib/widgets/loop_provenance_scope.dart:408",
+    "zh": "观察于"
+  },
+  "widgets_inlineStatesLoopInlineUnavailableRetryLabel": {
+    "en": "Retrying",
+    "placeholders": {},
+    "where": "lib/widgets/loop_inline_states.dart:111",
+    "zh": "重试中"
+  },
+  "widgets_inlineStatesLoopProvenanceLineSemanticsLabel": {
+    "en": "{text}, view data source details",
+    "placeholders": {
+      "text": {
+        "example": "text",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_inline_states.dart:311",
+    "zh": "{text}，查看数据来源说明"
+  },
+  "widgets_inlineStatesLoopProvenanceMarkerLabel": {
+    "en": "{text}, data source is in the details at the top right",
+    "placeholders": {
+      "text": {
+        "example": "text",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_inline_states.dart:293",
+    "zh": "{text}，数据来源在页面右上角的说明里"
+  },
+  "widgets_inlineStatesLoopProvenanceSheetBarrierLabel": {
+    "en": "Close data source details",
+    "placeholders": {},
+    "where": "lib/widgets/loop_inline_states.dart:344",
+    "zh": "关闭数据来源说明"
+  },
+  "widgets_inlineStatesText2": {
+    "en": "Observed at {timeLabel}",
+    "placeholders": {
+      "timeLabel": {
+        "example": "_timeLabel(at)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_inline_states.dart:250",
+    "zh": "观察于 {timeLabel}"
+  },
+  "widgets_inlineStatesValue": {
+    "en": "Source not labeled",
+    "placeholders": {},
+    "where": "lib/widgets/loop_inline_states.dart:358, lib/widgets/loop_provenance_scope.dart:402",
+    "zh": "来源未标注"
+  },
+  "widgets_labelColon": {
+    "en": ": ",
+    "placeholders": {},
+    "where": "lib/widgets/loop_toast.dart:360",
+    "zh": "："
+  },
+  "widgets_loadingIf": {
+    "en": "Update failed. Showing the last data read",
+    "placeholders": {},
+    "where": "lib/widgets/loop_loading.dart:61",
+    "zh": "更新失败，显示的是上次读到的数据"
+  },
+  "widgets_loadingIf2": {
+    "en": "Data from {age}, updating",
+    "placeholders": {
+      "age": {
+        "example": "age",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_loading.dart:65",
+    "zh": "数据来自{age}，正在更新"
+  },
+  "widgets_loadingLoopAgeLabel": {
+    "en": "{inSeconds}s ago",
+    "placeholders": {
+      "inSeconds": {
+        "example": "delta.inSeconds",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_loading.dart:11",
+    "zh": "{inSeconds} 秒前"
+  },
+  "widgets_loadingLoopAgeLabel2": {
+    "en": "{inMinutes}m ago",
+    "placeholders": {
+      "inMinutes": {
+        "example": "delta.inMinutes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_loading.dart:12",
+    "zh": "{inMinutes} 分钟前"
+  },
+  "widgets_loadingLoopAgeLabel3": {
+    "en": "{inHours}h ago",
+    "placeholders": {
+      "inHours": {
+        "example": "delta.inHours",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_loading.dart:13",
+    "zh": "{inHours} 小时前"
+  },
+  "widgets_loadingLoopAgeLabel4": {
+    "en": "{inDays}d ago",
+    "placeholders": {
+      "inDays": {
+        "example": "delta.inDays",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_loading.dart:14",
+    "zh": "{inDays} 天前"
+  },
+  "widgets_loadingS": {
+    "en": "Update failed. Last read {ageLabel}",
+    "placeholders": {
+      "ageLabel": {
+        "example": "loopAgeLabel(at, now: now)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_loading.dart:62",
+    "zh": "更新失败，显示的是{ageLabel}读到的数据"
+  },
+  "widgets_loadingS2": {
+    "en": "Data from {age}",
+    "placeholders": {
+      "age": {
+        "example": "age",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_loading.dart:65",
+    "zh": "数据来自{age}"
+  },
+  "widgets_pagesLoopKeyboardDoneLabel": {
+    "en": "Done, hide keyboard",
+    "placeholders": {},
+    "where": "lib/widgets/loop_pages.dart:466",
+    "zh": "完成，收起键盘"
+  },
+  "widgets_personRowLabel": {
+    "en": "View all",
+    "placeholders": {},
+    "where": "lib/widgets/loop_person_row.dart:304",
+    "zh": "查看全部"
+  },
+  "widgets_profileSectionCommunities": {
+    "en": "Communities",
+    "placeholders": {},
+    "where": "lib/widgets/loop_profile_sections.dart:13",
+    "zh": "社区"
+  },
+  "widgets_profileSectionTrades": {
+    "en": "Trades",
+    "placeholders": {},
+    "where": "lib/widgets/loop_profile_sections.dart:12",
+    "zh": "交易"
+  },
+  "widgets_provenanceScopeLabel": {
+    "en": "Data sources and details",
+    "placeholders": {},
+    "where": "lib/widgets/loop_provenance_scope.dart:304",
+    "zh": "数据来源与说明"
+  },
+  "widgets_quoteRowSwitch": {
+    "en": "Not reported",
+    "placeholders": {},
+    "where": "lib/widgets/loop_quote_row.dart:87",
+    "zh": "未报告"
+  },
+  "widgets_roundKeyLabel": {
+    "en": ", unavailable",
+    "placeholders": {},
+    "where": "lib/widgets/loop_round_key.dart:113",
+    "zh": "，暂不可用"
+  },
+  "widgets_sentenceGap": {
+    "en": " ",
+    "placeholders": {},
+    "where": "lib/widgets/loop_components.dart:4491",
+    "zh": ""
+  },
+  "widgets_sentenceJoin": {
+    "en": ". ",
+    "placeholders": {},
+    "where": "lib/widgets/loop_blocks.dart:1179",
+    "zh": "。"
+  },
+  "widgets_sheetBarrierLabel": {
+    "en": "Close sheet",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sheet.dart:11",
+    "zh": "关闭弹层"
+  },
+  "widgets_signSheetBuild": {
+    "en": "Don't close the app",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sign_sheet.dart:299",
+    "zh": "请勿关闭 App"
+  },
+  "widgets_signSheetConfirmLabel": {
+    "en": "Confirm signature",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sign_sheet.dart:47",
+    "zh": "确认签名"
+  },
+  "widgets_signSheetLabel": {
+    "en": "Adjust policy",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sign_sheet.dart:207",
+    "zh": "调整策略"
+  },
+  "widgets_signSheetPolicyRejected": {
+    "en": "Rejected by policy",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sign_sheet.dart:122",
+    "zh": "被策略拒绝"
+  },
+  "widgets_signSheetSigning": {
+    "en": "Signing",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sign_sheet.dart:121, lib/widgets/loop_sign_sheet.dart:308",
+    "zh": "签名中"
+  },
+  "widgets_signSheetSigningTitle": {
+    "en": "Signing and broadcasting",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sign_sheet.dart:49",
+    "zh": "正在签名并广播"
+  },
+  "widgets_signSheetSimulationFailed": {
+    "en": "Simulation failed",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sign_sheet.dart:120",
+    "zh": "模拟失败"
+  },
+  "widgets_signSheetTitle": {
+    "en": "Confirm transaction",
+    "placeholders": {},
+    "where": "lib/widgets/loop_sign_sheet.dart:41",
+    "zh": "确认交易"
+  },
+  "widgets_signStepsLabel": {
+    "en": "Step {number} {label}, {caption}",
+    "placeholders": {
+      "caption": {
+        "example": "step.caption",
+        "type": "Object"
+      },
+      "label": {
+        "example": "step.label",
+        "type": "Object"
+      },
+      "number": {
+        "example": "number",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_sign_steps.dart:69",
+    "zh": "第 {number} 步 {label}，{caption}"
+  },
+  "widgets_signStepsStep": {
+    "en": "Next, {waitingCaption}",
+    "placeholders": {
+      "waitingCaption": {
+        "example": "step.waitingCaption",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_sign_steps.dart:125",
+    "zh": "下一步，{waitingCaption}"
+  },
+  "widgets_toastSwitch": {
+    "en": "Warning",
+    "placeholders": {},
+    "where": "lib/widgets/loop_toast.dart:295",
+    "zh": "警告"
+  },
+  "widgets_toastSwitch2": {
+    "en": "Error",
+    "placeholders": {},
+    "where": "lib/widgets/loop_toast.dart:296",
+    "zh": "错误"
+  },
+  "widgets_tokenCardBuild": {
+    "en": "{fact} — source {source}, observed at {observedLabel}",
+    "placeholders": {
+      "fact": {
+        "example": "fact.fact",
+        "type": "Object"
+      },
+      "observedLabel": {
+        "example": "fact.observedLabel",
+        "type": "Object"
+      },
+      "source": {
+        "example": "fact.source",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_token_card.dart:702",
+    "zh": "{fact} —— 来源 {source}，观察于 {observedLabel}"
+  },
+  "widgets_tokenCardLoading": {
+    "en": "Identifying",
+    "placeholders": {},
+    "where": "lib/widgets/loop_token_card.dart:169, lib/widgets/loop_token_card.dart:390",
+    "zh": "识别中"
+  },
+  "widgets_tokenCardPartial": {
+    "en": "Data missing",
+    "placeholders": {},
+    "where": "lib/widgets/loop_token_card.dart:171",
+    "zh": "数据缺失"
+  },
+  "widgets_tokenCardRisk": {
+    "en": "Risk facts",
+    "placeholders": {},
+    "where": "lib/widgets/loop_token_card.dart:172",
+    "zh": "风险事实"
+  },
+  "widgets_tokenCardSwitch": {
+    "en": "Identifying…",
+    "placeholders": {},
+    "where": "lib/widgets/loop_token_card.dart:358",
+    "zh": "识别中…"
+  },
+  "widgets_uiDiscover": {
+    "en": "Discover",
+    "placeholders": {},
+    "where": "lib/widgets/loop_ui.dart:497",
+    "zh": "发现"
+  },
+  "widgets_uiDiscuss": {
+    "en": "Discuss",
+    "placeholders": {},
+    "where": "lib/widgets/loop_ui.dart:498",
+    "zh": "讨论"
+  },
+  "widgets_uiExecute": {
+    "en": "Execute",
+    "placeholders": {},
+    "where": "lib/widgets/loop_ui.dart:499",
+    "zh": "执行"
+  },
+  "widgets_uiLabel": {
+    "en": "Current stage: {label}",
+    "placeholders": {
+      "label": {
+        "example": "stage.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/widgets/loop_ui.dart:525",
+    "zh": "当前阶段：{label}"
+  }
+}

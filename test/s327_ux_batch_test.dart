@@ -119,7 +119,7 @@ void main() {
       // no 复制邀请码 button.
       expect(_key('referral-invite-card'), findsOneWidget);
       expect(_key('referral-poster'), findsOneWidget);
-      expect(find.widgetWithText(LoopButton, '复制邀请码'), findsNothing);
+      expect(find.widgetWithText(LoopButton, 'Copy invite code'), findsNothing);
       expect(_iconOf(tester, 'referral-copy-code'), 'copy');
 
       await tester.tap(_key('referral-copy-code'));

@@ -305,7 +305,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey<String>('send-confirm-sign')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
 
       expect(
@@ -319,7 +319,7 @@ void main() {
         find.byKey(const ValueKey<String>('send-confirm-state-offline')),
         findsNothing,
       );
-      expect(find.text('确认签名'), findsNothing);
+      expect(find.text('Confirm signature'), findsNothing);
       expect(wallet.handoffs, hasLength(1));
       expect(intents.reportCalls, 1);
     });

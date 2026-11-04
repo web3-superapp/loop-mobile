@@ -25,6 +25,7 @@ import 'package:flutter/widgets.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_camera.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 import 'package:loop_mobile/widgets/loop_keyboard.dart';
@@ -138,12 +139,12 @@ String loopChatImageFailureMessage(Object error) {
     return loopChatImageRefusalMessage(LoopChatImageRefusal.unsupportedFormat);
   }
   if (loopStreamFailureIsOffline(error)) {
-    return '设备当前离线，图片没有上传，这条消息也没有发出去。';
+    return LoopL10n.current.integrations_chatImageComposerIf;
   }
   if (error is StreamChatNetworkError && error.statusCode == 403) {
-    return '服务端拒绝了这次图片上传，这条消息没有发出去。';
+    return LoopL10n.current.integrations_chatImageComposerIf2;
   }
-  return '图片没有上传成功，这条消息没有发出去。';
+  return LoopL10n.current.integrations_chatImageComposerIf3;
 }
 
 /// The LOOP composer: the official one, behind LOOP's gate and LOOP's copy.

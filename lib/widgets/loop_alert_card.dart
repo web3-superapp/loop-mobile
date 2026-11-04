@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 
@@ -50,7 +51,9 @@ class LoopAlertCard extends StatelessWidget {
       padding: margin,
       child: Semantics(
         container: true,
-        label: text == null ? title : '$title。$text',
+        label: text == null
+            ? title
+            : '$title${LoopL10n.current.widgets_sentenceJoin}$text',
         child: ExcludeSemantics(
           child: Container(
             key: const ValueKey<String>('loop-alert-card'),

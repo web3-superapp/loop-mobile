@@ -990,6 +990,70 @@
   "@account_screensWalletRecoveryUnavailableTitle": {
     "description": "lib/features/account/account_screens.dart:1428"
   },
+  "app_appUnknownRouteHomeLabel": "Back to Chat",
+  "@app_appUnknownRouteHomeLabel": {
+    "description": "lib/app.dart:2720"
+  },
+  "app_appUnknownRouteScreenTitle": "Page not found",
+  "@app_appUnknownRouteScreenTitle": {
+    "description": "lib/app.dart:2708"
+  },
+  "app_appUnknownRouteStateMessage": "This visit has been logged.",
+  "@app_appUnknownRouteStateMessage": {
+    "description": "lib/app.dart:2717"
+  },
+  "app_appUnknownRouteStateTitle": "This address isn't a LOOP page",
+  "@app_appUnknownRouteStateTitle": {
+    "description": "lib/app.dart:2716"
+  },
+  "app_onboardingSequenceLoopId": "Create LOOP ID",
+  "@app_onboardingSequenceLoopId": {
+    "description": "lib/app/session/onboarding_sequence.dart:16"
+  },
+  "app_onboardingSequenceSecurity": "Security settings",
+  "@app_onboardingSequenceSecurity": {
+    "description": "lib/app/session/onboarding_sequence.dart:15"
+  },
+  "app_onboardingSequenceWalletBackup": "Set up recovery",
+  "@app_onboardingSequenceWalletBackup": {
+    "description": "lib/app/session/onboarding_sequence.dart:14"
+  },
+  "app_onboardingSequenceWalletCreate": "Create wallet",
+  "@app_onboardingSequenceWalletCreate": {
+    "description": "lib/app/session/onboarding_sequence.dart:13"
+  },
+  "app_sessionControllerErrorMessage": "You're signed out on this device, but LOOP hasn't confirmed the server session was revoked.",
+  "@app_sessionControllerErrorMessage": {
+    "description": "lib/app/session/loop_session_controller.dart:691"
+  },
+  "app_sessionControllerErrorMessage2": "You're signed out on this device, but Privy hasn't confirmed the remote sign-out.",
+  "@app_sessionControllerErrorMessage2": {
+    "description": "lib/app/session/loop_session_controller.dart:696"
+  },
+  "app_sessionControllerPrivyGatewayException": "Signing out. Try again when it finishes.",
+  "@app_sessionControllerPrivyGatewayException": {
+    "description": "lib/app/session/loop_session_controller.dart:564"
+  },
+  "app_sessionControllerPrivyGatewayException2": "The account changed and no wallet is linked. Try again.",
+  "@app_sessionControllerPrivyGatewayException2": {
+    "description": "lib/app/session/loop_session_controller.dart:584"
+  },
+  "app_sessionControllerPrivyGatewayException3": "Development previews and restricted sessions don't create real wallets.",
+  "@app_sessionControllerPrivyGatewayException3": {
+    "description": "lib/app/session/loop_session_controller.dart:597"
+  },
+  "app_sessionControllerPrivyGatewayException4": "The account changed. Check the wallet status again.",
+  "@app_sessionControllerPrivyGatewayException4": {
+    "description": "lib/app/session/loop_session_controller.dart:616"
+  },
+  "app_sessionControllerPrivyGatewayException5": "The wallet status changed. Check it again before continuing.",
+  "@app_sessionControllerPrivyGatewayException5": {
+    "description": "lib/app/session/loop_session_controller.dart:623"
+  },
+  "app_walletProvisioningControllerFail": "Wallet creation didn't finish. Your account and sign-in are unchanged. Try again later.",
+  "@app_walletProvisioningControllerFail": {
+    "description": "lib/app/session/wallet_provisioning_controller.dart:134"
+  },
   "betaFeedback_cameraFailed": "Couldn't open the camera",
   "@betaFeedback_cameraFailed": {
     "description": "lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94"
@@ -9072,6 +9136,818 @@
   "dapp_signingTransaction": "Confirm transaction",
   "@dapp_signingTransaction": {
     "description": "lib/features/dapp/dapp_signing.dart:243, lib/features/dapp/dapp_signing.dart:721"
+  },
+  "integrations_chatCameraLoopChatCameraPermissionMessage": "No camera access. Allow LOOP to use the camera in system settings, then try again.",
+  "@integrations_chatCameraLoopChatCameraPermissionMessage": {
+    "description": "lib/integrations/communication/loop_chat_camera.dart:46"
+  },
+  "integrations_chatCameraLoopChatCameraUnavailableMessage": "The camera didn't take a photo, so nothing was added.",
+  "@integrations_chatCameraLoopChatCameraUnavailableMessage": {
+    "description": "lib/integrations/communication/loop_chat_camera.dart:51"
+  },
+  "integrations_chatImageAttachmentsFailureMessage": "Image didn't load",
+  "@integrations_chatImageAttachmentsFailureMessage": {
+    "description": "lib/integrations/communication/loop_chat_image_attachments.dart:60"
+  },
+  "integrations_chatImageAttachmentsLoopChatImageViewerCounter": "{page} / {total}",
+  "@integrations_chatImageAttachmentsLoopChatImageViewerCounter": {
+    "description": "lib/integrations/communication/loop_chat_image_attachments.dart:403",
+    "placeholders": {
+      "page": {
+        "type": "Object?"
+      },
+      "total": {
+        "type": "Object?"
+      }
+    }
+  },
+  "integrations_chatImageAttachmentsRetryMessage": "Tap to retry",
+  "@integrations_chatImageAttachmentsRetryMessage": {
+    "description": "lib/integrations/communication/loop_chat_image_attachments.dart:61"
+  },
+  "integrations_chatImageComposerIf": "This device is offline. The image wasn't uploaded and the message wasn't sent.",
+  "@integrations_chatImageComposerIf": {
+    "description": "lib/integrations/communication/loop_chat_image_composer.dart:141"
+  },
+  "integrations_chatImageComposerIf2": "The server rejected this image upload. The message wasn't sent.",
+  "@integrations_chatImageComposerIf2": {
+    "description": "lib/integrations/communication/loop_chat_image_composer.dart:144"
+  },
+  "integrations_chatImageComposerIf3": "The image didn't upload. The message wasn't sent.",
+  "@integrations_chatImageComposerIf3": {
+    "description": "lib/integrations/communication/loop_chat_image_composer.dart:146"
+  },
+  "integrations_chatImagePolicyNotAnImage": "Only images can be sent here. What you picked isn't an image, so it wasn't added.",
+  "@integrations_chatImagePolicyNotAnImage": {
+    "description": "lib/integrations/communication/loop_chat_image_policy.dart:67"
+  },
+  "integrations_chatImagePolicyTooLarge": "Each image must be 10 MB or less. The larger one wasn't added.",
+  "@integrations_chatImagePolicyTooLarge": {
+    "description": "lib/integrations/communication/loop_chat_image_policy.dart:70"
+  },
+  "integrations_chatImagePolicyTooMany": "A message can have up to 9 images. The extra ones weren't added.",
+  "@integrations_chatImagePolicyTooMany": {
+    "description": "lib/integrations/communication/loop_chat_image_policy.dart:71"
+  },
+  "integrations_chatImagePolicyUnsupportedFormat": "Only JPG, PNG, WebP and GIF images are supported. Other formats weren't added.",
+  "@integrations_chatImagePolicyUnsupportedFormat": {
+    "description": "lib/integrations/communication/loop_chat_image_policy.dart:69"
+  },
+  "integrations_externalWalletCredentialGatewayExternalWalletConnectorException": "The wallet returned a duplicate sign-in request. Reconnect.",
+  "@integrations_externalWalletCredentialGatewayExternalWalletConnectorException": {
+    "description": "lib/integrations/reown/external_wallet_credential_gateway.dart:57"
+  },
+  "integrations_externalWalletCredentialGatewayExternalWalletConnectorException2": "The address, message or signature from the wallet doesn't match this sign-in request.",
+  "@integrations_externalWalletCredentialGatewayExternalWalletConnectorException2": {
+    "description": "lib/integrations/reown/external_wallet_credential_gateway.dart:80"
+  },
+  "integrations_externalWalletCredentialGatewayPrivyGatewayException": "No current Privy account. The wallet wasn't linked.",
+  "@integrations_externalWalletCredentialGatewayPrivyGatewayException": {
+    "description": "lib/integrations/reown/external_wallet_credential_gateway.dart:44"
+  },
+  "integrations_memoryChatGatewaysCommunityName": "Preview community",
+  "@integrations_memoryChatGatewaysCommunityName": {
+    "description": "lib/integrations/communication/memory_chat_v2_gateways.dart:130, lib/integrations/communication/memory_live_voice_rooms.dart:25"
+  },
+  "integrations_memoryCommunityGatewaysDescription": "A sample community in development preview. Member counts and roles are local in-memory values.",
+  "@integrations_memoryCommunityGatewaysDescription": {
+    "description": "lib/integrations/community/memory_community_gateways.dart:61"
+  },
+  "integrations_memoryCommunityGatewaysLabel": "Power community",
+  "@integrations_memoryCommunityGatewaysLabel": {
+    "description": "lib/integrations/community/memory_community_gateways.dart:69"
+  },
+  "integrations_memoryCommunityGatewaysName": "Demo community · Frogs",
+  "@integrations_memoryCommunityGatewaysName": {
+    "description": "lib/integrations/community/memory_community_gateways.dart:58"
+  },
+  "integrations_memoryCommunityGatewaysName2": "Demo community · Builders",
+  "@integrations_memoryCommunityGatewaysName2": {
+    "description": "lib/integrations/community/memory_community_gateways.dart:73"
+  },
+  "integrations_memoryCommunityGatewaysName3": "Demo community · In review",
+  "@integrations_memoryCommunityGatewaysName3": {
+    "description": "lib/integrations/community/memory_community_gateways.dart:80"
+  },
+  "integrations_memoryCommunityGatewaysRejectedReason": "Demo data: this name duplicates a live community. Pick another and resubmit.",
+  "@integrations_memoryCommunityGatewaysRejectedReason": {
+    "description": "lib/integrations/community/memory_community_gateways.dart:222"
+  },
+  "integrations_memoryCommunityGatewaysTitle": "Demo notice · This week's roadmap",
+  "@integrations_memoryCommunityGatewaysTitle": {
+    "description": "lib/integrations/community/memory_community_gateways.dart:149"
+  },
+  "integrations_memoryCommunityGatewaysTitle2": "Demo notice · Thursday voice room",
+  "@integrations_memoryCommunityGatewaysTitle2": {
+    "description": "lib/integrations/community/memory_community_gateways.dart:157"
+  },
+  "integrations_memoryLiveVoiceRoomsCommunityName": "Preview community (not joined)",
+  "@integrations_memoryLiveVoiceRoomsCommunityName": {
+    "description": "lib/integrations/communication/memory_live_voice_rooms.dart:61"
+  },
+  "integrations_memoryLiveVoiceRoomsDisplayName": "Preview host",
+  "@integrations_memoryLiveVoiceRoomsDisplayName": {
+    "description": "lib/integrations/communication/memory_live_voice_rooms.dart:30, lib/integrations/communication/memory_live_voice_rooms.dart:38"
+  },
+  "integrations_memoryLiveVoiceRoomsDisplayName2": "Preview speaker",
+  "@integrations_memoryLiveVoiceRoomsDisplayName2": {
+    "description": "lib/integrations/communication/memory_live_voice_rooms.dart:43"
+  },
+  "integrations_memoryLiveVoiceRoomsTitle": "Development preview · Friday AMA",
+  "@integrations_memoryLiveVoiceRoomsTitle": {
+    "description": "lib/integrations/communication/memory_live_voice_rooms.dart:27"
+  },
+  "integrations_memoryPublicProfilesAlias": "Preview user",
+  "@integrations_memoryPublicProfilesAlias": {
+    "description": "lib/integrations/social/memory_public_profiles.dart:31"
+  },
+  "integrations_memoryPublicProfilesBio": "Development preview account. Profile and holdings are demo data.",
+  "@integrations_memoryPublicProfilesBio": {
+    "description": "lib/integrations/social/memory_public_profiles.dart:33"
+  },
+  "integrations_memoryPublicProfilesLabel": "Featured community",
+  "@integrations_memoryPublicProfilesLabel": {
+    "description": "lib/integrations/social/memory_public_profiles.dart:113"
+  },
+  "integrations_memoryPublicProfilesName": "Preview community",
+  "@integrations_memoryPublicProfilesName": {
+    "description": "lib/integrations/social/memory_public_profiles.dart:107"
+  },
+  "integrations_memoryPublicProfilesName2": "Demo data group",
+  "@integrations_memoryPublicProfilesName2": {
+    "description": "lib/integrations/social/memory_public_profiles.dart:117"
+  },
+  "integrations_memoryWatchlistGatewayName": "Default",
+  "@integrations_memoryWatchlistGatewayName": {
+    "description": "lib/integrations/market/memory_watchlist_gateway.dart:62"
+  },
+  "integrations_memoryWatchlistGatewayName2": "Watching",
+  "@integrations_memoryWatchlistGatewayName2": {
+    "description": "lib/integrations/market/memory_watchlist_gateway.dart:94"
+  },
+  "integrations_networkProbeName": "LOOP service · Ready",
+  "@integrations_networkProbeName": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:195"
+  },
+  "integrations_networkProbeName2": "LOOP service · Capabilities",
+  "@integrations_networkProbeName2": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:207"
+  },
+  "integrations_networkProbeName3": "Sign-in service Privy",
+  "@integrations_networkProbeName3": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:220"
+  },
+  "integrations_networkProbeName4": "Chat service Stream",
+  "@integrations_networkProbeName4": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:238"
+  },
+  "integrations_networkProbeName5": "Voice service Stream",
+  "@integrations_networkProbeName5": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:248"
+  },
+  "integrations_networkProbeName6": "Token icons",
+  "@integrations_networkProbeName6": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:258"
+  },
+  "integrations_networkProbeName7": "Push service Firebase",
+  "@integrations_networkProbeName7": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:273"
+  },
+  "integrations_networkProbeName8": "BSC mainnet node",
+  "@integrations_networkProbeName8": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:285"
+  },
+  "integrations_networkProbeName9": "Network baseline Apple",
+  "@integrations_networkProbeName9": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:300"
+  },
+  "integrations_networkProbePurpose": "The app's main data",
+  "@integrations_networkProbePurpose": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:196"
+  },
+  "integrations_networkProbePurpose2": "Two requests in a row, the second is recorded (reused connection)",
+  "@integrations_networkProbePurpose2": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:208"
+  },
+  "integrations_networkProbePurpose3": "Sign-in and built-in wallet",
+  "@integrations_networkProbePurpose3": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:221"
+  },
+  "integrations_networkProbePurpose4": "Conversations and messages",
+  "@integrations_networkProbePurpose4": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:239"
+  },
+  "integrations_networkProbePurpose5": "Icon image source",
+  "@integrations_networkProbePurpose5": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:259"
+  },
+  "integrations_networkProbePurpose6": "System push notifications",
+  "@integrations_networkProbePurpose6": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:274"
+  },
+  "integrations_networkProbePurpose7": "Reference only; the app doesn't connect to nodes directly",
+  "@integrations_networkProbePurpose7": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:286"
+  },
+  "integrations_networkProbePurpose8": "Baseline for DNS and secure connections",
+  "@integrations_networkProbePurpose8": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:301"
+  },
+  "integrations_networkProbeSubject": "LOOP network diagnosis",
+  "@integrations_networkProbeSubject": {
+    "description": "lib/integrations/diagnostics/loop_network_probe.dart:354"
+  },
+  "integrations_privyAuthGatewayAuthentication": "Your sign-in has expired. Sign in again.",
+  "@integrations_privyAuthGatewayAuthentication": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:434"
+  },
+  "integrations_privyAuthGatewayExternalWalletLinkedElsewhereMessage": "This wallet is linked to another LOOP account. Sign in to that account and unlink it first, then come back to link it.",
+  "@integrations_privyAuthGatewayExternalWalletLinkedElsewhereMessage": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:116"
+  },
+  "integrations_privyAuthGatewayLoopUndecidedSessionMessage": "Can't confirm your sign-in right now. Try again later.",
+  "@integrations_privyAuthGatewayLoopUndecidedSessionMessage": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:111"
+  },
+  "integrations_privyAuthGatewayMessage": "The Privy App Client ID isn't configured, so real sign-in isn't available.",
+  "@integrations_privyAuthGatewayMessage": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:297"
+  },
+  "integrations_privyAuthGatewayNetwork": "Can't confirm your sign-in right now. Check your network and retry.",
+  "@integrations_privyAuthGatewayNetwork": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:435"
+  },
+  "integrations_privyAuthGatewayOauthFailureMessage": "{label} sign-in cancelled.",
+  "@integrations_privyAuthGatewayOauthFailureMessage": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:814",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "integrations_privyAuthGatewayOauthFailureMessage2": "{label} sign-in can't reach the network. Try again later.",
+  "@integrations_privyAuthGatewayOauthFailureMessage2": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:819",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "integrations_privyAuthGatewayOauthFailureMessage3": "{label} sign-in couldn't return to the app. Check the app configuration and retry.",
+  "@integrations_privyAuthGatewayOauthFailureMessage3": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:824",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "integrations_privyAuthGatewayOauthFailureMessage4": "{label} sign-in didn't finish. Retry.",
+  "@integrations_privyAuthGatewayOauthFailureMessage4": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:826",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException": "Couldn't send the code. Try again later.",
+  "@integrations_privyAuthGatewayPrivyGatewayException": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:454"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException10": "Invalid wallet address. Nothing was unlinked.",
+  "@integrations_privyAuthGatewayPrivyGatewayException10": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:601"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException11": "The account changed. Refresh to check whether the wallet was unlinked.",
+  "@integrations_privyAuthGatewayPrivyGatewayException11": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:608"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException12": "Unlinking didn't finish. Check your network and retry.",
+  "@integrations_privyAuthGatewayPrivyGatewayException12": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:618, lib/integrations/privy/privy_auth_gateway.dart:867"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException14": "The previous account's wallet action is still finishing. Try again later.",
+  "@integrations_privyAuthGatewayPrivyGatewayException14": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:637"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException15": "Wallet creation isn't confirmed. Refresh and try again later.",
+  "@integrations_privyAuthGatewayPrivyGatewayException15": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:681"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException16": "Finish Privy sign-in first.",
+  "@integrations_privyAuthGatewayPrivyGatewayException16": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:697"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException17": "Can't reach the sign-in service right now. Check your network and retry.",
+  "@integrations_privyAuthGatewayPrivyGatewayException17": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:709"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException18": "Your sign-in credential has expired. Try again.",
+  "@integrations_privyAuthGatewayPrivyGatewayException18": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:713"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException19": "Couldn't sign out. Try again later.",
+  "@integrations_privyAuthGatewayPrivyGatewayException19": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:723"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException2": "The code is invalid or has expired. Check it again.",
+  "@integrations_privyAuthGatewayPrivyGatewayException2": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:469"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException3": "Sign-in didn't finish. Check your network and return configuration, then retry.",
+  "@integrations_privyAuthGatewayPrivyGatewayException3": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:498"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException4": "Privy didn't return a sign-in message to sign. Retry.",
+  "@integrations_privyAuthGatewayPrivyGatewayException4": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:512"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException5": "Couldn't create the wallet sign-in message. Check your network and retry.",
+  "@integrations_privyAuthGatewayPrivyGatewayException5": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:514, lib/integrations/privy/privy_auth_gateway.dart:519"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException6": "Wallet sign-in didn't finish. Check your network and retry.",
+  "@integrations_privyAuthGatewayPrivyGatewayException6": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:546"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException8": "Wallet linking didn't finish. Check your network and retry.",
+  "@integrations_privyAuthGatewayPrivyGatewayException8": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:584"
+  },
+  "integrations_privyAuthGatewayPrivyGatewayException9": "The account changed and the wallet wasn't unlinked. Try again.",
+  "@integrations_privyAuthGatewayPrivyGatewayException9": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:598"
+  },
+  "integrations_privyAuthGatewaySiweFailureMessage": "This wallet already belongs to another Privy account. LOOP won't move or delete accounts automatically.",
+  "@integrations_privyAuthGatewaySiweFailureMessage": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:833"
+  },
+  "integrations_privyAuthGatewaySiweFailureMessage2": "Couldn't submit the wallet credential. Check your network and retry.",
+  "@integrations_privyAuthGatewaySiweFailureMessage2": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:839, lib/integrations/privy/privy_auth_gateway.dart:856"
+  },
+  "integrations_privyAuthGatewaySiweFailureMessage3": "Privy didn't accept this wallet credential; it may be linked to another account. LOOP won't move or delete accounts automatically.",
+  "@integrations_privyAuthGatewaySiweFailureMessage3": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:841"
+  },
+  "integrations_privyAuthGatewaySiweLinkFailureMessage": "Wallet linking didn't finish. Retry.",
+  "@integrations_privyAuthGatewaySiweLinkFailureMessage": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:858"
+  },
+  "integrations_privyAuthGatewaySiweUnlinkFailureMessage": "This is the account's only sign-in method and can't be unlinked. Link an email or another sign-in method first.",
+  "@integrations_privyAuthGatewaySiweUnlinkFailureMessage": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:873"
+  },
+  "integrations_privyAuthGatewaySiweUnlinkFailureMessage2": "Unlinking didn't finish. Try again later.",
+  "@integrations_privyAuthGatewaySiweUnlinkFailureMessage2": {
+    "description": "lib/integrations/privy/privy_auth_gateway.dart:875"
+  },
+  "integrations_privyMfaGatewayReleasedMessage": "LOOP doesn't yet offer a way to enter a code for actions held by two-step verification. This action was cancelled.",
+  "@integrations_privyMfaGatewayReleasedMessage": {
+    "description": "lib/integrations/privy/privy_mfa_gateway.dart:234"
+  },
+  "integrations_reactionsLoopReactionFallbackLabel": "Reaction",
+  "@integrations_reactionsLoopReactionFallbackLabel": {
+    "description": "lib/integrations/communication/loop_reactions.dart:32"
+  },
+  "integrations_reactionsS": "Like",
+  "@integrations_reactionsS": {
+    "description": "lib/integrations/communication/loop_reactions.dart:21"
+  },
+  "integrations_reactionsS2": "Haha",
+  "@integrations_reactionsS2": {
+    "description": "lib/integrations/communication/loop_reactions.dart:22"
+  },
+  "integrations_reactionsS3": "Love",
+  "@integrations_reactionsS3": {
+    "description": "lib/integrations/communication/loop_reactions.dart:23"
+  },
+  "integrations_reactionsS4": "Wow",
+  "@integrations_reactionsS4": {
+    "description": "lib/integrations/communication/loop_reactions.dart:24"
+  },
+  "integrations_reactionsS5": "Sad",
+  "@integrations_reactionsS5": {
+    "description": "lib/integrations/communication/loop_reactions.dart:25"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException": "The wallet connection or signature request was rejected.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:65"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException10": "The Reown Project ID isn't configured, so external wallets aren't available.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException10": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:290"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException11": "A sign-in or wallet connection is already in progress.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException11": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:337"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException12": "This page was closed. Start the wallet connection again.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException12": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:343"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException13": "The sign-in message is empty. Reconnect the wallet.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException13": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:392"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException14": "The wallet connection or return didn't finish. Go back to LOOP and retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException14": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:413"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException15": "Wallet connection cancelled.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException15": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:491"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException16": "The wallet picker didn't open. Retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException16": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:501"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException17": "The wallet connection timed out. Go back to LOOP and retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException17": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:518"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException18": "This wallet session didn't authorize personal_sign. Reconnect.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException18": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:531"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException19": "The wallet didn't return a usable EVM address.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException19": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:543"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException2": "Wallet app not found. Install it and retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException2": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:71"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException20": "Invalid wallet session. Reconnect.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException20": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:572"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException21": "The wallet signature timed out. Go back to LOOP and retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException21": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:593"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException22": "The wallet didn't return a valid signature.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException22": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:599"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException3": "Couldn't open the wallet app or return to LOOP. Retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException3": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:77"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException4": "The wallet connection can't reach the network. Try again later.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException4": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:87"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException5": "The wallet connection or return didn't finish. Retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException5": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:92"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException6": "Reown setup didn't finish. Restart LOOP and retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException6": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:176"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException7": "Reown setup failed. Restart LOOP and retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException7": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:196, lib/integrations/reown/reown_external_wallet_connector.dart:219"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException8": "The Reown service timed out. Check your network and retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException8": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:208"
+  },
+  "integrations_reownExternalWalletConnectorExternalWalletConnectorException9": "The Reown service isn't ready. Restart LOOP and retry.",
+  "@integrations_reownExternalWalletConnectorExternalWalletConnectorException9": {
+    "description": "lib/integrations/reown/reown_external_wallet_connector.dart:232"
+  },
+  "integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel": "View profile",
+  "@integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel": {
+    "description": "lib/integrations/communication/stream_chat_appearance.dart:731"
+  },
+  "integrations_streamReactionIconResolverHint": "Remove reaction",
+  "@integrations_streamReactionIconResolverHint": {
+    "description": "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart:366"
+  },
+  "integrations_streamReactionIconResolverHint2": "React with {reactionLabel}",
+  "@integrations_streamReactionIconResolverHint2": {
+    "description": "lib/integrations/communication/loop_stream_reaction_icon_resolver.dart:366",
+    "placeholders": {
+      "reactionLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "integrations_streamUnreadPillBandLoopUnreadPillDismissLabel": "Mark as read",
+  "@integrations_streamUnreadPillBandLoopUnreadPillDismissLabel": {
+    "description": "lib/integrations/communication/stream_unread_pill_band.dart:274"
+  },
+  "intel_rankBoardAlias": "Anonymous",
+  "@intel_rankBoardAlias": {
+    "description": "lib/features/intel/intel_rank_board.dart:425"
+  },
+  "intel_rankBoardBuild": "Not ranked yet",
+  "@intel_rankBoardBuild": {
+    "description": "lib/features/intel/intel_rank_board.dart:766"
+  },
+  "intel_rankBoardBuild2": "Leaderboard updates live",
+  "@intel_rankBoardBuild2": {
+    "description": "lib/features/intel/intel_rank_board.dart:819"
+  },
+  "intel_rankBoardCaption": "{participants, plural, =1{1 person has power} other{{participants} people have power}}",
+  "@intel_rankBoardCaption": {
+    "description": "lib/features/intel/intel_rank_board.dart:280",
+    "placeholders": {
+      "participants": {
+        "type": "num"
+      }
+    }
+  },
+  "intel_rankBoardCaption2": "Direct invites",
+  "@intel_rankBoardCaption2": {
+    "description": "lib/features/intel/intel_rank_board.dart:303, lib/features/intel/intel_rank_board.dart:1272, lib/features/intel/intel_rank_board.dart:1504"
+  },
+  "intel_rankBoardCaption3": "Others see an anonymous member",
+  "@intel_rankBoardCaption3": {
+    "description": "lib/features/intel/intel_rank_board.dart:372"
+  },
+  "intel_rankBoardEmptyMessage": "Couldn't load Power Ranking",
+  "@intel_rankBoardEmptyMessage": {
+    "description": "lib/features/intel/intel_rank_board.dart:177"
+  },
+  "intel_rankBoardEmptyReason": "Ranking data can't be loaded right now.",
+  "@intel_rankBoardEmptyReason": {
+    "description": "lib/features/intel/intel_rank_board.dart:178"
+  },
+  "intel_rankBoardFigure": "Only visible to you",
+  "@intel_rankBoardFigure": {
+    "description": "lib/features/intel/intel_rank_board.dart:376"
+  },
+  "intel_rankBoardIf": "Members with power: {vString}.",
+  "@intel_rankBoardIf": {
+    "description": "lib/features/intel/intel_rank_board.dart:500",
+    "placeholders": {
+      "vString": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardIf2": "{intelRankLedgerKickerBase}, live",
+  "@intel_rankBoardIf2": {
+    "description": "lib/features/intel/intel_rank_board.dart:515",
+    "placeholders": {
+      "intelRankLedgerKickerBase": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardIf3": "Community {name}, weight {weight}",
+  "@intel_rankBoardIf3": {
+    "description": "lib/features/intel/intel_rank_board.dart:591",
+    "placeholders": {
+      "name": {
+        "type": "Object?"
+      },
+      "weight": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardIf4": "Invite your first friend to get ranked",
+  "@intel_rankBoardIf4": {
+    "description": "lib/features/intel/intel_rank_board.dart:609"
+  },
+  "intel_rankBoardIf5": "Direct invites {me}",
+  "@intel_rankBoardIf5": {
+    "description": "lib/features/intel/intel_rank_board.dart:612",
+    "placeholders": {
+      "me": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardIf6": "Power {powerFigure}",
+  "@intel_rankBoardIf6": {
+    "description": "lib/features/intel/intel_rank_board.dart:612",
+    "placeholders": {
+      "powerFigure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardIf7": "My communities",
+  "@intel_rankBoardIf7": {
+    "description": "lib/features/intel/intel_rank_board.dart:1475"
+  },
+  "intel_rankBoardIntelRankBoardTitle": "Power Ranking",
+  "@intel_rankBoardIntelRankBoardTitle": {
+    "description": "lib/features/intel/intel_rank_board.dart:145, lib/features/intel/intel_rank_board.dart:508"
+  },
+  "intel_rankBoardIntelRankCapabilityBlockTitle": "Power Ranking isn't available right now",
+  "@intel_rankBoardIntelRankCapabilityBlockTitle": {
+    "description": "lib/features/intel/intel_rank_board.dart:163"
+  },
+  "intel_rankBoardIntelRankEmptyInviteLabel": "Invite",
+  "@intel_rankBoardIntelRankEmptyInviteLabel": {
+    "description": "lib/features/intel/intel_rank_board.dart:252"
+  },
+  "intel_rankBoardIntelRankEmptyMessage": "Once you invite your first friend, this ranks by direct invites",
+  "@intel_rankBoardIntelRankEmptyMessage": {
+    "description": "lib/features/intel/intel_rank_board.dart:247"
+  },
+  "intel_rankBoardIntelRankEmptyMessage2": "Check back after the next power snapshot",
+  "@intel_rankBoardIntelRankEmptyMessage2": {
+    "description": "lib/features/intel/intel_rank_board.dart:247"
+  },
+  "intel_rankBoardIntelRankEmptyTitle": "No one has invited a friend yet",
+  "@intel_rankBoardIntelRankEmptyTitle": {
+    "description": "lib/features/intel/intel_rank_board.dart:246"
+  },
+  "intel_rankBoardIntelRankEmptyTitle2": "No entries ranked this time",
+  "@intel_rankBoardIntelRankEmptyTitle2": {
+    "description": "lib/features/intel/intel_rank_board.dart:246"
+  },
+  "intel_rankBoardIntelRankGapToNext": "{figure} more to reach Rank #{above}",
+  "@intel_rankBoardIntelRankGapToNext": {
+    "description": "lib/features/intel/intel_rank_board.dart:573",
+    "placeholders": {
+      "above": {
+        "type": "Object?"
+      },
+      "figure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardIntelRankLedgerHeading": "My rank\nNot ranked yet",
+  "@intel_rankBoardIntelRankLedgerHeading": {
+    "description": "lib/features/intel/intel_rank_board.dart:534"
+  },
+  "intel_rankBoardIntelRankMeLoadingHeading": "Loading my rank",
+  "@intel_rankBoardIntelRankMeLoadingHeading": {
+    "description": "lib/features/intel/intel_rank_board.dart:121"
+  },
+  "intel_rankBoardIntelRankPodiumLabel": "Podium",
+  "@intel_rankBoardIntelRankPodiumLabel": {
+    "description": "lib/features/intel/intel_rank_board.dart:332"
+  },
+  "intel_rankBoardIntelRankProvenancePrefix": "By direct invites",
+  "@intel_rankBoardIntelRankProvenancePrefix": {
+    "description": "lib/features/intel/intel_rank_board.dart:439"
+  },
+  "intel_rankBoardIntelRankUnavailableMessage": "Leaderboard can't be loaded right now · {launchReasonCodeText}",
+  "@intel_rankBoardIntelRankUnavailableMessage": {
+    "description": "lib/features/intel/intel_rank_board.dart:232",
+    "placeholders": {
+      "launchReasonCodeText": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardIntelReferralLedgerTitle": "My live rank",
+  "@intel_rankBoardIntelReferralLedgerTitle": {
+    "description": "lib/features/intel/intel_rank_board.dart:719"
+  },
+  "intel_rankBoardLabel": "Rank #{place}, open",
+  "@intel_rankBoardLabel": {
+    "description": "lib/features/intel/intel_rank_board.dart:1236",
+    "placeholders": {
+      "place": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardLoopProvenanceLine": "LOOP invite relations",
+  "@intel_rankBoardLoopProvenanceLine": {
+    "description": "lib/features/intel/intel_rank_board.dart:444"
+  },
+  "intel_rankBoardLoopProvenanceLine2": "The invite board ranks by current active direct invites; ties share a rank. Invite relations are read live, without waiting for a power snapshot.",
+  "@intel_rankBoardLoopProvenanceLine2": {
+    "description": "lib/features/intel/intel_rank_board.dart:453"
+  },
+  "intel_rankBoardLoopProvenanceLine3": "Ranks come from the latest power snapshot; power changes on other accounts or communities change ranks. Nothing is calculated on this device.",
+  "@intel_rankBoardLoopProvenanceLine3": {
+    "description": "lib/features/intel/intel_rank_board.dart:455"
+  },
+  "intel_rankBoardLoopProvenanceLine4": "{miningRuleKeyText} Anonymous entries show \"{miningRuleKeyText2}\".",
+  "@intel_rankBoardLoopProvenanceLine4": {
+    "description": "lib/features/intel/intel_rank_board.dart:456",
+    "placeholders": {
+      "miningRuleKeyText": {
+        "type": "Object?"
+      },
+      "miningRuleKeyText2": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardMiningFormulaEffective": "By the current power formula",
+  "@intel_rankBoardMiningFormulaEffective": {
+    "description": "lib/features/intel/intel_rank_board.dart:441"
+  },
+  "intel_rankBoardMiningFormulaPending": "Power formula not yet in effect",
+  "@intel_rankBoardMiningFormulaPending": {
+    "description": "lib/features/intel/intel_rank_board.dart:442"
+  },
+  "intel_rankBoardMiningSnapshotComputed": "{intelRankLedgerKickerBase}, snapshot {intelRankMonthDayClock}",
+  "@intel_rankBoardMiningSnapshotComputed": {
+    "description": "lib/features/intel/intel_rank_board.dart:519",
+    "placeholders": {
+      "intelRankLedgerKickerBase": {
+        "type": "Object?"
+      },
+      "intelRankMonthDayClock": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardNull": "Community {name}",
+  "@intel_rankBoardNull": {
+    "description": "lib/features/intel/intel_rank_board.dart:596",
+    "placeholders": {
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardParticipantEntry": "{name} ({count})",
+  "@intel_rankBoardParticipantEntry": {
+    "description": "lib/features/intel/intel_rank_board.dart:500",
+    "placeholders": {
+      "count": {
+        "type": "Object?"
+      },
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardReferrals": "Invitation",
+  "@intel_rankBoardReferrals": {
+    "description": "lib/features/intel/intel_rank_board.dart:40"
+  },
+  "intel_rankBoardS": "LOOP power snapshot",
+  "@intel_rankBoardS": {
+    "description": "lib/features/intel/intel_rank_board.dart:444"
+  },
+  "intel_rankBoardS2": "My rank\nRank #{rank}",
+  "@intel_rankBoardS2": {
+    "description": "lib/features/intel/intel_rank_board.dart:534",
+    "placeholders": {
+      "rank": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardS3": "{figure} to reach Rank #{above}",
+  "@intel_rankBoardS3": {
+    "description": "lib/features/intel/intel_rank_board.dart:574",
+    "placeholders": {
+      "above": {
+        "type": "Object?"
+      },
+      "figure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardS4": "Once you have power, you'll be ranked at the next snapshot",
+  "@intel_rankBoardS4": {
+    "description": "lib/features/intel/intel_rank_board.dart:609"
+  },
+  "intel_rankBoardSpoken": "Invites",
+  "@intel_rankBoardSpoken": {
+    "description": "lib/features/intel/intel_rank_board.dart:307, lib/features/intel/intel_rank_board.dart:1507"
+  },
+  "intel_rankBoardText3": "Not ranked",
+  "@intel_rankBoardText3": {
+    "description": "lib/features/intel/intel_rank_board.dart:954, lib/features/intel/intel_rank_board.dart:1370, lib/features/intel/intel_rank_board.dart:1430"
+  },
+  "intel_rankBoardText4": "Rank #{position}",
+  "@intel_rankBoardText4": {
+    "description": "lib/features/intel/intel_rank_board.dart:954",
+    "placeholders": {
+      "position": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardText5": "Weight {weight}",
+  "@intel_rankBoardText5": {
+    "description": "lib/features/intel/intel_rank_board.dart:958, lib/features/intel/intel_rank_board.dart:1211, lib/features/intel/intel_rank_board.dart:1350, lib/features/intel/intel_rank_board.dart:1434",
+    "placeholders": {
+      "weight": {
+        "type": "Object?"
+      }
+    }
+  },
+  "intel_rankBoardText6": "Open",
+  "@intel_rankBoardText6": {
+    "description": "lib/features/intel/intel_rank_board.dart:1250"
+  },
+  "intel_screenIntelScreenTitle": "Intelligence",
+  "@intel_screenIntelScreenTitle": {
+    "description": "lib/features/intel/intel_screen.dart:122"
   },
   "launch2Creator_figureWithNote": "{figure} ({note})",
   "@launch2Creator_figureWithNote": {
@@ -20900,6 +21776,2117 @@
       }
     }
   },
+  "miningRewards_inviteHeadActive": "Active",
+  "@miningRewards_inviteHeadActive": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1356"
+  },
+  "miningRewards_inviteHeadAsset": "Assets",
+  "@miningRewards_inviteHeadAsset": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1356"
+  },
+  "miningRewards_inviteHeadNft": "NFT",
+  "@miningRewards_inviteHeadNft": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1356"
+  },
+  "miningRewards_modelsMiningPowerOnlyNotice": "Mining starts once the LOOP token launches; until then only power is tracked",
+  "@miningRewards_modelsMiningPowerOnlyNotice": {
+    "description": "lib/features/mining_rewards/mining_rewards_models.dart:449"
+  },
+  "miningRewards_screenBuild": "Not enough BNB for the network fee. Swap {from} for {to} first.{need} Come back to claim after the swap; your claimable balance won't change.",
+  "@miningRewards_screenBuild": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1063",
+    "placeholders": {
+      "from": {
+        "type": "Object?"
+      },
+      "need": {
+        "type": "Object?"
+      },
+      "to": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenBuild2": "Shown after an hour with power is settled",
+  "@miningRewards_screenBuild2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1130"
+  },
+  "miningRewards_screenBuild3": "No meme coins counted toward mining last hour",
+  "@miningRewards_screenBuild3": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1207"
+  },
+  "miningRewards_screenBuild4": "Level",
+  "@miningRewards_screenBuild4": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1361"
+  },
+  "miningRewards_screenBuild5": "Rate",
+  "@miningRewards_screenBuild5": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1362"
+  },
+  "miningRewards_screenCaption": "Updates after the next hour is settled",
+  "@miningRewards_screenCaption": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:535, lib/features/mining_rewards/mining_rewards_screen.dart:563"
+  },
+  "miningRewards_screenCaption2": "{completedMinutes}/60 · next {clockLabel}",
+  "@miningRewards_screenCaption2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:536",
+    "placeholders": {
+      "clockLabel": {
+        "type": "Object?"
+      },
+      "completedMinutes": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenConfirming": "Confirming on-chain",
+  "@miningRewards_screenConfirming": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:731"
+  },
+  "miningRewards_screenConfirming2": "On-chain and waiting for confirmation. Don't claim again.",
+  "@miningRewards_screenConfirming2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:751"
+  },
+  "miningRewards_screenDisabledReason": "Loading the latest claimable amount",
+  "@miningRewards_screenDisabledReason": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:875"
+  },
+  "miningRewards_screenExpired": "Voucher expired",
+  "@miningRewards_screenExpired": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:734"
+  },
+  "miningRewards_screenExpired2": "The claim voucher expired and nothing was paid out. Your claimable balance is unchanged. You can claim again.",
+  "@miningRewards_screenExpired2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:766"
+  },
+  "miningRewards_screenFact": "Own weighted power",
+  "@miningRewards_screenFact": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1157"
+  },
+  "miningRewards_screenFact2": "Invite power",
+  "@miningRewards_screenFact2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1158, lib/features/mining_rewards/mining_rewards_screen.dart:1228"
+  },
+  "miningRewards_screenFact4": "Excluded ({miningExcludedReasonText})",
+  "@miningRewards_screenFact4": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1221",
+    "placeholders": {
+      "miningExcludedReasonText": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenFact5": "Own power",
+  "@miningRewards_screenFact5": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1227"
+  },
+  "miningRewards_screenFailed": "The on-chain claim failed. Your claimable balance didn't go down.{reasonSuffix}",
+  "@miningRewards_screenFailed": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:761",
+    "placeholders": {
+      "reasonSuffix": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenFailedCode": " ({code})",
+  "@miningRewards_screenFailedCode": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:762",
+    "placeholders": {
+      "code": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenGasInsufficient": "Not enough BNB for the network fee. Swap USDT first.",
+  "@miningRewards_screenGasInsufficient": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:745"
+  },
+  "miningRewards_screenHeading": "Settlement results can't be loaded right now",
+  "@miningRewards_screenHeading": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:503"
+  },
+  "miningRewards_screenIf": "No LOOP to claim right now",
+  "@miningRewards_screenIf": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:886"
+  },
+  "miningRewards_screenIf2": "Loading wallet",
+  "@miningRewards_screenIf2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:892"
+  },
+  "miningRewards_screenLabel": "Showing {figure} LOOP",
+  "@miningRewards_screenLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:526",
+    "placeholders": {
+      "figure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenLabel2": "Total settled LOOP",
+  "@miningRewards_screenLabel2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:655"
+  },
+  "miningRewards_screenLabel3": "Total claimed LOOP",
+  "@miningRewards_screenLabel3": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:660"
+  },
+  "miningRewards_screenLabel4": "Claimable LOOP",
+  "@miningRewards_screenLabel4": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:665"
+  },
+  "miningRewards_screenLabel6": "Meme coin power",
+  "@miningRewards_screenLabel6": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:708"
+  },
+  "miningRewards_screenLoopLabel": "Power summary",
+  "@miningRewards_screenLoopLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:321"
+  },
+  "miningRewards_screenLoopLabel2": "Rewards summary",
+  "@miningRewards_screenLoopLabel2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:326"
+  },
+  "miningRewards_screenLoopLabel3": "NFT track",
+  "@miningRewards_screenLoopLabel3": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:348"
+  },
+  "miningRewards_screenLoopLabel4": "Meme coin track",
+  "@miningRewards_screenLoopLabel4": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:350"
+  },
+  "miningRewards_screenLoopLabel5": "Five-level invites",
+  "@miningRewards_screenLoopLabel5": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:352"
+  },
+  "miningRewards_screenLoopLabel6": "Claim history",
+  "@miningRewards_screenLoopLabel6": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:355"
+  },
+  "miningRewards_screenLoopProvenanceLine": "LOOP hourly settlement",
+  "@miningRewards_screenLoopProvenanceLine": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:373"
+  },
+  "miningRewards_screenLoopSheetHeading": "Not enough for network fee",
+  "@miningRewards_screenLoopSheetHeading": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1058"
+  },
+  "miningRewards_screenMessage": "BscScan link copied",
+  "@miningRewards_screenMessage": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1027, lib/features/mining_rewards/mining_rewards_screen.dart:1518"
+  },
+  "miningRewards_screenMessage2": "Couldn't load earlier records",
+  "@miningRewards_screenMessage2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1529"
+  },
+  "miningRewards_screenMiningAssetBasisNote": "Weighted by amount held: power = average amount held that hour × mining weight",
+  "@miningRewards_screenMiningAssetBasisNote": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1373"
+  },
+  "miningRewards_screenMiningClaimAmountLabel": "Claimable now",
+  "@miningRewards_screenMiningClaimAmountLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:936"
+  },
+  "miningRewards_screenMiningClaimButtonLabel": "Claim in progress",
+  "@miningRewards_screenMiningClaimButtonLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:967"
+  },
+  "miningRewards_screenMiningClaimButtonSemanticLabel": "Claim, unavailable",
+  "@miningRewards_screenMiningClaimButtonSemanticLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:972"
+  },
+  "miningRewards_screenMiningClaimGasGoLabel": "Swap",
+  "@miningRewards_screenMiningClaimGasGoLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1075"
+  },
+  "miningRewards_screenMiningClaimGasGoLabel2": "Top up",
+  "@miningRewards_screenMiningClaimGasGoLabel2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1075"
+  },
+  "miningRewards_screenMiningClaimMinimumLabel": "Minimum claim",
+  "@miningRewards_screenMiningClaimMinimumLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:944"
+  },
+  "miningRewards_screenMiningClaimResumeLabel": "Keep checking",
+  "@miningRewards_screenMiningClaimResumeLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:960"
+  },
+  "miningRewards_screenMiningClaimRetryReportLabel": "Report again",
+  "@miningRewards_screenMiningClaimRetryReportLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:953"
+  },
+  "miningRewards_screenMiningClaimTxSubtitle": "Copy BscScan link",
+  "@miningRewards_screenMiningClaimTxSubtitle": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1025"
+  },
+  "miningRewards_screenMiningClaimTxTitle": "Successful transaction {miningShortHash}",
+  "@miningRewards_screenMiningClaimTxTitle": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1024",
+    "placeholders": {
+      "miningShortHash": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenMiningClaimsEmptyTitle": "No claims yet",
+  "@miningRewards_screenMiningClaimsEmptyTitle": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1487"
+  },
+  "miningRewards_screenMiningHourCountedNote": "Active last hour and counted toward power",
+  "@miningRewards_screenMiningHourCountedNote": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1382"
+  },
+  "miningRewards_screenMiningInviteNote": "Only invitees' own power counts; invitees with zero own power don't count. Equivalent NFT power is used only for reward calculation.",
+  "@miningRewards_screenMiningInviteNote": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1369"
+  },
+  "miningRewards_screenMiningMinuteBarSemanticLabel": "Minute {completedMinutes} of 60",
+  "@miningRewards_screenMiningMinuteBarSemanticLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:545",
+    "placeholders": {
+      "completedMinutes": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenMiningMinuteEpochBody": "Settlement period {clockLabel}–{clockLabel2} · this hour's rewards are fully claimable after settlement",
+  "@miningRewards_screenMiningMinuteEpochBody": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1415",
+    "placeholders": {
+      "clockLabel": {
+        "type": "Object?"
+      },
+      "clockLabel2": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenMiningMinuteKicker": "Last hour rewards",
+  "@miningRewards_screenMiningMinuteKicker": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:431, lib/features/mining_rewards/mining_rewards_screen.dart:1163, lib/features/mining_rewards/mining_rewards_screen.dart:1233"
+  },
+  "miningRewards_screenMiningMinuteTotalBody": "Last hour {miningLoopFigure} LOOP",
+  "@miningRewards_screenMiningMinuteTotalBody": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1409",
+    "placeholders": {
+      "miningLoopFigure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenMiningNftBasisNote": "NFT power = amount held × community factor",
+  "@miningRewards_screenMiningNftBasisNote": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1376"
+  },
+  "miningRewards_screenMiningNftRealCount": "NFTs held (actual count)",
+  "@miningRewards_screenMiningNftRealCount": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1153"
+  },
+  "miningRewards_screenMiningPowerEpochBody": "Period {clockLabel}–{clockLabel2} · counted every hour on the hour",
+  "@miningRewards_screenMiningPowerEpochBody": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1436",
+    "placeholders": {
+      "clockLabel": {
+        "type": "Object?"
+      },
+      "clockLabel2": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenMiningPowerFolioHeading": "{figure} power",
+  "@miningRewards_screenMiningPowerFolioHeading": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:575",
+    "placeholders": {
+      "figure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenMiningPowerTracksBody": "NFT power {nftPower} · Meme coin power {assetPower}",
+  "@miningRewards_screenMiningPowerTracksBody": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1429",
+    "placeholders": {
+      "assetPower": {
+        "type": "Object?"
+      },
+      "nftPower": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenMiningRewardsInfoActionTitle": "About mining rewards",
+  "@miningRewards_screenMiningRewardsInfoActionTitle": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:267, lib/features/mining_rewards/mining_rewards_screen.dart:268"
+  },
+  "miningRewards_screenMiningRewardsProvenanceDetail": "Every hour on the hour (UTC), the previous hour's NFT and meme coin tracks are settled; that hour's rewards are claimable once settled. The per-minute growth only displays last hour's rewards and doesn't change the claimable amount.",
+  "@miningRewards_screenMiningRewardsProvenanceDetail": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:377"
+  },
+  "miningRewards_screenMiningRewardsProvenanceDetail2": "Every hour on the hour (UTC), power on the previous hour's NFT and meme coin tracks is counted.",
+  "@miningRewards_screenMiningRewardsProvenanceDetail2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:380"
+  },
+  "miningRewards_screenMiningRewardsProvenancePrefix": "Last read",
+  "@miningRewards_screenMiningRewardsProvenancePrefix": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:375"
+  },
+  "miningRewards_screenMiningRewardsStateEmptyMessage": "No reward records yet",
+  "@miningRewards_screenMiningRewardsStateEmptyMessage": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:297"
+  },
+  "miningRewards_screenNoGasSource": "There's no BNB in your wallet for the network fee. Top up BNB first.",
+  "@miningRewards_screenNoGasSource": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:746"
+  },
+  "miningRewards_screenNull": "No power last hour",
+  "@miningRewards_screenNull": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:563"
+  },
+  "miningRewards_screenPollTimedOut": "Broadcast, but no confirmation read yet. It may still be confirming; check again later and don't claim again.",
+  "@miningRewards_screenPollTimedOut": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:758"
+  },
+  "miningRewards_screenPowerFolio": "The previous hour settles every hour on the hour; the next hour displays by the minute.",
+  "@miningRewards_screenPowerFolio": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:593"
+  },
+  "miningRewards_screenPreparing": "Creating the claim voucher. The wallet hasn't opened yet.",
+  "@miningRewards_screenPreparing": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:741"
+  },
+  "miningRewards_screenRow": "Level {level}",
+  "@miningRewards_screenRow": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1334",
+    "placeholders": {
+      "level": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenRow2": "Total",
+  "@miningRewards_screenRow2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1343"
+  },
+  "miningRewards_screenS": "Power appears after the first hour is settled",
+  "@miningRewards_screenS": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:419"
+  },
+  "miningRewards_screenS2": "Power for the previous hour is counted every hour on the hour.",
+  "@miningRewards_screenS2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:593"
+  },
+  "miningRewards_screenS3": "Nothing to claim",
+  "@miningRewards_screenS3": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:729, lib/features/mining_rewards/mining_rewards_screen.dart:779"
+  },
+  "miningRewards_screenS4": "Claimable amount is below the minimum claim",
+  "@miningRewards_screenS4": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:783"
+  },
+  "miningRewards_screenS5": "No wallet available",
+  "@miningRewards_screenS5": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:892"
+  },
+  "miningRewards_screenS6": " This claim needs about {requiredNative} BNB.",
+  "@miningRewards_screenS6": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1048",
+    "placeholders": {
+      "requiredNative": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenS7": "BNB needed for network fee",
+  "@miningRewards_screenS7": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1058"
+  },
+  "miningRewards_screenS8": "Your wallet has no BNB and no USDT to swap.{need} Top up a little BNB first, then come back to claim.",
+  "@miningRewards_screenS8": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1065",
+    "placeholders": {
+      "need": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenStamp": "Settling",
+  "@miningRewards_screenStamp": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:537, lib/features/mining_rewards/mining_rewards_screen.dart:581"
+  },
+  "miningRewards_screenSucceeded": "Claimed. LOOP has arrived.",
+  "@miningRewards_screenSucceeded": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:759"
+  },
+  "miningRewards_screenSwitch": "Mining rules aren't in effect yet, so nothing is settled.",
+  "@miningRewards_screenSwitch": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:399"
+  },
+  "miningRewards_screenSwitch10": "This claim is locked. Don't claim again.",
+  "@miningRewards_screenSwitch10": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:756"
+  },
+  "miningRewards_screenSwitch11": "The settlement service isn't available right now, so you can't claim",
+  "@miningRewards_screenSwitch11": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:776"
+  },
+  "miningRewards_screenSwitch12": "Mining rules aren't in effect yet, so you can't claim",
+  "@miningRewards_screenSwitch12": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:777"
+  },
+  "miningRewards_screenSwitch13": "Claimable after an hour with power is settled",
+  "@miningRewards_screenSwitch13": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:778"
+  },
+  "miningRewards_screenSwitch14": "Claimable at {miningLoopFigure} LOOP",
+  "@miningRewards_screenSwitch14": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:782, lib/features/mining_rewards/mining_rewards_screen.dart:889",
+    "placeholders": {
+      "miningLoopFigure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenSwitch15": "The previous claim is still processing. Claim after it finishes",
+  "@miningRewards_screenSwitch15": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:784"
+  },
+  "miningRewards_screenSwitch16": "The claim chain isn't configured yet, so you can't claim",
+  "@miningRewards_screenSwitch16": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:788"
+  },
+  "miningRewards_screenSwitch17": "Claim voucher issuing isn't configured yet, so you can't claim",
+  "@miningRewards_screenSwitch17": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:789"
+  },
+  "miningRewards_screenSwitch18": "On-chain writes are off right now, so you can't claim",
+  "@miningRewards_screenSwitch18": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:790"
+  },
+  "miningRewards_screenSwitch19": "Mainnet claims aren't open yet",
+  "@miningRewards_screenSwitch19": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:791"
+  },
+  "miningRewards_screenSwitch2": "Mining rules are in effect. Power for the previous hour is counted every hour on the hour and shown here.",
+  "@miningRewards_screenSwitch2": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:402"
+  },
+  "miningRewards_screenSwitch20": "The claim contract is paused, so you can't claim",
+  "@miningRewards_screenSwitch20": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:794"
+  },
+  "miningRewards_screenSwitch21": "The claim contract can't be read right now, so you can't claim",
+  "@miningRewards_screenSwitch21": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:795"
+  },
+  "miningRewards_screenSwitch22": "The claim contract's balance is too low, so you can't claim",
+  "@miningRewards_screenSwitch22": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:796"
+  },
+  "miningRewards_screenSwitch23": "Claims aren't available right now",
+  "@miningRewards_screenSwitch23": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:797"
+  },
+  "miningRewards_screenSwitch24": "No LOOP to claim right now.",
+  "@miningRewards_screenSwitch24": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:803"
+  },
+  "miningRewards_screenSwitch25": "Claimable amount is below the minimum claim.",
+  "@miningRewards_screenSwitch25": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:804"
+  },
+  "miningRewards_screenSwitch26": "The previous claim is still processing. Claim after it finishes.",
+  "@miningRewards_screenSwitch26": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:805"
+  },
+  "miningRewards_screenSwitch27": "The simulation didn't pass; this claim would be rejected on-chain. No transaction was submitted.",
+  "@miningRewards_screenSwitch27": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:807, lib/features/mining_rewards/mining_rewards_signing.dart:87"
+  },
+  "miningRewards_screenSwitch28": "The claim contract is paused. Your balance is unchanged.",
+  "@miningRewards_screenSwitch28": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:808"
+  },
+  "miningRewards_screenSwitch29": "The claim contract can't be read right now. No voucher was created and your balance is unchanged.",
+  "@miningRewards_screenSwitch29": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:809"
+  },
+  "miningRewards_screenSwitch3": "The settlement service isn't available right now. The numbers below may not be current.",
+  "@miningRewards_screenSwitch3": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:403"
+  },
+  "miningRewards_screenSwitch30": "The claim contract's balance is too low to claim right now. Your balance is unchanged.",
+  "@miningRewards_screenSwitch30": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:810"
+  },
+  "miningRewards_screenSwitch31": "The claim voucher expired. No transaction was submitted. Claim again.",
+  "@miningRewards_screenSwitch31": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:811"
+  },
+  "miningRewards_screenSwitch32": "Claims go only to your LOOP built-in wallet.",
+  "@miningRewards_screenSwitch32": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:812"
+  },
+  "miningRewards_screenSwitch33": "No voucher was created and no transaction was submitted.",
+  "@miningRewards_screenSwitch33": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:817"
+  },
+  "miningRewards_screenSwitch34": "Claim status",
+  "@miningRewards_screenSwitch34": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:924"
+  },
+  "miningRewards_screenSwitch35": "Graduated; DEX pool holdings are still syncing",
+  "@miningRewards_screenSwitch35": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1178"
+  },
+  "miningRewards_screenSwitch36": "Graduated; DEX pool holdings can't be read right now",
+  "@miningRewards_screenSwitch36": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1179"
+  },
+  "miningRewards_screenSwitch37": "Mining weight not configured yet",
+  "@miningRewards_screenSwitch37": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1180"
+  },
+  "miningRewards_screenSwitch38": "Not counted yet",
+  "@miningRewards_screenSwitch38": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1181"
+  },
+  "miningRewards_screenSwitch4": "Mining rules are in effect. The previous hour settles every hour on the hour; it's then shown here by the minute and can be claimed.",
+  "@miningRewards_screenSwitch4": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:409"
+  },
+  "miningRewards_screenSwitch5": "Settlement data can't be loaded right now. The numbers below may not be current.",
+  "@miningRewards_screenSwitch5": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:410"
+  },
+  "miningRewards_screenSwitch6": "Hours you had power in aren't settled yet",
+  "@miningRewards_screenSwitch6": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:418"
+  },
+  "miningRewards_screenSwitch7": "Rewards appear after the first hour is settled",
+  "@miningRewards_screenSwitch7": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:419"
+  },
+  "miningRewards_screenSwitch8": "Claimable",
+  "@miningRewards_screenSwitch8": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:729"
+  },
+  "miningRewards_screenSwitch9": "Submitted and waiting to land on-chain (checked {attempts} times). Don't claim again.",
+  "@miningRewards_screenSwitch9": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:752",
+    "placeholders": {
+      "attempts": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenTimedOut": "Network unavailable. No claim voucher was created.",
+  "@miningRewards_screenTimedOut": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:815"
+  },
+  "miningRewards_screenTitle": "Claim {miningLoopFigure} LOOP",
+  "@miningRewards_screenTitle": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:1504",
+    "placeholders": {
+      "miningLoopFigure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_screenUnavailable": "Claims aren't available right now. Your balance is unchanged.",
+  "@miningRewards_screenUnavailable": {
+    "description": "lib/features/mining_rewards/mining_rewards_screen.dart:816"
+  },
+  "miningRewards_signingIf": "The wallet result is unknown, so this claim is locked. Don't claim again; refresh later to check.",
+  "@miningRewards_signingIf": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:361"
+  },
+  "miningRewards_signingIf2": "Broadcast ({short}) and recorded by the server; waiting for on-chain confirmation.",
+  "@miningRewards_signingIf2": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:365",
+    "placeholders": {
+      "short": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_signingIf3": "Broadcast ({short}). {miningClaimReportReasonText}",
+  "@miningRewards_signingIf3": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:367",
+    "placeholders": {
+      "miningClaimReportReasonText": {
+        "type": "Object?"
+      },
+      "short": {
+        "type": "Object?"
+      }
+    }
+  },
+  "miningRewards_signingLabel": "Claim amount",
+  "@miningRewards_signingLabel": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:62"
+  },
+  "miningRewards_signingLabel2": "Receiving wallet",
+  "@miningRewards_signingLabel2": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:64"
+  },
+  "miningRewards_signingLabel3": "Network fee",
+  "@miningRewards_signingLabel3": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:69"
+  },
+  "miningRewards_signingLabel4": "Voucher valid until",
+  "@miningRewards_signingLabel4": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:70"
+  },
+  "miningRewards_signingSwitch": "Cancelled. Nothing changed.",
+  "@miningRewards_signingSwitch": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:77"
+  },
+  "miningRewards_signingSwitch10": "The wallet didn't finish signing. No transaction was submitted and your claimable balance is unchanged.",
+  "@miningRewards_signingSwitch10": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:88"
+  },
+  "miningRewards_signingSwitch11": "A different hash was already reported for this claim, so this broadcast wasn't recorded. Don't claim again; refresh later to check.",
+  "@miningRewards_signingSwitch11": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:95"
+  },
+  "miningRewards_signingSwitch12": "This on-chain transaction doesn't match the claim voucher, so the server didn't record it. Don't claim again, and contact support.",
+  "@miningRewards_signingSwitch12": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:97"
+  },
+  "miningRewards_signingSwitch13": "The wallet broadcast it, but the report didn't arrive. The transaction may be on-chain; you can report the same hash again. Don't claim again.",
+  "@miningRewards_signingSwitch13": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:98"
+  },
+  "miningRewards_signingSwitch2": "Verification didn't pass. Nothing changed.",
+  "@miningRewards_signingSwitch2": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:78"
+  },
+  "miningRewards_signingSwitch3": "The claim voucher expired. No transaction was submitted and your claimable balance is unchanged. Claim again.",
+  "@miningRewards_signingSwitch3": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:79"
+  },
+  "miningRewards_signingSwitch4": "The transaction doesn't match what you confirmed, so signing was refused. No transaction was submitted.",
+  "@miningRewards_signingSwitch4": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:80"
+  },
+  "miningRewards_signingSwitch5": "Couldn't find the wallet for this claim. No transaction was submitted.",
+  "@miningRewards_signingSwitch5": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:81"
+  },
+  "miningRewards_signingSwitch6": "The voucher's wallet doesn't match the current wallet, so signing was refused. No transaction was submitted.",
+  "@miningRewards_signingSwitch6": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:82"
+  },
+  "miningRewards_signingSwitch7": "Signing isn't allowed on this chain. No transaction was submitted.",
+  "@miningRewards_signingSwitch7": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:84"
+  },
+  "miningRewards_signingSwitch8": "The wallet can't sign on this chain right now. No transaction was submitted.",
+  "@miningRewards_signingSwitch8": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:85"
+  },
+  "miningRewards_signingSwitch9": "The signed-in wallet isn't the one for this claim. No transaction was submitted.",
+  "@miningRewards_signingSwitch9": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:86"
+  },
+  "miningRewards_signingTitle": "Confirm claim",
+  "@miningRewards_signingTitle": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:114, lib/features/mining_rewards/mining_rewards_signing.dart:342, lib/features/mining_rewards/mining_rewards_signing.dart:349"
+  },
+  "miningRewards_signingValue": "Claim mining rewards",
+  "@miningRewards_signingValue": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:61"
+  },
+  "miningRewards_signingValue2": "Paid with BNB in wallet",
+  "@miningRewards_signingValue2": {
+    "description": "lib/features/mining_rewards/mining_rewards_signing.dart:69"
+  },
+  "mining_controllersActivationRequired": "Activate your LOOP ID before binding an invite code. You can bind any time after activation.",
+  "@mining_controllersActivationRequired": {
+    "description": "lib/features/mining/mining_controllers.dart:423"
+  },
+  "mining_controllersIdempotencyConflict": "This binding was already submitted with a different invite code. Refresh to see the latest status.",
+  "@mining_controllersIdempotencyConflict": {
+    "description": "lib/features/mining/mining_controllers.dart:428"
+  },
+  "mining_controllersNotFound": "This invite code doesn't exist. Check with the person who invited you and try again; codes can't be guessed, so more attempts won't help.",
+  "@mining_controllersNotFound": {
+    "description": "lib/features/mining/mining_controllers.dart:425"
+  },
+  "mining_controllersPolicyBlocked": "You can't bind an invite code right now. Each account can bind only once. Refresh to see the latest status.",
+  "@mining_controllersPolicyBlocked": {
+    "description": "lib/features/mining/mining_controllers.dart:424"
+  },
+  "mining_controllersStale": "This account already has an inviter. It can't be changed after binding.",
+  "@mining_controllersStale": {
+    "description": "lib/features/mining/mining_controllers.dart:427"
+  },
+  "mining_controllersValidationFailed": "This invite code can't be bound: you can't invite yourself or bind a code from someone you invited.",
+  "@mining_controllersValidationFailed": {
+    "description": "lib/features/mining/mining_controllers.dart:426"
+  },
+  "mining_copyHead": "Showing the power snapshot from {computedAtLabel}",
+  "@mining_copyHead": {
+    "description": "lib/features/mining/mining_copy.dart:150",
+    "placeholders": {
+      "computedAtLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_copyIf": "Block and time appear here after the next power snapshot.",
+  "@mining_copyIf": {
+    "description": "lib/features/mining/mining_copy.dart:66"
+  },
+  "mining_copyIf2": "The latest calculation didn't finish and there's no complete snapshot to fall back on.",
+  "@mining_copyIf2": {
+    "description": "lib/features/mining/mining_copy.dart:73"
+  },
+  "mining_copyIf3": "{named}, and {rest} more assets",
+  "@mining_copyIf3": {
+    "description": "lib/features/mining/mining_copy.dart:118",
+    "placeholders": {
+      "named": {
+        "type": "Object?"
+      },
+      "rest": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_copyIncomplete": "Reference prices for some assets couldn't be read this time",
+  "@mining_copyIncomplete": {
+    "description": "lib/features/mining/mining_copy.dart:121"
+  },
+  "mining_copyMiningConditionEmbedded": "Calculated from holdings in wallets linked to your LOOP account.",
+  "@mining_copyMiningConditionEmbedded": {
+    "description": "lib/features/mining/mining_copy.dart:25"
+  },
+  "mining_copyMiningConditionMember": "You must join the community; only the time you're a member counts. Tokens without a bound community don't require this.",
+  "@mining_copyMiningConditionMember": {
+    "description": "lib/features/mining/mining_copy.dart:24"
+  },
+  "mining_copyMiningConditionVerified": "Community tokens count only when their bound community is approved; communities in review don't count.",
+  "@mining_copyMiningConditionVerified": {
+    "description": "lib/features/mining/mining_copy.dart:23"
+  },
+  "mining_copyMiningConditionsShort": "Calculated from linked wallet holdings. Community tokens require joining their approved community.",
+  "@mining_copyMiningConditionsShort": {
+    "description": "lib/features/mining/mining_copy.dart:28"
+  },
+  "mining_copyMiningPowerFormulaHeading": "Holdings × weight",
+  "@mining_copyMiningPowerFormulaHeading": {
+    "description": "lib/features/mining/mining_copy.dart:18"
+  },
+  "mining_copyMiningSnapshotRowTitle": "Latest power snapshot",
+  "@mining_copyMiningSnapshotRowTitle": {
+    "description": "lib/features/mining/mining_copy.dart:31"
+  },
+  "mining_copyMiningSnapshotSectionLabel": "Power snapshot",
+  "@mining_copyMiningSnapshotSectionLabel": {
+    "description": "lib/features/mining/mining_copy.dart:30"
+  },
+  "mining_copyMiningStaleLine": "The latest snapshot was invalidated",
+  "@mining_copyMiningStaleLine": {
+    "description": "lib/features/mining/mining_copy.dart:145"
+  },
+  "mining_copyS": "The latest calculation didn't finish ({cause}) and there's no complete snapshot to fall back on.",
+  "@mining_copyS": {
+    "description": "lib/features/mining/mining_copy.dart:74",
+    "placeholders": {
+      "cause": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_copyS2": "The latest snapshot didn't finish",
+  "@mining_copyS2": {
+    "description": "lib/features/mining/mining_copy.dart:146"
+  },
+  "mining_copyStaleWithCause": "{head} · {tail} ({cause})",
+  "@mining_copyStaleWithCause": {
+    "description": "lib/features/mining/mining_copy.dart:152",
+    "placeholders": {
+      "cause": {
+        "type": "Object?"
+      },
+      "head": {
+        "type": "Object?"
+      },
+      "tail": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_copySwitch": "No power snapshot has been taken yet",
+  "@mining_copySwitch": {
+    "description": "lib/features/mining/mining_copy.dart:43"
+  },
+  "mining_copySwitch2": "No complete power snapshot yet",
+  "@mining_copySwitch2": {
+    "description": "lib/features/mining/mining_copy.dart:46"
+  },
+  "mining_copySwitch3": "Shown after the next power snapshot",
+  "@mining_copySwitch3": {
+    "description": "lib/features/mining/mining_copy.dart:47"
+  },
+  "mining_copySwitch4": "Power snapshot can't be loaded right now",
+  "@mining_copySwitch4": {
+    "description": "lib/features/mining/mining_copy.dart:48"
+  },
+  "mining_copySwitch5": "{label} has no available quote right now",
+  "@mining_copySwitch5": {
+    "description": "lib/features/mining/mining_copy.dart:94",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_copySwitch6": "{label}'s reference price isn't recent enough",
+  "@mining_copySwitch6": {
+    "description": "lib/features/mining/mining_copy.dart:95",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_copySwitch7": "{label}'s reference price comes from an unregistered token",
+  "@mining_copySwitch7": {
+    "description": "lib/features/mining/mining_copy.dart:96",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_copySwitch8": "{label}'s reference price couldn't be read this time",
+  "@mining_copySwitch8": {
+    "description": "lib/features/mining/mining_copy.dart:97",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_copySwitch9": "That snapshot's data was incomplete",
+  "@mining_copySwitch9": {
+    "description": "lib/features/mining/mining_copy.dart:124"
+  },
+  "mining_modelsApproved": "Approved",
+  "@mining_modelsApproved": {
+    "description": "lib/features/mining/mining_models.dart:1059, lib/features/mining/mining_secondary_screens.dart:581"
+  },
+  "mining_modelsCommunities": "Communities",
+  "@mining_modelsCommunities": {
+    "description": "lib/features/mining/mining_models.dart:615"
+  },
+  "mining_modelsMiningAssetLabel": "{chainName} native token",
+  "@mining_modelsMiningAssetLabel": {
+    "description": "lib/features/mining/mining_models.dart:577",
+    "placeholders": {
+      "chainName": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_modelsMiningBaselineDetail": "Token power = amount held × asset weight, not multiplied by price; NFT power = amount held × community factor. Community tokens count only when their bound community is approved and you've joined it. Calculated from holdings in wallets linked to your LOOP account. Current version: every asset's weight is 1, the daily output is an estimate, and the reward token isn't decided yet. These numbers aren't earnings or a promise.",
+  "@mining_modelsMiningBaselineDetail": {
+    "description": "lib/features/mining/mining_models.dart:235"
+  },
+  "mining_modelsMiningBaselineLabel": "Current power formula",
+  "@mining_modelsMiningBaselineLabel": {
+    "description": "lib/features/mining/mining_models.dart:231"
+  },
+  "mining_modelsMiningReferralRankLabel": "Invites",
+  "@mining_modelsMiningReferralRankLabel": {
+    "description": "lib/features/mining/mining_models.dart:620"
+  },
+  "mining_modelsPendingApproval": "Pending approval",
+  "@mining_modelsPendingApproval": {
+    "description": "lib/features/mining/mining_models.dart:1058, lib/features/mining/mining_secondary_screens.dart:582, lib/features/mining/mining_widgets.dart:43"
+  },
+  "mining_modelsRetired": "Retired",
+  "@mining_modelsRetired": {
+    "description": "lib/features/mining/mining_models.dart:1060"
+  },
+  "mining_modelsS": "Native token",
+  "@mining_modelsS": {
+    "description": "lib/features/mining/mining_models.dart:578"
+  },
+  "mining_modelsSwitch": "Power = holdings × weight",
+  "@mining_modelsSwitch": {
+    "description": "lib/features/mining/mining_models.dart:1227"
+  },
+  "mining_modelsSwitch10": "Market stability",
+  "@mining_modelsSwitch10": {
+    "description": "lib/features/mining/mining_models.dart:1240"
+  },
+  "mining_modelsSwitch11": "User quality",
+  "@mining_modelsSwitch11": {
+    "description": "lib/features/mining/mining_models.dart:1241"
+  },
+  "mining_modelsSwitch12": "Depth of partnership with LOOP",
+  "@mining_modelsSwitch12": {
+    "description": "lib/features/mining/mining_models.dart:1243"
+  },
+  "mining_modelsSwitch13": "TWAP (time-weighted average price): keeps a single trade from skewing the reference price.",
+  "@mining_modelsSwitch13": {
+    "description": "lib/features/mining/mining_models.dart:1244"
+  },
+  "mining_modelsSwitch14": "Multi-period, multi-source comparison to cross-check unusual moves.",
+  "@mining_modelsSwitch14": {
+    "description": "lib/features/mining/mining_models.dart:1245"
+  },
+  "mining_modelsSwitch15": "Liquidity cap: limits the value counted for low-liquidity assets.",
+  "@mining_modelsSwitch15": {
+    "description": "lib/features/mining/mining_models.dart:1246"
+  },
+  "mining_modelsSwitch16": "Anonymous member",
+  "@mining_modelsSwitch16": {
+    "description": "lib/features/mining/mining_models.dart:1247"
+  },
+  "mining_modelsSwitch17": "Whether others see an alias or \"Anonymous member\" depends only on that account's anonymous mode; \"Discoverable\" isn't involved, and you always see your own alias.",
+  "@mining_modelsSwitch17": {
+    "description": "lib/features/mining/mining_models.dart:1249"
+  },
+  "mining_modelsSwitch18": "Power values follow that account's own \"Mining power\" visibility; when set to only me, others can't see the value, but rank and entry counts stay public.",
+  "@mining_modelsSwitch18": {
+    "description": "lib/features/mining/mining_models.dart:1251"
+  },
+  "mining_modelsSwitch19": "A rule item defined by LOOP.",
+  "@mining_modelsSwitch19": {
+    "description": "lib/features/mining/mining_models.dart:1252"
+  },
+  "mining_modelsSwitch2": "Power = holdings × reference price × weight",
+  "@mining_modelsSwitch2": {
+    "description": "lib/features/mining/mining_models.dart:1231"
+  },
+  "mining_modelsSwitch3": "Daily output = my power ÷ network power × daily output",
+  "@mining_modelsSwitch3": {
+    "description": "lib/features/mining/mining_models.dart:1232"
+  },
+  "mining_modelsSwitch4": "LOOP uses a fixed top weight tier (value pending approval).",
+  "@mining_modelsSwitch4": {
+    "description": "lib/features/mining/mining_models.dart:1233"
+  },
+  "mining_modelsSwitch5": "Community token weights are granted by review; the range is pending approval.",
+  "@mining_modelsSwitch5": {
+    "description": "lib/features/mining/mining_models.dart:1234"
+  },
+  "mining_modelsSwitch6": "Community quality",
+  "@mining_modelsSwitch6": {
+    "description": "lib/features/mining/mining_models.dart:1235"
+  },
+  "mining_modelsSwitch7": "Community size",
+  "@mining_modelsSwitch7": {
+    "description": "lib/features/mining/mining_models.dart:1237"
+  },
+  "mining_modelsSwitch8": "Token liquidity",
+  "@mining_modelsSwitch8": {
+    "description": "lib/features/mining/mining_models.dart:1238"
+  },
+  "mining_modelsSwitch9": "Project quality",
+  "@mining_modelsSwitch9": {
+    "description": "lib/features/mining/mining_models.dart:1239"
+  },
+  "mining_modelsUsers": "Users",
+  "@mining_modelsUsers": {
+    "description": "lib/features/mining/mining_models.dart:614"
+  },
+  "mining_referralAppliesMiningPower": "mining power",
+  "@mining_referralAppliesMiningPower": {
+    "description": "lib/features/mining/referral_screen.dart:342"
+  },
+  "mining_referralBarrierLabel": "Close invite code binding",
+  "@mining_referralBarrierLabel": {
+    "description": "lib/features/mining/referral_screen.dart:228"
+  },
+  "mining_referralBarrierLabel2": "Close invite poster",
+  "@mining_referralBarrierLabel2": {
+    "description": "lib/features/mining/referral_screen.dart:509"
+  },
+  "mining_referralBuild": "Invite code",
+  "@mining_referralBuild": {
+    "description": "lib/features/mining/referral_screen.dart:423, lib/features/mining/referral_screen.dart:983"
+  },
+  "mining_referralBuild2": "Invite link",
+  "@mining_referralBuild2": {
+    "description": "lib/features/mining/referral_screen.dart:456"
+  },
+  "mining_referralBuild3": "Enter the invite code any time after signing up and mine together.",
+  "@mining_referralBuild3": {
+    "description": "lib/features/mining/referral_screen.dart:960"
+  },
+  "mining_referralBuild4": "Enter the invite code after signing up on LOOP",
+  "@mining_referralBuild4": {
+    "description": "lib/features/mining/referral_screen.dart:994"
+  },
+  "mining_referralBuild5": "Inviter bound. The relation is locked and can't be changed",
+  "@mining_referralBuild5": {
+    "description": "lib/features/mining/referral_screen.dart:1032"
+  },
+  "mining_referralBuild6": "Each account can bind only once, and the relation can't be changed once locked. You can't bind your own code or a code from someone you invited.",
+  "@mining_referralBuild6": {
+    "description": "lib/features/mining/referral_screen.dart:1184"
+  },
+  "mining_referralDepthMax": ", up to L{maximumDepth}",
+  "@mining_referralDepthMax": {
+    "description": "lib/features/mining/referral_screen.dart:313",
+    "placeholders": {
+      "maximumDepth": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralEmptyMessage": "Couldn't load invite relations",
+  "@mining_referralEmptyMessage": {
+    "description": "lib/features/mining/referral_screen.dart:128"
+  },
+  "mining_referralEmptyMessage2": "No invitations yet",
+  "@mining_referralEmptyMessage2": {
+    "description": "lib/features/mining/referral_screen.dart:714, lib/features/mining/referral_screen.dart:723"
+  },
+  "mining_referralEmptyReason": "Invite code and invite count can't be loaded right now.",
+  "@mining_referralEmptyReason": {
+    "description": "lib/features/mining/referral_screen.dart:129"
+  },
+  "mining_referralErrorText": "Invalid invite code format. Check it and try again.",
+  "@mining_referralErrorText": {
+    "description": "lib/features/mining/referral_screen.dart:1195"
+  },
+  "mining_referralIf": "Mine with me on LOOP. Sign up and enter my invite code {code}",
+  "@mining_referralIf": {
+    "description": "lib/features/mining/referral_screen.dart:545",
+    "placeholders": {
+      "code": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralInvitees": "Invite list",
+  "@mining_referralInvitees": {
+    "description": "lib/features/mining/referral_screen.dart:83"
+  },
+  "mining_referralLabel": "My invite code {code}",
+  "@mining_referralLabel": {
+    "description": "lib/features/mining/referral_screen.dart:429",
+    "placeholders": {
+      "code": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralLabelText": "Invite code (like LOOP-XXXXX)",
+  "@mining_referralLabelText": {
+    "description": "lib/features/mining/referral_screen.dart:1194"
+  },
+  "mining_referralLoopLabel": "My inviter",
+  "@mining_referralLoopLabel": {
+    "description": "lib/features/mining/referral_screen.dart:178"
+  },
+  "mining_referralLoopRecordRow": "{shown, plural, =1{1 active member} other{{shown} active members}}",
+  "@mining_referralLoopRecordRow": {
+    "description": "lib/features/mining/referral_screen.dart:674",
+    "placeholders": {
+      "shown": {
+        "type": "num"
+      }
+    }
+  },
+  "mining_referralLoopSheetHeading": "Invite poster",
+  "@mining_referralLoopSheetHeading": {
+    "description": "lib/features/mining/referral_screen.dart:823"
+  },
+  "mining_referralMessage": "This account already has an inviter, so {code} from the invite link won't be bound",
+  "@mining_referralMessage": {
+    "description": "lib/features/mining/referral_screen.dart:217",
+    "placeholders": {
+      "code": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralMessage2": "This account can't bind an invite code right now, so {code} from the invite link wasn't submitted",
+  "@mining_referralMessage2": {
+    "description": "lib/features/mining/referral_screen.dart:218",
+    "placeholders": {
+      "code": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralMessage3": "Invite code bound",
+  "@mining_referralMessage3": {
+    "description": "lib/features/mining/referral_screen.dart:237"
+  },
+  "mining_referralMessage4": "The share sheet didn't open. Copy the link instead",
+  "@mining_referralMessage4": {
+    "description": "lib/features/mining/referral_screen.dart:536"
+  },
+  "mining_referralModelsInvalid": "Invalid",
+  "@mining_referralModelsInvalid": {
+    "description": "lib/features/mining/referral_models.dart:338"
+  },
+  "mining_referralModelsInvalidated": "Invalidated",
+  "@mining_referralModelsInvalidated": {
+    "description": "lib/features/mining/referral_models.dart:80"
+  },
+  "mining_referralModelsPending": "Pending",
+  "@mining_referralModelsPending": {
+    "description": "lib/features/mining/referral_models.dart:337"
+  },
+  "mining_referralModelsPendingActivation": "Pending activation",
+  "@mining_referralModelsPendingActivation": {
+    "description": "lib/features/mining/referral_models.dart:76"
+  },
+  "mining_referralModelsPendingMining": "Pending mining",
+  "@mining_referralModelsPendingMining": {
+    "description": "lib/features/mining/referral_models.dart:78"
+  },
+  "mining_referralModelsPendingWallet": "Pending wallet link",
+  "@mining_referralModelsPendingWallet": {
+    "description": "lib/features/mining/referral_models.dart:77"
+  },
+  "mining_referralModelsSwitch": "People I invited directly and verified",
+  "@mining_referralModelsSwitch": {
+    "description": "lib/features/mining/referral_models.dart:379"
+  },
+  "mining_referralModelsSwitch2": "People my L1 invited",
+  "@mining_referralModelsSwitch2": {
+    "description": "lib/features/mining/referral_models.dart:380"
+  },
+  "mining_referralModelsSwitch3": "People my L2 invited",
+  "@mining_referralModelsSwitch3": {
+    "description": "lib/features/mining/referral_models.dart:381"
+  },
+  "mining_referralModelsSwitch4": "People my L3 invited",
+  "@mining_referralModelsSwitch4": {
+    "description": "lib/features/mining/referral_models.dart:382"
+  },
+  "mining_referralModelsSwitch5": "People my L4 invited",
+  "@mining_referralModelsSwitch5": {
+    "description": "lib/features/mining/referral_models.dart:383"
+  },
+  "mining_referralModelsSwitch6": "Invite relation level",
+  "@mining_referralModelsSwitch6": {
+    "description": "lib/features/mining/referral_models.dart:384"
+  },
+  "mining_referralModelsValid": "Active",
+  "@mining_referralModelsValid": {
+    "description": "lib/features/mining/referral_models.dart:79, lib/features/mining/referral_models.dart:336"
+  },
+  "mining_referralOverviewCounts": "\n{valid} active · {pending} pending verification.",
+  "@mining_referralOverviewCounts": {
+    "description": "lib/features/mining/referral_screen.dart:306",
+    "placeholders": {
+      "pending": {
+        "type": "Object?"
+      },
+      "valid": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralBoostTotalTitle": "Total boost",
+  "@mining_referralReferralBoostTotalTitle": {
+    "description": "lib/features/mining/referral_screen.dart:659"
+  },
+  "mining_referralReferralBoundRowSubtitle": "Depth L{depth} · {referralValidationStatusLabel} · locked {launchTimestampLabel}",
+  "@mining_referralReferralBoundRowSubtitle": {
+    "description": "lib/features/mining/referral_screen.dart:1056",
+    "placeholders": {
+      "depth": {
+        "type": "Object?"
+      },
+      "launchTimestampLabel": {
+        "type": "Object?"
+      },
+      "referralValidationStatusLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralBoundRowTitle": "Inviter bound",
+  "@mining_referralReferralBoundRowTitle": {
+    "description": "lib/features/mining/referral_screen.dart:1053"
+  },
+  "mining_referralReferralCapabilityInlineMessage": "Invite relations aren't available right now",
+  "@mining_referralReferralCapabilityInlineMessage": {
+    "description": "lib/features/mining/referral_screen.dart:117"
+  },
+  "mining_referralReferralClaimFailureTitle": "This binding didn't finish",
+  "@mining_referralReferralClaimFailureTitle": {
+    "description": "lib/features/mining/referral_screen.dart:1107"
+  },
+  "mining_referralReferralClaimShapeInvalidBody": "An invite code is LOOP- followed by 5 characters. Clearly invalid codes aren't submitted, so your one binding isn't wasted.",
+  "@mining_referralReferralClaimShapeInvalidBody": {
+    "description": "lib/features/mining/referral_screen.dart:1094"
+  },
+  "mining_referralReferralClaimShapeInvalidTitle": "Invalid invite code format",
+  "@mining_referralReferralClaimShapeInvalidTitle": {
+    "description": "lib/features/mining/referral_screen.dart:1093"
+  },
+  "mining_referralReferralClaimSubmitLabel": "Bind",
+  "@mining_referralReferralClaimSubmitLabel": {
+    "description": "lib/features/mining/referral_screen.dart:1204"
+  },
+  "mining_referralReferralClaimSuccessBody": "This relation is confirmed. It can't be changed after binding.",
+  "@mining_referralReferralClaimSuccessBody": {
+    "description": "lib/features/mining/referral_screen.dart:1121"
+  },
+  "mining_referralReferralClaimSuccessTitle": "Relation locked",
+  "@mining_referralReferralClaimSuccessTitle": {
+    "description": "lib/features/mining/referral_screen.dart:1120"
+  },
+  "mining_referralReferralClaimWindowTimed": "You can't bind an invite code right now. Refresh and try again later",
+  "@mining_referralReferralClaimWindowTimed": {
+    "description": "lib/features/mining/referral_screen.dart:1036"
+  },
+  "mining_referralReferralClaimWindowUnavailable": "Can't bind yet: {launchReasonCodeText}",
+  "@mining_referralReferralClaimWindowUnavailable": {
+    "description": "lib/features/mining/referral_screen.dart:1035",
+    "placeholders": {
+      "launchReasonCodeText": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralCopyCodeLabel": "Copy invite code",
+  "@mining_referralReferralCopyCodeLabel": {
+    "description": "lib/features/mining/referral_screen.dart:443"
+  },
+  "mining_referralReferralCopyCodeMessage": "Invite code copied",
+  "@mining_referralReferralCopyCodeMessage": {
+    "description": "lib/features/mining/referral_screen.dart:444"
+  },
+  "mining_referralReferralCopyLinkLabel": "Copy invite link",
+  "@mining_referralReferralCopyLinkLabel": {
+    "description": "lib/features/mining/referral_screen.dart:476"
+  },
+  "mining_referralReferralCopyLinkMessage": "Invite link copied",
+  "@mining_referralReferralCopyLinkMessage": {
+    "description": "lib/features/mining/referral_screen.dart:477"
+  },
+  "mining_referralReferralInfoBindingBody": "Invitees can bind any time after activating their LOOP ID; each account can bind only once, and the relation can't be changed once locked. You can't bind your own code or a code from someone you invited.",
+  "@mining_referralReferralInfoBindingBody": {
+    "description": "lib/features/mining/referral_screen.dart:333"
+  },
+  "mining_referralReferralInfoBindingTitle": "Bind invite code",
+  "@mining_referralReferralInfoBindingTitle": {
+    "description": "lib/features/mining/referral_screen.dart:331, lib/features/mining/referral_screen.dart:1066, lib/features/mining/referral_screen.dart:1176"
+  },
+  "mining_referralReferralInfoDepthBody": "People you invite directly and who are verified are L1, people L1 invites are L2, and so on{rules}. Each level's boost rate follows what the server publishes and counts only that level's active relations.",
+  "@mining_referralReferralInfoDepthBody": {
+    "description": "lib/features/mining/referral_screen.dart:308",
+    "placeholders": {
+      "rules": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralInfoDepthTitle": "How depth is counted",
+  "@mining_referralReferralInfoDepthTitle": {
+    "description": "lib/features/mining/referral_screen.dart:306"
+  },
+  "mining_referralReferralInfoMiningOnlyBody": "Invite boost counts only toward mining power. It isn't income, commission or a rebate.",
+  "@mining_referralReferralInfoMiningOnlyBody": {
+    "description": "lib/features/mining/referral_screen.dart:293"
+  },
+  "mining_referralReferralInfoMiningOnlyTitle": "Counts only toward mining power",
+  "@mining_referralReferralInfoMiningOnlyTitle": {
+    "description": "lib/features/mining/referral_screen.dart:292"
+  },
+  "mining_referralReferralInfoRelationshipBody": "Each account has one invite code. Sharing doesn't create a relation until it's verified; \"Active\" counts only verified relations, and the rest show as pending verification and add no boost.{overview}",
+  "@mining_referralReferralInfoRelationshipBody": {
+    "description": "lib/features/mining/referral_screen.dart:299",
+    "placeholders": {
+      "overview": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralInfoRelationshipTitle": "How a relation is formed",
+  "@mining_referralReferralInfoRelationshipTitle": {
+    "description": "lib/features/mining/referral_screen.dart:297"
+  },
+  "mining_referralReferralInfoRulesBody": "Effective {launchTimestampLabel} · max depth L{maximumDepth} · applies to {rules}",
+  "@mining_referralReferralInfoRulesBody": {
+    "description": "lib/features/mining/referral_screen.dart:341",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      },
+      "maximumDepth": {
+        "type": "Object?"
+      },
+      "rules": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralInfoRulesTitle": "Rule version",
+  "@mining_referralReferralInfoRulesTitle": {
+    "description": "lib/features/mining/referral_screen.dart:339"
+  },
+  "mining_referralReferralInfoValidMemberBody": "An invitee is an active member only if they had power in the latest settled hour.{stats}",
+  "@mining_referralReferralInfoValidMemberBody": {
+    "description": "lib/features/mining/referral_screen.dart:322",
+    "placeholders": {
+      "stats": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralInfoValidMemberTitle": "Active members",
+  "@mining_referralReferralInfoValidMemberTitle": {
+    "description": "lib/features/mining/referral_screen.dart:320"
+  },
+  "mining_referralReferralInviteLinkLabel": "Invite link {link}",
+  "@mining_referralReferralInviteLinkLabel": {
+    "description": "lib/features/mining/referral_screen.dart:462",
+    "placeholders": {
+      "link": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralPosterLabel": "Create poster",
+  "@mining_referralReferralPosterLabel": {
+    "description": "lib/features/mining/referral_screen.dart:505"
+  },
+  "mining_referralReferralPosterLabel2": "LOOP invite poster, invite code {code}",
+  "@mining_referralReferralPosterLabel2": {
+    "description": "lib/features/mining/referral_screen.dart:937",
+    "placeholders": {
+      "code": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralReferralPosterNoLink": "Invite links aren't open yet, so the poster shows only the invite code.",
+  "@mining_referralReferralPosterNoLink": {
+    "description": "lib/features/mining/referral_screen.dart:851"
+  },
+  "mining_referralReferralPosterQrSemanticLabel": "Invite link QR code",
+  "@mining_referralReferralPosterQrSemanticLabel": {
+    "description": "lib/features/mining/referral_screen.dart:977"
+  },
+  "mining_referralReferralPosterShareLabel": "Creating…",
+  "@mining_referralReferralPosterShareLabel": {
+    "description": "lib/features/mining/referral_screen.dart:862"
+  },
+  "mining_referralReferralPosterShareLabel2": "Save or share poster",
+  "@mining_referralReferralPosterShareLabel2": {
+    "description": "lib/features/mining/referral_screen.dart:862"
+  },
+  "mining_referralReferralShareLinkLabel": "Share link",
+  "@mining_referralReferralShareLinkLabel": {
+    "description": "lib/features/mining/referral_screen.dart:492"
+  },
+  "mining_referralRow": "Hidden member",
+  "@mining_referralRow": {
+    "description": "lib/features/mining/referral_screen.dart:749"
+  },
+  "mining_referralS": "Mine with me on LOOP. Sign up and enter my invite code {code}\n{link}",
+  "@mining_referralS": {
+    "description": "lib/features/mining/referral_screen.dart:546",
+    "placeholders": {
+      "code": {
+        "type": "Object?"
+      },
+      "link": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralS2": "Scan to open the invite page",
+  "@mining_referralS2": {
+    "description": "lib/features/mining/referral_screen.dart:994"
+  },
+  "mining_referralSemanticLabel": "{name}, joined {launchTimestampLabel}, {referralInviteeStatusLabel}",
+  "@mining_referralSemanticLabel": {
+    "description": "lib/features/mining/referral_screen.dart:788",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      },
+      "name": {
+        "type": "Object?"
+      },
+      "referralInviteeStatusLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralSubject": "Join me on LOOP",
+  "@mining_referralSubject": {
+    "description": "lib/features/mining/referral_screen.dart:531, lib/features/mining/referral_screen.dart:957"
+  },
+  "mining_referralSubtitle": "NFT {powerFigure} · Assets {powerFigure2}",
+  "@mining_referralSubtitle": {
+    "description": "lib/features/mining/referral_screen.dart:677",
+    "placeholders": {
+      "powerFigure": {
+        "type": "Object?"
+      },
+      "powerFigure2": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralSubtitle2": "Joined {launchTimestampLabel}",
+  "@mining_referralSubtitle2": {
+    "description": "lib/features/mining/referral_screen.dart:775",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralTitle": "L{level} · Boost {boostPercent}%",
+  "@mining_referralTitle": {
+    "description": "lib/features/mining/referral_screen.dart:315",
+    "placeholders": {
+      "boostPercent": {
+        "type": "Object?"
+      },
+      "level": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralValidAsOf": "\nFigures as of {time}.",
+  "@mining_referralValidAsOf": {
+    "description": "lib/features/mining/referral_screen.dart:329",
+    "placeholders": {
+      "time": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_referralValidNoHour": "\nNo settled hour yet, so active members are 0 for now.",
+  "@mining_referralValidNoHour": {
+    "description": "lib/features/mining/referral_screen.dart:328"
+  },
+  "mining_screenCell": "Token power",
+  "@mining_screenCell": {
+    "description": "lib/features/mining/mining_screen.dart:499"
+  },
+  "mining_screenCell2": "NFT power",
+  "@mining_screenCell2": {
+    "description": "lib/features/mining/mining_screen.dart:500, lib/features/mining/mining_widgets.dart:1165"
+  },
+  "mining_screenCell3": "Token power · Last hour",
+  "@mining_screenCell3": {
+    "description": "lib/features/mining/mining_screen.dart:511"
+  },
+  "mining_screenCell4": "NFT power · Last hour",
+  "@mining_screenCell4": {
+    "description": "lib/features/mining/mining_screen.dart:512"
+  },
+  "mining_screenClaimSemanticLabel": "Claim rewards, open rewards and claims",
+  "@mining_screenClaimSemanticLabel": {
+    "description": "lib/features/mining/mining_screen.dart:187"
+  },
+  "mining_screenEmptyLine": "No power snapshot yet",
+  "@mining_screenEmptyLine": {
+    "description": "lib/features/mining/mining_screen.dart:573"
+  },
+  "mining_screenEmptyMessage": "No power data yet",
+  "@mining_screenEmptyMessage": {
+    "description": "lib/features/mining/mining_screen.dart:152"
+  },
+  "mining_screenEmptyMessage2": "No power breakdown yet",
+  "@mining_screenEmptyMessage2": {
+    "description": "lib/features/mining/mining_screen.dart:551"
+  },
+  "mining_screenEmptyTitle": "No NFT power yet",
+  "@mining_screenEmptyTitle": {
+    "description": "lib/features/mining/mining_screen.dart:599"
+  },
+  "mining_screenHeading": "Loading",
+  "@mining_screenHeading": {
+    "description": "lib/features/mining/mining_screen.dart:478, lib/features/mining/mining_secondary_screens.dart:288"
+  },
+  "mining_screenKicker": "Total power",
+  "@mining_screenKicker": {
+    "description": "lib/features/mining/mining_screen.dart:477"
+  },
+  "mining_screenLabel": "Total mined",
+  "@mining_screenLabel": {
+    "description": "lib/features/mining/mining_screen.dart:168"
+  },
+  "mining_screenLabel2": "Claimable",
+  "@mining_screenLabel2": {
+    "description": "lib/features/mining/mining_screen.dart:176"
+  },
+  "mining_screenLabel3": "Last hour power",
+  "@mining_screenLabel3": {
+    "description": "lib/features/mining/mining_screen.dart:433"
+  },
+  "mining_screenLabel4": "Active invites",
+  "@mining_screenLabel4": {
+    "description": "lib/features/mining/mining_screen.dart:439"
+  },
+  "mining_screenLabel5": "Today's estimate",
+  "@mining_screenLabel5": {
+    "description": "lib/features/mining/mining_screen.dart:449, lib/features/mining/mining_screen.dart:455"
+  },
+  "mining_screenLoopInfoNote": "No power snapshot loaded yet.",
+  "@mining_screenLoopInfoNote": {
+    "description": "lib/features/mining/mining_screen.dart:369"
+  },
+  "mining_screenLoopInfoNote2": "LOOP doesn't accumulate points or estimate earnings on this device. Not loaded doesn't mean \"zero power\".",
+  "@mining_screenLoopInfoNote2": {
+    "description": "lib/features/mining/mining_screen.dart:384"
+  },
+  "mining_screenMiningCapabilityUnavailableLabel": "Mining isn't available right now",
+  "@mining_screenMiningCapabilityUnavailableLabel": {
+    "description": "lib/features/mining/mining_screen.dart:142"
+  },
+  "mining_screenMiningCompositionNftUnavailableMessage": "NFT power isn't provided separately yet",
+  "@mining_screenMiningCompositionNftUnavailableMessage": {
+    "description": "lib/features/mining/mining_screen.dart:563"
+  },
+  "mining_screenMiningFormulaEffective": "LOOP doesn't accumulate points or estimate earnings on this device. Every number on this page comes from the latest power snapshot.",
+  "@mining_screenMiningFormulaEffective": {
+    "description": "lib/features/mining/mining_screen.dart:383"
+  },
+  "mining_screenMiningInfoConditionsBody": "Token power = amount held × asset weight, not multiplied by price; NFTs use their community factor.\n{miningConditionVerified}\n{miningConditionMember}\n{miningConditionEmbedded}",
+  "@mining_screenMiningInfoConditionsBody": {
+    "description": "lib/features/mining/mining_screen.dart:393",
+    "placeholders": {
+      "miningConditionEmbedded": {
+        "type": "Object?"
+      },
+      "miningConditionMember": {
+        "type": "Object?"
+      },
+      "miningConditionVerified": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_screenMiningInfoConditionsTitle": "Which holdings count toward power",
+  "@mining_screenMiningInfoConditionsTitle": {
+    "description": "lib/features/mining/mining_screen.dart:391"
+  },
+  "mining_screenMiningInfoFormulaTitle": "Formula version",
+  "@mining_screenMiningInfoFormulaTitle": {
+    "description": "lib/features/mining/mining_screen.dart:362"
+  },
+  "mining_screenMiningInfoOpenRulesLabel": "View mining rules",
+  "@mining_screenMiningInfoOpenRulesLabel": {
+    "description": "lib/features/mining/mining_screen.dart:307"
+  },
+  "mining_screenMiningInfoTruthTitle": "No local estimates",
+  "@mining_screenMiningInfoTruthTitle": {
+    "description": "lib/features/mining/mining_screen.dart:381"
+  },
+  "mining_screenMiningInviteInfoTitle": "About invites",
+  "@mining_screenMiningInviteInfoTitle": {
+    "description": "lib/features/mining/mining_screen.dart:216, lib/features/mining/mining_screen.dart:217"
+  },
+  "mining_screenMiningRulesActionTitle": "About mining",
+  "@mining_screenMiningRulesActionTitle": {
+    "description": "lib/features/mining/mining_screen.dart:299, lib/features/mining/mining_screen.dart:300"
+  },
+  "mining_screenMiningSnapshotComputed": "Block {groupedFigure} · {launchTimestampLabel} · when power was calculated",
+  "@mining_screenMiningSnapshotComputed": {
+    "description": "lib/features/mining/mining_screen.dart:374, lib/features/mining/mining_secondary_screens.dart:486",
+    "placeholders": {
+      "groupedFigure": {
+        "type": "Object?"
+      },
+      "launchTimestampLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_screenMiningSnapshotComputed2": "Snapshot · {launchTimestampLabel}{stale}",
+  "@mining_screenMiningSnapshotComputed2": {
+    "description": "lib/features/mining/mining_screen.dart:419",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      },
+      "stale": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_screenParenthetical": " ({text})",
+  "@mining_screenParenthetical": {
+    "description": "lib/features/mining/mining_screen.dart:345",
+    "placeholders": {
+      "text": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_screenS": "No token power yet",
+  "@mining_screenS": {
+    "description": "lib/features/mining/mining_screen.dart:573, lib/features/mining/mining_screen.dart:625"
+  },
+  "mining_screenSpoken": "Not loaded yet",
+  "@mining_screenSpoken": {
+    "description": "lib/features/mining/mining_screen.dart:283, lib/features/mining/mining_screen.dart:441, lib/features/mining/mining_secondary_screens.dart:118"
+  },
+  "mining_screenSpoken2": "No settled hour yet",
+  "@mining_screenSpoken2": {
+    "description": "lib/features/mining/mining_screen.dart:435, lib/features/mining/mining_screen.dart:508"
+  },
+  "mining_screenSwitch": "Mining summary not loaded yet. The formula version appears here once loaded.",
+  "@mining_screenSwitch": {
+    "description": "lib/features/mining/mining_screen.dart:325"
+  },
+  "mining_screenSwitch2": "No approved mining formula version: {launchReasonCodeText}",
+  "@mining_screenSwitch2": {
+    "description": "lib/features/mining/mining_screen.dart:327",
+    "placeholders": {
+      "launchReasonCodeText": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_screenSwitch3": "Mining formula pending approval. Numbers on this page have a source only after approval.",
+  "@mining_screenSwitch3": {
+    "description": "lib/features/mining/mining_screen.dart:332"
+  },
+  "mining_screenSwitch4": "Formula version pending approval",
+  "@mining_screenSwitch4": {
+    "description": "lib/features/mining/mining_screen.dart:333, lib/features/mining/mining_widgets.dart:46"
+  },
+  "mining_screenSwitch5": "Mining formula in effect{scope} · effective {launchTimestampLabel}",
+  "@mining_screenSwitch5": {
+    "description": "lib/features/mining/mining_screen.dart:342",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      },
+      "scope": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_screenSwitch6": "Formula version in effect",
+  "@mining_screenSwitch6": {
+    "description": "lib/features/mining/mining_screen.dart:344, lib/features/mining/mining_widgets.dart:58"
+  },
+  "mining_screenValue": "{invites, plural, =1{1 person} other{{invites} people}}",
+  "@mining_screenValue": {
+    "description": "lib/features/mining/mining_screen.dart:440, lib/features/mining/mining_screen.dart:441",
+    "placeholders": {
+      "invites": {
+        "type": "num"
+      }
+    }
+  },
+  "mining_secondaryScreensCell": "My power",
+  "@mining_secondaryScreensCell": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:374"
+  },
+  "mining_secondaryScreensEmptyMessage": "Couldn't load this community",
+  "@mining_secondaryScreensEmptyMessage": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:142"
+  },
+  "mining_secondaryScreensEmptyMessage2": "Couldn't load rules",
+  "@mining_secondaryScreensEmptyMessage2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:631"
+  },
+  "mining_secondaryScreensEmptyReason": "The community may not exist or isn't visible to this account.",
+  "@mining_secondaryScreensEmptyReason": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:143"
+  },
+  "mining_secondaryScreensEmptyReason2": "Formula version can't be loaded right now.",
+  "@mining_secondaryScreensEmptyReason2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:632"
+  },
+  "mining_secondaryScreensHeading": "Weights and power rules",
+  "@mining_secondaryScreensHeading": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:573"
+  },
+  "mining_secondaryScreensIf": "Daily output",
+  "@mining_secondaryScreensIf": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:590, lib/features/mining/mining_secondary_screens.dart:785"
+  },
+  "mining_secondaryScreensKicker": "Power rules",
+  "@mining_secondaryScreensKicker": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:567"
+  },
+  "mining_secondaryScreensLabel": "My power, {spokenContribution}. Community weight, {spokenWeight}",
+  "@mining_secondaryScreensLabel": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:366",
+    "placeholders": {
+      "spokenContribution": {
+        "type": "Object?"
+      },
+      "spokenWeight": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_secondaryScreensLabel2": "Approved formula version",
+  "@mining_secondaryScreensLabel2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:644"
+  },
+  "mining_secondaryScreensLoopFolioPrimary": "No approved formula and no draft pending approval.",
+  "@mining_secondaryScreensLoopFolioPrimary": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:575"
+  },
+  "mining_secondaryScreensLoopFolioPrimary2": "No approved formula yet. The one below is a draft pending approval.",
+  "@mining_secondaryScreensLoopFolioPrimary2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:576"
+  },
+  "mining_secondaryScreensLoopFolioPrimary3": "This version is approved and in effect; no draft pending approval.",
+  "@mining_secondaryScreensLoopFolioPrimary3": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:577"
+  },
+  "mining_secondaryScreensLoopFolioPrimary4": "This version is approved and in effect. A draft pending approval is below.",
+  "@mining_secondaryScreensLoopFolioPrimary4": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:578"
+  },
+  "mining_secondaryScreensLoopLabel": "My contribution",
+  "@mining_secondaryScreensLoopLabel": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:152"
+  },
+  "mining_secondaryScreensLoopLabel2": "Community record",
+  "@mining_secondaryScreensLoopLabel2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:154"
+  },
+  "mining_secondaryScreensLoopLabel3": "Community weight",
+  "@mining_secondaryScreensLoopLabel3": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:156, lib/features/mining/mining_secondary_screens.dart:376"
+  },
+  "mining_secondaryScreensLoopLabel4": "Bound assets",
+  "@mining_secondaryScreensLoopLabel4": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:160, lib/features/mining/mining_secondary_screens.dart:166"
+  },
+  "mining_secondaryScreensLoopLabel5": "Approved version",
+  "@mining_secondaryScreensLoopLabel5": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:636"
+  },
+  "mining_secondaryScreensLoopLabel6": "Version pending approval",
+  "@mining_secondaryScreensLoopLabel6": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:667"
+  },
+  "mining_secondaryScreensLoopLabel7": "Invite relation rules",
+  "@mining_secondaryScreensLoopLabel7": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:684"
+  },
+  "mining_secondaryScreensLoopLabel8": "Asset weights",
+  "@mining_secondaryScreensLoopLabel8": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:868"
+  },
+  "mining_secondaryScreensLoopProvenanceLine": "LOOP mining rules",
+  "@mining_secondaryScreensLoopProvenanceLine": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:663, lib/features/mining/mining_widgets.dart:279"
+  },
+  "mining_secondaryScreensMiningCommunityAssetRowSubtitle": "This community has no bound assets yet",
+  "@mining_secondaryScreensMiningCommunityAssetRowSubtitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:168"
+  },
+  "mining_secondaryScreensMiningCommunityAssetRowTrailing": "Bound",
+  "@mining_secondaryScreensMiningCommunityAssetRowTrailing": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:172"
+  },
+  "mining_secondaryScreensMiningCommunityLogoKicker": "Community power",
+  "@mining_secondaryScreensMiningCommunityLogoKicker": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:295"
+  },
+  "mining_secondaryScreensMiningCommunityMetricParticipantsTitle": "Holders mining",
+  "@mining_secondaryScreensMiningCommunityMetricParticipantsTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:423"
+  },
+  "mining_secondaryScreensMiningCommunityMetricPowerTitle": "Community total power",
+  "@mining_secondaryScreensMiningCommunityMetricPowerTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:438"
+  },
+  "mining_secondaryScreensMiningCommunityNoticeBody": "Weights come from review; the review factors are public, the exact scores aren't. Communities that aren't approved have no weight and no power. Holders must join the community for their holdings to count.",
+  "@mining_secondaryScreensMiningCommunityNoticeBody": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:181"
+  },
+  "mining_secondaryScreensMiningCommunityNoticeTitle": "Weights are set by platform review",
+  "@mining_secondaryScreensMiningCommunityNoticeTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:179"
+  },
+  "mining_secondaryScreensMiningCommunityRankActionLabel": "View leaderboard",
+  "@mining_secondaryScreensMiningCommunityRankActionLabel": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:100"
+  },
+  "mining_secondaryScreensMiningCommunityReadingLabel": "Community rank",
+  "@mining_secondaryScreensMiningCommunityReadingLabel": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:109"
+  },
+  "mining_secondaryScreensMiningCommunityReadingTrailingLabel": "Participants",
+  "@mining_secondaryScreensMiningCommunityReadingTrailingLabel": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:120"
+  },
+  "mining_secondaryScreensMiningCommunityScreenTitle": "Community mining",
+  "@mining_secondaryScreensMiningCommunityScreenTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:94, lib/features/mining/mining_secondary_screens.dart:131"
+  },
+  "mining_secondaryScreensMiningCommunityWeightNotApplicableMessage": "No weight to review",
+  "@mining_secondaryScreensMiningCommunityWeightNotApplicableMessage": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:258"
+  },
+  "mining_secondaryScreensMiningCommunityWeightPendingMessage": "Weight in review",
+  "@mining_secondaryScreensMiningCommunityWeightPendingMessage": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:251"
+  },
+  "mining_secondaryScreensMiningCommunityWeightRowSubtitle": "Reviewed {launchTimestampLabel}",
+  "@mining_secondaryScreensMiningCommunityWeightRowSubtitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:221",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_secondaryScreensMiningCommunityWeightRowTitle": "Weight granted",
+  "@mining_secondaryScreensMiningCommunityWeightRowTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:220"
+  },
+  "mining_secondaryScreensMiningCommunityWeightVersion": "Formula version in effect {identifier}",
+  "@mining_secondaryScreensMiningCommunityWeightVersion": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:232",
+    "placeholders": {
+      "identifier": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_secondaryScreensMiningFigureValue": "Sum of members' power on bound assets",
+  "@mining_secondaryScreensMiningFigureValue": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:442"
+  },
+  "mining_secondaryScreensMiningParticipantsCount": "Members with power in the latest power snapshot",
+  "@mining_secondaryScreensMiningParticipantsCount": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:427"
+  },
+  "mining_secondaryScreensMiningRulesNoPendingMessage": "No draft version right now.",
+  "@mining_secondaryScreensMiningRulesNoPendingMessage": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:673"
+  },
+  "mining_secondaryScreensMiningRulesNoPendingTitle": "No version pending approval",
+  "@mining_secondaryScreensMiningRulesNoPendingTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:672"
+  },
+  "mining_secondaryScreensMiningRulesNoticeBody": "Versions pending approval aren't used in any calculation. Weight ranges list rule items only, with no values; values are published after approval.",
+  "@mining_secondaryScreensMiningRulesNoticeBody": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:728"
+  },
+  "mining_secondaryScreensMiningRulesNoticeTitle": "Drafts aren't rules in effect",
+  "@mining_secondaryScreensMiningRulesNoticeTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:727"
+  },
+  "mining_secondaryScreensMiningRulesOpenReferralLabel": "View my invite relations",
+  "@mining_secondaryScreensMiningRulesOpenReferralLabel": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:714"
+  },
+  "mining_secondaryScreensMiningRulesReferralLSubtitle": "Effective {launchTimestampLabel}",
+  "@mining_secondaryScreensMiningRulesReferralLSubtitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:700",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_secondaryScreensMiningRulesScreenTitle": "Mining rules",
+  "@mining_secondaryScreensMiningRulesScreenTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:561, lib/features/mining/mining_secondary_screens.dart:620"
+  },
+  "mining_secondaryScreensSubtitle": "Invite boost counts only toward power",
+  "@mining_secondaryScreensSubtitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:805"
+  },
+  "mining_secondaryScreensSwitch": "Sum of members' power on bound assets, weights included.",
+  "@mining_secondaryScreensSwitch": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:282"
+  },
+  "mining_secondaryScreensSwitch2": "Community total power appears here once loaded.",
+  "@mining_secondaryScreensSwitch2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:288"
+  },
+  "mining_secondaryScreensSwitch3": "This page hasn't loaded this community's power yet.",
+  "@mining_secondaryScreensSwitch3": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:289"
+  },
+  "mining_secondaryScreensSwitch4": "Weights are granted by platform review and are already included in the power above.",
+  "@mining_secondaryScreensSwitch4": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:384"
+  },
+  "mining_secondaryScreensSwitch5": "Approved {launchTimestampLabel}",
+  "@mining_secondaryScreensSwitch5": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:861",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_secondaryScreensText": "Daily output ",
+  "@mining_secondaryScreensText": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:596"
+  },
+  "mining_secondaryScreensText2": "Exact scores aren't public; weights follow the platform's overall review.",
+  "@mining_secondaryScreensText2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:928"
+  },
+  "mining_secondaryScreensTitle": "{subject} isn't available right now",
+  "@mining_secondaryScreensTitle": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:36",
+    "placeholders": {
+      "subject": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_secondaryScreensTitle2": "Power formula",
+  "@mining_secondaryScreensTitle2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:773"
+  },
+  "mining_secondaryScreensTitle3": "Invite boost",
+  "@mining_secondaryScreensTitle3": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:804, lib/features/mining/referral_screen.dart:84"
+  },
+  "mining_secondaryScreensTitle4": "Reviewed community tokens",
+  "@mining_secondaryScreensTitle4": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:831"
+  },
+  "mining_secondaryScreensTrailingCaption": "Published after the LOOP token launches",
+  "@mining_secondaryScreensTrailingCaption": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:798"
+  },
+  "mining_secondaryScreensTrailingCaption2": "Estimated output",
+  "@mining_secondaryScreensTrailingCaption2": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:799"
+  },
+  "mining_secondaryScreensTrailingCaption3": "Daily output",
+  "@mining_secondaryScreensTrailingCaption3": {
+    "description": "lib/features/mining/mining_secondary_screens.dart:799"
+  },
+  "mining_widgetsLoopRecordRow": "Holding {amountFigure}",
+  "@mining_widgetsLoopRecordRow": {
+    "description": "lib/features/mining/mining_widgets.dart:1137",
+    "placeholders": {
+      "amountFigure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_widgetsLoopRecordRow4": "NFT power {powerFigure}",
+  "@mining_widgetsLoopRecordRow4": {
+    "description": "lib/features/mining/mining_widgets.dart:1168",
+    "placeholders": {
+      "powerFigure": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_widgetsMarker": "Not updated",
+  "@mining_widgetsMarker": {
+    "description": "lib/features/mining/mining_widgets.dart:291"
+  },
+  "mining_widgetsMiningCompositionExpression": "{amountFigure} × weight {weight}",
+  "@mining_widgetsMiningCompositionExpression": {
+    "description": "lib/features/mining/mining_widgets.dart:1179",
+    "placeholders": {
+      "amountFigure": {
+        "type": "Object?"
+      },
+      "weight": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_widgetsMiningDemoHoldingsDetail": "This power includes demo holdings: they aren't on-chain, nobody actually holds them, and the numbers are for trying things out.",
+  "@mining_widgetsMiningDemoHoldingsDetail": {
+    "description": "lib/features/mining/mining_widgets.dart:234"
+  },
+  "mining_widgetsMiningFormulaRowSemanticLabel": "Mining formula not decided yet",
+  "@mining_widgetsMiningFormulaRowSemanticLabel": {
+    "description": "lib/features/mining/mining_widgets.dart:44"
+  },
+  "mining_widgetsMiningFormulaRowSemanticLabel2": "Mining formula pending approval",
+  "@mining_widgetsMiningFormulaRowSemanticLabel2": {
+    "description": "lib/features/mining/mining_widgets.dart:44"
+  },
+  "mining_widgetsMiningFormulaRowSemanticLabel3": "Mining formula in effect",
+  "@mining_widgetsMiningFormulaRowSemanticLabel3": {
+    "description": "lib/features/mining/mining_widgets.dart:56"
+  },
+  "mining_widgetsMiningFormulaRowSubtitle": "The numbers above have a source only after approval.",
+  "@mining_widgetsMiningFormulaRowSubtitle": {
+    "description": "lib/features/mining/mining_widgets.dart:42"
+  },
+  "mining_widgetsMiningFormulaRowSubtitle2": "In effect · {launchTimestampLabel}",
+  "@mining_widgetsMiningFormulaRowSubtitle2": {
+    "description": "lib/features/mining/mining_widgets.dart:54",
+    "placeholders": {
+      "launchTimestampLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_widgetsMiningFormulaRowTitle": "Mining formula",
+  "@mining_widgetsMiningFormulaRowTitle": {
+    "description": "lib/features/mining/mining_widgets.dart:36, lib/features/mining/mining_widgets.dart:51"
+  },
+  "mining_widgetsMiningFormulaRowTrailing": "In effect",
+  "@mining_widgetsMiningFormulaRowTrailing": {
+    "description": "lib/features/mining/mining_widgets.dart:55"
+  },
+  "mining_widgetsMiningNetworkKicker": "Network power · Last hour",
+  "@mining_widgetsMiningNetworkKicker": {
+    "description": "lib/features/mining/mining_widgets.dart:689, lib/features/mining/mining_widgets.dart:781"
+  },
+  "mining_widgetsMiningNetworkKicker2": "Network power",
+  "@mining_widgetsMiningNetworkKicker2": {
+    "description": "lib/features/mining/mining_widgets.dart:689, lib/features/mining/mining_widgets.dart:781"
+  },
+  "mining_widgetsMiningNetworkRankActionLabel2": "Power Ranking, my rank {place}",
+  "@mining_widgetsMiningNetworkRankActionLabel2": {
+    "description": "lib/features/mining/mining_widgets.dart:592",
+    "placeholders": {
+      "place": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_widgetsMiningNetworkTotalLabel": "Network power, {spoken}",
+  "@mining_widgetsMiningNetworkTotalLabel": {
+    "description": "lib/features/mining/mining_widgets.dart:706, lib/features/mining/mining_widgets.dart:791",
+    "placeholders": {
+      "spoken": {
+        "type": "Object?"
+      }
+    }
+  },
+  "mining_widgetsMiningSummaryHeroAssetsLabel": "Power details",
+  "@mining_widgetsMiningSummaryHeroAssetsLabel": {
+    "description": "lib/features/mining/mining_widgets.dart:555"
+  },
+  "mining_widgetsMiningSummaryHeroClaimLabel": "Mining rewards",
+  "@mining_widgetsMiningSummaryHeroClaimLabel": {
+    "description": "lib/features/mining/mining_widgets.dart:536"
+  },
+  "mining_widgetsMiningSummaryHeroClaimLabel2": "Claim rewards",
+  "@mining_widgetsMiningSummaryHeroClaimLabel2": {
+    "description": "lib/features/mining/mining_widgets.dart:536"
+  },
+  "mining_widgetsMiningSummaryHeroClaimSemanticLabel": "Mining rewards, open the mining rewards page",
+  "@mining_widgetsMiningSummaryHeroClaimSemanticLabel": {
+    "description": "lib/features/mining/mining_widgets.dart:540"
+  },
+  "mining_widgetsText": "My total power",
+  "@mining_widgetsText": {
+    "description": "lib/features/mining/mining_widgets.dart:455"
+  },
   "notifications_applicationNoReason": "No reason was given. Edit the community profile and submit again.",
   "@notifications_applicationNoReason": {
     "description": "lib/features/notifications/community_application_notifications.dart:93"
@@ -30084,5 +33071,535 @@
   "wallet_txResultWalletMoneyActionsMoneyFactsFooterText": "Confirmations can't be loaded",
   "@wallet_txResultWalletMoneyActionsMoneyFactsFooterText": {
     "description": "lib/features/wallet/tx_result_screen.dart:334"
+  },
+  "widgets_assetsBuild": "{slot} avatar",
+  "@widgets_assetsBuild": {
+    "description": "lib/widgets/loop_assets.dart:686",
+    "placeholders": {
+      "slot": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_atmosphereLabel": "{title}, view all",
+  "@widgets_atmosphereLabel": {
+    "description": "lib/widgets/loop_atmosphere.dart:807",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_avatarStackBuild": "{remaining} more",
+  "@widgets_avatarStackBuild": {
+    "description": "lib/widgets/loop_avatar_stack.dart:218",
+    "placeholders": {
+      "remaining": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_blocksUnread": "Not loaded",
+  "@widgets_blocksUnread": {
+    "description": "lib/widgets/loop_blocks.dart:145"
+  },
+  "widgets_clauseJoin": "; ",
+  "@widgets_clauseJoin": {
+    "description": "lib/widgets/loop_token_card.dart:651"
+  },
+  "widgets_componentsBuild": "Trace ID {traceId}",
+  "@widgets_componentsBuild": {
+    "description": "lib/widgets/loop_components.dart:4405",
+    "placeholders": {
+      "traceId": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsBuild2": "Source {source}",
+  "@widgets_componentsBuild2": {
+    "description": "lib/widgets/loop_components.dart:4406",
+    "placeholders": {
+      "source": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsCacheStale": "Cached values may be out of date.",
+  "@widgets_componentsCacheStale": {
+    "description": "lib/widgets/loop_components.dart:4491"
+  },
+  "widgets_componentsCachedHeadline": "Offline · Showing cache",
+  "@widgets_componentsCachedHeadline": {
+    "description": "lib/widgets/loop_components.dart:4463"
+  },
+  "widgets_componentsCachedTimeoutHeadline": "LOOP timed out · Showing cache",
+  "@widgets_componentsCachedTimeoutHeadline": {
+    "description": "lib/widgets/loop_components.dart:4464"
+  },
+  "widgets_componentsCard": "Loading card",
+  "@widgets_componentsCard": {
+    "description": "lib/widgets/loop_components.dart:3752"
+  },
+  "widgets_componentsChart": "Loading chart",
+  "@widgets_componentsChart": {
+    "description": "lib/widgets/loop_components.dart:3751"
+  },
+  "widgets_componentsConnectionHeadline": "Can't reach LOOP",
+  "@widgets_componentsConnectionHeadline": {
+    "description": "lib/widgets/loop_components.dart:4465"
+  },
+  "widgets_componentsDetail": "Loading details",
+  "@widgets_componentsDetail": {
+    "description": "lib/widgets/loop_components.dart:3750"
+  },
+  "widgets_componentsFigure": "Loading figures",
+  "@widgets_componentsFigure": {
+    "description": "lib/widgets/loop_components.dart:3753"
+  },
+  "widgets_componentsHintText": "Send a message",
+  "@widgets_componentsHintText": {
+    "description": "lib/widgets/loop_components.dart:3318"
+  },
+  "widgets_componentsLabel": "{title}, {trailing}, can't be changed",
+  "@widgets_componentsLabel": {
+    "description": "lib/widgets/loop_components.dart:1868, lib/widgets/loop_components.dart:1996",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      },
+      "trailing": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsLabel2": "What happened",
+  "@widgets_componentsLabel2": {
+    "description": "lib/widgets/loop_components.dart:2276"
+  },
+  "widgets_componentsLabel3": "What's affected",
+  "@widgets_componentsLabel3": {
+    "description": "lib/widgets/loop_components.dart:2281"
+  },
+  "widgets_componentsLabel4": "Updating",
+  "@widgets_componentsLabel4": {
+    "description": "lib/widgets/loop_components.dart:4127"
+  },
+  "widgets_componentsLabel5": "Other options",
+  "@widgets_componentsLabel5": {
+    "description": "lib/widgets/loop_components.dart:4418"
+  },
+  "widgets_componentsLabel6": "Reconnect",
+  "@widgets_componentsLabel6": {
+    "description": "lib/widgets/loop_components.dart:4541"
+  },
+  "widgets_componentsLoopOfflineCachedAt": "Cached {cachedAt}",
+  "@widgets_componentsLoopOfflineCachedAt": {
+    "description": "lib/widgets/loop_components.dart:4530",
+    "placeholders": {
+      "cachedAt": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsLoopOfflineCachedAtSemanticsLabel": "Cached at {cachedAt}",
+  "@widgets_componentsLoopOfflineCachedAtSemanticsLabel": {
+    "description": "lib/widgets/loop_components.dart:4533",
+    "placeholders": {
+      "cachedAt": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsNoCacheBody": "This read didn't finish and there's no cache to show yet.",
+  "@widgets_componentsNoCacheBody": {
+    "description": "lib/widgets/loop_components.dart:4467"
+  },
+  "widgets_componentsPriceRow": "Loading list",
+  "@widgets_componentsPriceRow": {
+    "description": "lib/widgets/loop_components.dart:3749"
+  },
+  "widgets_componentsRetryFailedMessage": "Still couldn't connect. Try again once the network is back.",
+  "@widgets_componentsRetryFailedMessage": {
+    "description": "lib/widgets/loop_components.dart:4200"
+  },
+  "widgets_componentsRetryingLabel": "Retrying…",
+  "@widgets_componentsRetryingLabel": {
+    "description": "lib/widgets/loop_components.dart:4199"
+  },
+  "widgets_componentsS": "Paused: {pausedActions}.",
+  "@widgets_componentsS": {
+    "description": "lib/widgets/loop_components.dart:4490",
+    "placeholders": {
+      "pausedActions": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsSettingsLabel": "Open system settings",
+  "@widgets_componentsSettingsLabel": {
+    "description": "lib/widgets/loop_components.dart:4563"
+  },
+  "widgets_componentsSwitch": "What happened: {happened}",
+  "@widgets_componentsSwitch": {
+    "description": "lib/widgets/loop_components.dart:2227",
+    "placeholders": {
+      "happened": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsSwitch2": "What's affected: {impact}",
+  "@widgets_componentsSwitch2": {
+    "description": "lib/widgets/loop_components.dart:2228",
+    "placeholders": {
+      "impact": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsSwitch3": "Next: {next}",
+  "@widgets_componentsSwitch3": {
+    "description": "lib/widgets/loop_components.dart:2229",
+    "placeholders": {
+      "next": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_componentsTimeoutHeadline": "LOOP timed out",
+  "@widgets_componentsTimeoutHeadline": {
+    "description": "lib/widgets/loop_components.dart:4466"
+  },
+  "widgets_componentsTitle": "Couldn't complete right now",
+  "@widgets_componentsTitle": {
+    "description": "lib/widgets/loop_components.dart:4345"
+  },
+  "widgets_componentsUnreachableMessage": "Nothing was loaded on this page and nothing was submitted. Check your network and retry.",
+  "@widgets_componentsUnreachableMessage": {
+    "description": "lib/widgets/loop_components.dart:4194"
+  },
+  "widgets_componentsUnreachableTitle": "Can't reach LOOP right now",
+  "@widgets_componentsUnreachableTitle": {
+    "description": "lib/widgets/loop_components.dart:4190"
+  },
+  "widgets_enumerationSeparator": ", ",
+  "@widgets_enumerationSeparator": {
+    "description": "lib/widgets/loop_components.dart:4490"
+  },
+  "widgets_environmentTagLabel": "Server {label}",
+  "@widgets_environmentTagLabel": {
+    "description": "lib/widgets/loop_environment_tag.dart:22",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_flatLoopStepDotsLabel": "Step {step} of {total}, {label}",
+  "@widgets_flatLoopStepDotsLabel": {
+    "description": "lib/widgets/loop_flat.dart:79",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      },
+      "step": {
+        "type": "Object?"
+      },
+      "total": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_infoSheetBarrierLabel": "Close details",
+  "@widgets_infoSheetBarrierLabel": {
+    "description": "lib/widgets/loop_info_sheet.dart:50, lib/widgets/loop_provenance_scope.dart:331"
+  },
+  "widgets_infoSheetLabel": "About {title}",
+  "@widgets_infoSheetLabel": {
+    "description": "lib/widgets/loop_info_sheet.dart:118",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_inlineStatesLabel": "Scope",
+  "@widgets_inlineStatesLabel": {
+    "description": "lib/widgets/loop_inline_states.dart:355"
+  },
+  "widgets_inlineStatesLabel2": "Source",
+  "@widgets_inlineStatesLabel2": {
+    "description": "lib/widgets/loop_inline_states.dart:357, lib/widgets/loop_inline_states.dart:397, lib/widgets/loop_provenance_scope.dart:400"
+  },
+  "widgets_inlineStatesLabel3": "Observed at",
+  "@widgets_inlineStatesLabel3": {
+    "description": "lib/widgets/loop_inline_states.dart:363, lib/widgets/loop_provenance_scope.dart:408"
+  },
+  "widgets_inlineStatesLoopInlineUnavailableRetryLabel": "Retrying",
+  "@widgets_inlineStatesLoopInlineUnavailableRetryLabel": {
+    "description": "lib/widgets/loop_inline_states.dart:111"
+  },
+  "widgets_inlineStatesLoopProvenanceLineSemanticsLabel": "{text}, view data source details",
+  "@widgets_inlineStatesLoopProvenanceLineSemanticsLabel": {
+    "description": "lib/widgets/loop_inline_states.dart:311",
+    "placeholders": {
+      "text": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_inlineStatesLoopProvenanceMarkerLabel": "{text}, data source is in the details at the top right",
+  "@widgets_inlineStatesLoopProvenanceMarkerLabel": {
+    "description": "lib/widgets/loop_inline_states.dart:293",
+    "placeholders": {
+      "text": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_inlineStatesLoopProvenanceSheetBarrierLabel": "Close data source details",
+  "@widgets_inlineStatesLoopProvenanceSheetBarrierLabel": {
+    "description": "lib/widgets/loop_inline_states.dart:344"
+  },
+  "widgets_inlineStatesText2": "Observed at {timeLabel}",
+  "@widgets_inlineStatesText2": {
+    "description": "lib/widgets/loop_inline_states.dart:250",
+    "placeholders": {
+      "timeLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_inlineStatesValue": "Source not labeled",
+  "@widgets_inlineStatesValue": {
+    "description": "lib/widgets/loop_inline_states.dart:358, lib/widgets/loop_provenance_scope.dart:402"
+  },
+  "widgets_labelColon": ": ",
+  "@widgets_labelColon": {
+    "description": "lib/widgets/loop_toast.dart:360"
+  },
+  "widgets_loadingIf": "Update failed. Showing the last data read",
+  "@widgets_loadingIf": {
+    "description": "lib/widgets/loop_loading.dart:61"
+  },
+  "widgets_loadingIf2": "Data from {age}, updating",
+  "@widgets_loadingIf2": {
+    "description": "lib/widgets/loop_loading.dart:65",
+    "placeholders": {
+      "age": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_loadingLoopAgeLabel": "{inSeconds}s ago",
+  "@widgets_loadingLoopAgeLabel": {
+    "description": "lib/widgets/loop_loading.dart:11",
+    "placeholders": {
+      "inSeconds": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_loadingLoopAgeLabel2": "{inMinutes}m ago",
+  "@widgets_loadingLoopAgeLabel2": {
+    "description": "lib/widgets/loop_loading.dart:12",
+    "placeholders": {
+      "inMinutes": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_loadingLoopAgeLabel3": "{inHours}h ago",
+  "@widgets_loadingLoopAgeLabel3": {
+    "description": "lib/widgets/loop_loading.dart:13",
+    "placeholders": {
+      "inHours": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_loadingLoopAgeLabel4": "{inDays}d ago",
+  "@widgets_loadingLoopAgeLabel4": {
+    "description": "lib/widgets/loop_loading.dart:14",
+    "placeholders": {
+      "inDays": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_loadingS": "Update failed. Last read {ageLabel}",
+  "@widgets_loadingS": {
+    "description": "lib/widgets/loop_loading.dart:62",
+    "placeholders": {
+      "ageLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_loadingS2": "Data from {age}",
+  "@widgets_loadingS2": {
+    "description": "lib/widgets/loop_loading.dart:65",
+    "placeholders": {
+      "age": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_pagesLoopKeyboardDoneLabel": "Done, hide keyboard",
+  "@widgets_pagesLoopKeyboardDoneLabel": {
+    "description": "lib/widgets/loop_pages.dart:466"
+  },
+  "widgets_personRowLabel": "View all",
+  "@widgets_personRowLabel": {
+    "description": "lib/widgets/loop_person_row.dart:304"
+  },
+  "widgets_profileSectionCommunities": "Communities",
+  "@widgets_profileSectionCommunities": {
+    "description": "lib/widgets/loop_profile_sections.dart:13"
+  },
+  "widgets_profileSectionTrades": "Trades",
+  "@widgets_profileSectionTrades": {
+    "description": "lib/widgets/loop_profile_sections.dart:12"
+  },
+  "widgets_provenanceScopeLabel": "Data sources and details",
+  "@widgets_provenanceScopeLabel": {
+    "description": "lib/widgets/loop_provenance_scope.dart:304"
+  },
+  "widgets_quoteRowSwitch": "Not reported",
+  "@widgets_quoteRowSwitch": {
+    "description": "lib/widgets/loop_quote_row.dart:87"
+  },
+  "widgets_roundKeyLabel": ", unavailable",
+  "@widgets_roundKeyLabel": {
+    "description": "lib/widgets/loop_round_key.dart:113"
+  },
+  "widgets_sentenceGap": " ",
+  "@widgets_sentenceGap": {
+    "description": "lib/widgets/loop_components.dart:4491"
+  },
+  "widgets_sentenceJoin": ". ",
+  "@widgets_sentenceJoin": {
+    "description": "lib/widgets/loop_blocks.dart:1179"
+  },
+  "widgets_sheetBarrierLabel": "Close sheet",
+  "@widgets_sheetBarrierLabel": {
+    "description": "lib/widgets/loop_sheet.dart:11"
+  },
+  "widgets_signSheetBuild": "Don't close the app",
+  "@widgets_signSheetBuild": {
+    "description": "lib/widgets/loop_sign_sheet.dart:299"
+  },
+  "widgets_signSheetConfirmLabel": "Confirm signature",
+  "@widgets_signSheetConfirmLabel": {
+    "description": "lib/widgets/loop_sign_sheet.dart:47"
+  },
+  "widgets_signSheetLabel": "Adjust policy",
+  "@widgets_signSheetLabel": {
+    "description": "lib/widgets/loop_sign_sheet.dart:207"
+  },
+  "widgets_signSheetPolicyRejected": "Rejected by policy",
+  "@widgets_signSheetPolicyRejected": {
+    "description": "lib/widgets/loop_sign_sheet.dart:122"
+  },
+  "widgets_signSheetSigning": "Signing",
+  "@widgets_signSheetSigning": {
+    "description": "lib/widgets/loop_sign_sheet.dart:121, lib/widgets/loop_sign_sheet.dart:308"
+  },
+  "widgets_signSheetSigningTitle": "Signing and broadcasting",
+  "@widgets_signSheetSigningTitle": {
+    "description": "lib/widgets/loop_sign_sheet.dart:49"
+  },
+  "widgets_signSheetSimulationFailed": "Simulation failed",
+  "@widgets_signSheetSimulationFailed": {
+    "description": "lib/widgets/loop_sign_sheet.dart:120"
+  },
+  "widgets_signSheetTitle": "Confirm transaction",
+  "@widgets_signSheetTitle": {
+    "description": "lib/widgets/loop_sign_sheet.dart:41"
+  },
+  "widgets_signStepsLabel": "Step {number} {label}, {caption}",
+  "@widgets_signStepsLabel": {
+    "description": "lib/widgets/loop_sign_steps.dart:69",
+    "placeholders": {
+      "caption": {
+        "type": "Object?"
+      },
+      "label": {
+        "type": "Object?"
+      },
+      "number": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_signStepsStep": "Next, {waitingCaption}",
+  "@widgets_signStepsStep": {
+    "description": "lib/widgets/loop_sign_steps.dart:125",
+    "placeholders": {
+      "waitingCaption": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_toastSwitch": "Warning",
+  "@widgets_toastSwitch": {
+    "description": "lib/widgets/loop_toast.dart:295"
+  },
+  "widgets_toastSwitch2": "Error",
+  "@widgets_toastSwitch2": {
+    "description": "lib/widgets/loop_toast.dart:296"
+  },
+  "widgets_tokenCardBuild": "{fact} — source {source}, observed at {observedLabel}",
+  "@widgets_tokenCardBuild": {
+    "description": "lib/widgets/loop_token_card.dart:702",
+    "placeholders": {
+      "fact": {
+        "type": "Object?"
+      },
+      "observedLabel": {
+        "type": "Object?"
+      },
+      "source": {
+        "type": "Object?"
+      }
+    }
+  },
+  "widgets_tokenCardLoading": "Identifying",
+  "@widgets_tokenCardLoading": {
+    "description": "lib/widgets/loop_token_card.dart:169, lib/widgets/loop_token_card.dart:390"
+  },
+  "widgets_tokenCardPartial": "Data missing",
+  "@widgets_tokenCardPartial": {
+    "description": "lib/widgets/loop_token_card.dart:171"
+  },
+  "widgets_tokenCardRisk": "Risk facts",
+  "@widgets_tokenCardRisk": {
+    "description": "lib/widgets/loop_token_card.dart:172"
+  },
+  "widgets_tokenCardSwitch": "Identifying…",
+  "@widgets_tokenCardSwitch": {
+    "description": "lib/widgets/loop_token_card.dart:358"
+  },
+  "widgets_uiDiscover": "Discover",
+  "@widgets_uiDiscover": {
+    "description": "lib/widgets/loop_ui.dart:497"
+  },
+  "widgets_uiDiscuss": "Discuss",
+  "@widgets_uiDiscuss": {
+    "description": "lib/widgets/loop_ui.dart:498"
+  },
+  "widgets_uiExecute": "Execute",
+  "@widgets_uiExecute": {
+    "description": "lib/widgets/loop_ui.dart:499"
+  },
+  "widgets_uiLabel": "Current stage: {label}",
+  "@widgets_uiLabel": {
+    "description": "lib/widgets/loop_ui.dart:525",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
   }
 }

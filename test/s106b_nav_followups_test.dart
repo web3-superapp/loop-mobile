@@ -240,7 +240,7 @@ void main() {
         mining: FakeMiningGateway(),
       );
       final card = find.byKey(const ValueKey<String>('intel-rank-me'));
-      for (final label in <String>['社区', '用户', '邀请']) {
+      for (final label in <String>['Community', 'User', 'Invitation']) {
         await tester.tap(find.text(label));
         await tester.pumpAndSettle();
         expect(card, findsOneWidget, reason: label);
@@ -453,7 +453,7 @@ void main() {
         find.byKey(const ValueKey<String>('probe-segment-updating')),
         findsOneWidget,
       );
-      expect(find.text('更新中'), findsOneWidget);
+      expect(find.text('Updating'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey<String>('probe-segment-1')));
       await tester.pumpAndSettle();
       expect(find.text('更新中'), findsNothing);

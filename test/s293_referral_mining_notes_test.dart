@@ -169,39 +169,58 @@ void main() {
 
       expect(
         note('referral-info-mining-only'),
-        contains('邀请加成只计入挖矿算力，不是收入、佣金或返佣。'),
+        contains(
+          'Invite boost counts only toward mining power. It isn\'t income, commission or a rebate.',
+        ),
       );
-      expect(note('referral-info-relationship'), contains('分享完成不代表关系成立，还需要验证'));
-      expect(note('referral-info-relationship'), contains('0 个有效关系 · 3 个待验证'));
-      expect(note('referral-info-depth'), contains('L1 再邀请的人是 L2'));
-      expect(note('referral-info-depth'), contains('最深到 L5'));
-      expect(note('referral-level-1'), contains('L1 · 加成 10%'));
+      expect(
+        note('referral-info-relationship'),
+        contains("Sharing doesn't create a relation until it's verified"),
+      );
+      expect(
+        note('referral-info-relationship'),
+        contains('0 active · 3 pending verification'),
+      );
+      expect(note('referral-info-depth'), contains('people L1 invites are L2'));
+      expect(note('referral-info-depth'), contains('up to L5'));
+      expect(note('referral-level-1'), contains('L1 · Boost 10%'));
       // S293b: one title and one description per level; no status counts
       // and no second 「L1 ·」.
-      expect(note('referral-level-1'), 'L1 · 加成 10%\n我直接邀请并已验证的人');
-      expect(note('referral-level-2'), contains('我的 L1 再邀请的人'));
-      expect(note('referral-level-1'), isNot(contains('待绑定钱包')));
-      expect(note('referral-level-1'), isNot(contains('有效 0')));
+      expect(
+        note('referral-level-1'),
+        'L1 · Boost 10%\nPeople I invited directly and verified',
+      );
+      expect(note('referral-level-2'), contains('People my L1 invited'));
+      expect(note('referral-level-1'), isNot(contains('Pending wallet link')));
+      expect(note('referral-level-1'), isNot(contains('Active 0')));
       expect(
         note('referral-info-valid-member'),
-        contains('被邀请人本人在最近一个结算小时有算力'),
+        contains(
+          'An invitee is an active member only if they had power in the latest settled hour',
+        ),
       );
       expect(
         note('referral-info-valid-member'),
-        contains('当前数字截至 2026-10-23 03:00 UTC'),
+        contains('Figures as of 2026-10-23 03:00 UTC'),
       );
       // S298: binding has no time limit; no day count, no deadline.
-      expect(note('referral-info-binding'), contains('激活 LOOP ID 后随时可以绑定'));
-      expect(note('referral-info-binding'), contains('一个账号只能绑定一次'));
-      expect(note('referral-info-binding'), isNot(contains('天内')));
-      expect(note('referral-info-binding'), isNot(contains('窗口')));
-      expect(note('referral-info-binding'), isNot(contains('截止')));
+      expect(
+        note('referral-info-binding'),
+        contains('Invitees can bind any time after activating their LOOP ID'),
+      );
+      expect(
+        note('referral-info-binding'),
+        contains('each account can bind only once'),
+      );
+      expect(note('referral-info-binding'), isNot(contains('days')));
+      expect(note('referral-info-binding'), isNot(contains('window')));
+      expect(note('referral-info-binding'), isNot(contains('deadline')));
       final rules = note('referral-info-rules');
-      expect(rules, contains('生效于 2026-09-01 00:00 UTC'));
-      expect(rules, contains('最大深度 L5'));
-      expect(rules, isNot(contains('绑定窗口')));
-      expect(rules, isNot(contains('7 天')));
-      expect(rules, contains('作用于挖矿算力'));
+      expect(rules, contains('Effective 2026-09-01 00:00 UTC'));
+      expect(rules, contains('max depth L5'));
+      expect(rules, isNot(contains('window')));
+      expect(rules, isNot(contains('7 days')));
+      expect(rules, contains('applies to mining power'));
       expect(rules, isNot(contains('miningPower')));
     });
 
@@ -230,7 +249,12 @@ void main() {
       final claim = find.byKey(const ValueKey<String>('referral-claim'));
       await scrollToS7Section(tester, claim);
       expect(tester.widget<LoopButton>(claim).onPressed, isNull);
-      expect(find.text('当前不能绑定邀请码，请稍后刷新再试'), findsOneWidget);
+      expect(
+        find.text(
+          'You can\'t bind an invite code right now. Refresh and try again later',
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('2026-10-28'), findsNothing);
 
       await pumpS7Page(
@@ -244,7 +268,12 @@ void main() {
       );
       await scrollToS7Section(tester, claim);
       expect(tester.widget<LoopButton>(claim).onPressed, isNull);
-      expect(find.text('已绑定邀请人，关系锁定后不能更换'), findsOneWidget);
+      expect(
+        find.text(
+          'Inviter bound. The relation is locked and can\'t be changed',
+        ),
+        findsOneWidget,
+      );
       // The inviter row is kept.
       expect(
         find.byKey(const ValueKey<String>('referral-bound-row')),
@@ -279,7 +308,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('有效成员截至'), findsNothing);
-      expect(find.textContaining('不是收入、佣金或返佣'), findsNothing);
+      expect(
+        find.textContaining("It isn't income, commission or a rebate"),
+        findsNothing,
+      );
 
       // S325 · decision 0255: the tab's notes join the page's one (i).
       await tester.tap(
@@ -290,8 +322,16 @@ void main() {
         find.byKey(const ValueKey<String>('mining-info-sheet')),
         findsOneWidget,
       );
-      expect(find.textContaining('不是收入、佣金或返佣'), findsOneWidget);
-      expect(find.textContaining('被邀请人本人在最近一个结算小时有算力'), findsOneWidget);
+      expect(
+        find.textContaining("It isn't income, commission or a rebate"),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'An invitee is an active member only if they had power in the latest settled hour',
+        ),
+        findsOneWidget,
+      );
     });
   });
 
@@ -342,13 +382,13 @@ void main() {
         find.byKey(const ValueKey<String>('mining-rules-action')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('挖矿说明'), findsOneWidget);
-      expect(find.text('公式版本'), findsOneWidget);
-      expect(find.textContaining('已生效的公式版本'), findsOneWidget);
-      expect(find.text('最近一次算力快照'), findsOneWidget);
-      expect(find.textContaining('这是算出算力的时间'), findsOneWidget);
-      expect(find.textContaining('区块 '), findsOneWidget);
-      expect(find.text('不做本地估算'), findsOneWidget);
+      expect(find.text('About mining'), findsOneWidget);
+      expect(find.text('Formula version'), findsOneWidget);
+      expect(find.textContaining('Formula version in effect'), findsOneWidget);
+      expect(find.text('Latest power snapshot'), findsOneWidget);
+      expect(find.textContaining('when power was calculated'), findsOneWidget);
+      expect(find.textContaining('Block '), findsOneWidget);
+      expect(find.text('No local estimates'), findsOneWidget);
     });
 
     testWidgets('without a summary the (i) says nothing was read', (
@@ -369,9 +409,18 @@ void main() {
         find.byKey(const ValueKey<String>('mining-rules-action')),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('还没有读到挖矿摘要'), findsOneWidget);
-      expect(find.textContaining('还没有读到算力快照'), findsOneWidget);
-      expect(find.textContaining('读不到不等于「算力为零」'), findsOneWidget);
+      expect(
+        find.textContaining('Mining summary not loaded yet'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('No power snapshot loaded yet'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Not loaded doesn\'t mean "zero power"'),
+        findsOneWidget,
+      );
     });
   });
 }

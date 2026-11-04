@@ -212,7 +212,10 @@ void main() {
         container.read(loopSessionProvider).account?.privyUserId,
         'did:privy:current',
       );
-      expect(container.read(emailAuthProvider).errorMessage, contains('账号已变化'));
+      expect(
+        container.read(emailAuthProvider).errorMessage,
+        contains('The account changed'),
+      );
     },
   );
 

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Presentation models for the `referral` module (loop-api decision 0036).
 ///
@@ -73,11 +74,16 @@ enum ReferralValidationStatus {
 
 String referralValidationStatusLabel(ReferralValidationStatus status) =>
     switch (status) {
-      ReferralValidationStatus.pendingActivation => '待激活',
-      ReferralValidationStatus.pendingWallet => '待绑定钱包',
-      ReferralValidationStatus.pendingMining => '待挖矿生效',
-      ReferralValidationStatus.valid => '有效',
-      ReferralValidationStatus.invalidated => '已作废',
+      ReferralValidationStatus.pendingActivation =>
+        LoopL10n.current.mining_referralModelsPendingActivation,
+      ReferralValidationStatus.pendingWallet =>
+        LoopL10n.current.mining_referralModelsPendingWallet,
+      ReferralValidationStatus.pendingMining =>
+        LoopL10n.current.mining_referralModelsPendingMining,
+      ReferralValidationStatus.valid =>
+        LoopL10n.current.mining_referralModelsValid,
+      ReferralValidationStatus.invalidated =>
+        LoopL10n.current.mining_referralModelsInvalidated,
     };
 
 /// The inviter side of a binding. It deliberately exposes no identity: only
@@ -333,9 +339,12 @@ enum ReferralInviteeStatus {
 
 String referralInviteeStatusLabel(ReferralInviteeStatus status) =>
     switch (status) {
-      ReferralInviteeStatus.valid => '有效',
-      ReferralInviteeStatus.pending => '待生效',
-      ReferralInviteeStatus.invalid => '已失效',
+      ReferralInviteeStatus.valid =>
+        LoopL10n.current.mining_referralModelsValid,
+      ReferralInviteeStatus.pending =>
+        LoopL10n.current.mining_referralModelsPending,
+      ReferralInviteeStatus.invalid =>
+        LoopL10n.current.mining_referralModelsInvalid,
     };
 
 /// One row of `GET /v2/referral/invitees`: a direct (L1) invitee.
@@ -376,12 +385,12 @@ final class ReferralInviteePage {
 /// zh-CN copy for one referral level. The description is a relationship depth,
 /// never a rank or a progression.
 String referralLevelDescription(int level) => switch (level) {
-  1 => '我直接邀请并已验证的人',
-  2 => '我的 L1 再邀请的人',
-  3 => '我的 L2 再邀请的人',
-  4 => '我的 L3 再邀请的人',
-  5 => '我的 L4 再邀请的人',
-  _ => '邀请关系的层级',
+  1 => LoopL10n.current.mining_referralModelsSwitch,
+  2 => LoopL10n.current.mining_referralModelsSwitch2,
+  3 => LoopL10n.current.mining_referralModelsSwitch3,
+  4 => LoopL10n.current.mining_referralModelsSwitch4,
+  5 => LoopL10n.current.mining_referralModelsSwitch5,
+  _ => LoopL10n.current.mining_referralModelsSwitch6,
 };
 
 /// Normalises what the user typed before it leaves the device.

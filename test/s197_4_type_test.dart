@@ -95,7 +95,12 @@ void main() {
     // S315: 总算力, and the place without an English 「RANK」 prefix.
     // S350b · decision 0275: the label is a 600 caption, a cell's label a
     // caption under its figure, and the figure the plate's Anton 40.
-    _expectStep(tester, '我的总算力', LoopType.caption, weight: FontWeight.w600);
+    _expectStep(
+      tester,
+      'My total power',
+      LoopType.caption,
+      weight: FontWeight.w600,
+    );
     _expectStep(tester, '持仓', LoopType.caption);
     _expectStep(tester, '10', LoopType.figure);
     _expectStep(tester, '1,234', LoopType.plateFigure);
@@ -158,7 +163,7 @@ void main() {
     final support = _painted(
       tester,
       // Decision 0243: the sheet is the shared (i) sheet, one note per fact.
-      '邀请加成只计入挖矿算力，不是收入、佣金或返佣。',
+      "Invite boost counts only toward mining power. It isn't income, commission or a rebate.",
     );
     expect(support.fontSize, LoopType.bodySm.fontSize);
     expect(support.color, LoopColors.text2);

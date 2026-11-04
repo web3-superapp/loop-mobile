@@ -5,6 +5,7 @@ import 'dart:ui' show PointMode;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -31,7 +32,7 @@ class LoopTopbar extends StatelessWidget {
     super.key,
     this.kicker,
     this.onBack,
-    this.backLabel = '返回',
+    this._backLabel,
     this.actions = const <Widget>[],
     this.minHeight = LoopLayout.topbarContentHeight,
     this.updating = false,
@@ -82,7 +83,8 @@ class LoopTopbar extends StatelessWidget {
   /// owner's avatar on 聊天 (decision 0110). Ignored when [onBack] is set.
   final Widget? leading;
   final VoidCallback? onBack;
-  final String backLabel;
+  final String? _backLabel;
+  String get backLabel => _backLabel ?? LoopL10n.current.common_back;
   final List<Widget> actions;
   final double minHeight;
 
@@ -1870,7 +1872,9 @@ class LoopRecordRow extends StatelessWidget {
       if (!readOnly) return padded;
       return Semantics(
         readOnly: true,
-        label: semanticLabel ?? '$title，${trailing ?? ''}，不可更改',
+        label:
+            semanticLabel ??
+            context.l10n.widgets_componentsLabel(title, trailing ?? ''),
         excludeSemantics: true,
         child: padded,
       );
@@ -1998,7 +2002,9 @@ extension on LoopRecordRow {
       if (!readOnly) return content;
       return Semantics(
         readOnly: true,
-        label: semanticLabel ?? '$title，${trailing ?? ''}，不可更改',
+        label:
+            semanticLabel ??
+            context.l10n.widgets_componentsLabel(title, trailing ?? ''),
         excludeSemantics: true,
         child: content,
       );
@@ -2185,7 +2191,10 @@ class LoopNotice extends StatelessWidget {
         !chalk &&
         happened == null &&
         trailing == null) {
-      final line = <String?>[title, body].whereType<String>().join('。');
+      final line = <String?>[
+        title,
+        body,
+      ].whereType<String>().join(LoopL10n.current.widgets_sentenceJoin);
       return Padding(
         padding: EdgeInsets.fromLTRB(
           LoopSpacing.page,
@@ -2229,10 +2238,10 @@ class LoopNotice extends StatelessWidget {
     final label = <String?>[
       title,
       body,
-      if (structured) '发生了什么：$happened',
-      if (structured) '影响什么：$impact',
-      if (structured) '下一步：$next',
-    ].whereType<String>().join('。');
+      if (structured) context.l10n.widgets_componentsSwitch(happened),
+      if (structured) context.l10n.widgets_componentsSwitch2(impact),
+      if (structured) context.l10n.widgets_componentsSwitch3(next),
+    ].whereType<String>().join(LoopL10n.current.widgets_sentenceJoin);
     return Padding(
       padding: margin,
       child: Semantics(
@@ -2278,17 +2287,17 @@ class LoopNotice extends StatelessWidget {
                       if (body != null) Text(body!, style: bodyStyle),
                       if (structured) ...<Widget>[
                         _NoticeSegment(
-                          label: '发生了什么',
+                          label: context.l10n.widgets_componentsLabel2,
                           text: happened!,
                           style: bodyStyle,
                         ),
                         _NoticeSegment(
-                          label: '影响什么',
+                          label: context.l10n.widgets_componentsLabel3,
                           text: impact!,
                           style: bodyStyle,
                         ),
                         _NoticeSegment(
-                          label: '下一步',
+                          label: context.l10n.common_next,
                           text: next!,
                           style: bodyStyle,
                         ),
@@ -2393,7 +2402,12 @@ class LoopBadge extends StatelessWidget {
         color: background,
         borderRadius: LoopRadius.tag,
       ),
-      child: Text(text, style: LoopType.tag.copyWith(color: foreground)),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: LoopType.tag.copyWith(color: foreground),
+      ),
     );
   }
 }
@@ -3320,18 +3334,21 @@ class LoopComposer extends StatefulWidget {
   const LoopComposer({
     super.key,
     this.controller,
-    this.hintText = '发送消息',
+    this._hintText,
     this.onSend,
     this.enabled = true,
-    this.sendLabel = '发送',
+    this._sendLabel,
     this.leading,
   });
 
   final TextEditingController? controller;
-  final String hintText;
+  final String? _hintText;
+  String get hintText =>
+      _hintText ?? LoopL10n.current.widgets_componentsHintText;
   final ValueChanged<String>? onSend;
   final bool enabled;
-  final String sendLabel;
+  final String? _sendLabel;
+  String get sendLabel => _sendLabel ?? LoopL10n.current.common_send;
   final Widget? leading;
 
   @override
@@ -3751,11 +3768,11 @@ class LoopSkeleton extends StatelessWidget {
       LoopSkeletonType.list ||
       LoopSkeletonType.row ||
       LoopSkeletonType.record ||
-      LoopSkeletonType.priceRow => '列表加载中',
-      LoopSkeletonType.detail => '详情加载中',
-      LoopSkeletonType.chart => '图表加载中',
-      LoopSkeletonType.card => '卡片加载中',
-      LoopSkeletonType.figure => '数字加载中',
+      LoopSkeletonType.priceRow => context.l10n.widgets_componentsPriceRow,
+      LoopSkeletonType.detail => context.l10n.widgets_componentsDetail,
+      LoopSkeletonType.chart => context.l10n.widgets_componentsChart,
+      LoopSkeletonType.card => context.l10n.widgets_componentsCard,
+      LoopSkeletonType.figure => context.l10n.widgets_componentsFigure,
     };
     return Semantics(
       container: true,
@@ -4129,10 +4146,11 @@ class _LoopFixedSkeletonRows extends StatelessWidget {
 /// says only that a newer answer is on the way. It never covers content,
 /// never disables an action and never claims the new answer arrived.
 class LoopUpdatingBadge extends StatelessWidget {
-  const LoopUpdatingBadge({super.key, this.visible = true, this.label = '更新中'});
+  const LoopUpdatingBadge({super.key, this.visible = true, this._label});
 
   final bool visible;
-  final String label;
+  final String? _label;
+  String get label => _label ?? LoopL10n.current.widgets_componentsLabel4;
 
   @override
   Widget build(BuildContext context) {
@@ -4164,8 +4182,8 @@ class LoopUpdatingBadge extends StatelessWidget {
 /// `LoopInlineUnavailable` (decision 0183).
 class LoopPageBlock extends StatefulWidget {
   const LoopPageBlock({
-    required this.title,
-    required this.message,
+    required String this._title,
+    required String this._message,
     super.key,
     this.action,
     this.margin = const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -4187,25 +4205,36 @@ class LoopPageBlock extends StatefulWidget {
     super.key,
     this.action,
     this.margin = const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-  }) : title = unreachableTitle,
-       message = unreachableMessage,
+  }) : _title = null,
+       _message = null,
        recoverable = true;
 
   /// Heading for [LoopPageBlock.unreachable].
-  static const String unreachableTitle = '现在连不上 LOOP';
+  static String get unreachableTitle =>
+      LoopL10n.current.widgets_componentsUnreachableTitle;
 
   /// Body for [LoopPageBlock.unreachable]. It names no provider and no rule,
   /// because none was received.
-  static const String unreachableMessage = '这一页没有读到任何内容，也没有提交任何操作。请检查网络后重试。';
+  static String get unreachableMessage =>
+      LoopL10n.current.widgets_componentsUnreachableMessage;
 
   /// Copy for the retry action, its running state, and what a retry that
   /// changed nothing is allowed to say.
-  static const String retryLabel = '重试';
-  static const String retryingLabel = '正在重试…';
-  static const String retryFailedMessage = '刚才这次还是没连上。等网络恢复后再试一次。';
+  static String get retryLabel => LoopL10n.current.common_retry;
+  static String get retryingLabel =>
+      LoopL10n.current.widgets_componentsRetryingLabel;
+  static String get retryFailedMessage =>
+      LoopL10n.current.widgets_componentsRetryFailedMessage;
 
-  final String title;
-  final String message;
+  final String? _title;
+  final String? _message;
+
+  /// The heading; [unreachableTitle] for [LoopPageBlock.unreachable], read in
+  /// the current language.
+  String get title => _title ?? unreachableTitle;
+
+  /// The explanation; [unreachableMessage] for [LoopPageBlock.unreachable].
+  String get message => _message ?? unreachableMessage;
   final Widget? action;
   final EdgeInsets margin;
 
@@ -4347,23 +4376,25 @@ class LoopErrorState extends StatelessWidget {
   const LoopErrorState({
     required this.reason,
     super.key,
-    this.title = '暂时无法完成',
+    this._title,
     this.traceId,
     this.source,
     this.onRetry,
-    this.retryLabel = '重试',
+    this._retryLabel,
     this.retryEnabled = true,
     this.alternative,
     this.alternativeLabel,
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
   });
 
-  final String title;
+  final String? _title;
+  String get title => _title ?? LoopL10n.current.widgets_componentsTitle;
   final String reason;
   final String? traceId;
   final String? source;
   final VoidCallback? onRetry;
-  final String retryLabel;
+  final String? _retryLabel;
+  String get retryLabel => _retryLabel ?? LoopL10n.current.common_retry;
 
   /// A retry that exists but may not be taken yet. The button stays on screen
   /// and stays unpressable, because a card whose button disappears reads as a
@@ -4407,8 +4438,10 @@ class LoopErrorState extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   <String>[
-                    if (traceId != null) '追踪号 $traceId',
-                    if (source != null) '来源 $source',
+                    if (traceId != null)
+                      context.l10n.widgets_componentsBuild(traceId),
+                    if (source != null)
+                      context.l10n.widgets_componentsBuild2(source),
                   ].join(' · '),
                   style: LoopType.figureXs,
                 ),
@@ -4420,7 +4453,9 @@ class LoopErrorState extends StatelessWidget {
                   children: <Widget>[
                     if (alternative != null)
                       LoopButton(
-                        label: alternativeLabel ?? '其他方式',
+                        label:
+                            alternativeLabel ??
+                            context.l10n.widgets_componentsLabel5,
                         onPressed: alternative,
                       ),
                     if (onRetry != null)
@@ -4460,22 +4495,38 @@ class LoopOfflineState extends StatelessWidget {
     super.key,
     this.cachedAtLabel,
     this.cause = LoopOfflineCause.connection,
-    this.pausedActions = const <String>['发送', '兑换', '跨链', '签名'],
+    this._pausedActions,
     this.onRetry,
     this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
   });
 
-  static const String cachedHeadline = '离线 · 显示缓存';
-  static const String cachedTimeoutHeadline = 'LOOP 响应超时 · 显示缓存';
-  static const String connectionHeadline = '连不上 LOOP';
-  static const String timeoutHeadline = 'LOOP 响应超时';
-  static const String noCacheBody = '这次读取没有完成，还没有可显示的缓存。';
+  static String get cachedHeadline =>
+      LoopL10n.current.widgets_componentsCachedHeadline;
+  static String get cachedTimeoutHeadline =>
+      LoopL10n.current.widgets_componentsCachedTimeoutHeadline;
+  static String get connectionHeadline =>
+      LoopL10n.current.widgets_componentsConnectionHeadline;
+  static String get timeoutHeadline =>
+      LoopL10n.current.widgets_componentsTimeoutHeadline;
+  static String get noCacheBody =>
+      LoopL10n.current.widgets_componentsNoCacheBody;
 
   /// Formatted last-sync time of a cached value that is on screen. `null`
   /// means there is no cached value, and the card says so.
   final String? cachedAtLabel;
   final LoopOfflineCause cause;
-  final List<String> pausedActions;
+  final List<String>? _pausedActions;
+
+  /// The actions the card says are paused; by default send, swap, bridge and
+  /// sign, in the current language.
+  List<String> get pausedActions =>
+      _pausedActions ??
+      <String>[
+        LoopL10n.current.common_send,
+        LoopL10n.current.common_swap,
+        LoopL10n.current.common_bridge,
+        LoopL10n.current.common_sign,
+      ];
   final VoidCallback? onRetry;
   final EdgeInsets margin;
 
@@ -4490,10 +4541,18 @@ class LoopOfflineState extends StatelessWidget {
 
   /// The card's sentence under the title.
   String get body {
-    final paused = pausedActions.isEmpty
-        ? ''
-        : '已暂停：${pausedActions.join('、')}。';
-    return cachedAtLabel != null ? '$paused缓存值可能已过期。' : '$noCacheBody$paused';
+    final l10n = LoopL10n.current;
+    final actions = pausedActions;
+    final paused = actions.isEmpty
+        ? null
+        : l10n.widgets_componentsS(
+            actions.join(l10n.widgets_enumerationSeparator),
+          );
+    return <String>[
+      if (cachedAtLabel == null) noCacheBody,
+      ?paused,
+      if (cachedAtLabel != null) l10n.widgets_componentsCacheStale,
+    ].join(l10n.widgets_sentenceGap);
   }
 
   @override
@@ -4532,10 +4591,15 @@ class LoopOfflineState extends StatelessWidget {
                   ),
                   if (cachedAt != null)
                     Text(
-                      '缓存 $cachedAt',
+                      context.l10n.widgets_componentsLoopOfflineCachedAt(
+                        cachedAt,
+                      ),
                       key: const ValueKey<String>('loop-offline-cached-at'),
                       style: LoopType.figureXs,
-                      semanticsLabel: '缓存时间 $cachedAt',
+                      semanticsLabel: context.l10n
+                          .widgets_componentsLoopOfflineCachedAtSemanticsLabel(
+                            cachedAt,
+                          ),
                     ),
                 ],
               ),
@@ -4543,7 +4607,10 @@ class LoopOfflineState extends StatelessWidget {
               Text(body, style: Theme.of(context).textTheme.bodyMedium),
               if (onRetry != null) ...<Widget>[
                 const SizedBox(height: 12),
-                LoopButton(label: '重试连接', onPressed: onRetry),
+                LoopButton(
+                  label: context.l10n.widgets_componentsLabel6,
+                  onPressed: onRetry,
+                ),
               ],
             ],
           ),
@@ -4564,8 +4631,8 @@ class LoopPermissionState extends StatelessWidget {
     this.denied = false,
     this.onRequest,
     this.onOpenSettings,
-    this.requestLabel = '继续',
-    this.settingsLabel = '前往系统设置',
+    this._requestLabel,
+    this._settingsLabel,
     this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
   });
 
@@ -4575,8 +4642,12 @@ class LoopPermissionState extends StatelessWidget {
   final bool denied;
   final VoidCallback? onRequest;
   final VoidCallback? onOpenSettings;
-  final String requestLabel;
-  final String settingsLabel;
+  final String? _requestLabel;
+  String get requestLabel =>
+      _requestLabel ?? LoopL10n.current.common_continueAction;
+  final String? _settingsLabel;
+  String get settingsLabel =>
+      _settingsLabel ?? LoopL10n.current.widgets_componentsSettingsLabel;
   final EdgeInsets margin;
 
   @override

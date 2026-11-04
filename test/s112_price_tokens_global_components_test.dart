@@ -189,7 +189,7 @@ void main() {
       final retry = find.byKey(
         const ValueKey<String>('loop-inline-unavailable-retry'),
       );
-      expect(find.text('重试'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
       expect(tester.getSize(retry).height, greaterThanOrEqualTo(44));
       expect(tester.getSize(retry).width, greaterThanOrEqualTo(44));
       await tester.tap(retry);
@@ -208,7 +208,7 @@ void main() {
         ),
       );
 
-      expect(find.text('重试中'), findsOneWidget);
+      expect(find.text('Retrying'), findsOneWidget);
       expect(find.text('重试'), findsNothing);
       await tester.tap(
         find.byKey(const ValueKey<String>('loop-inline-unavailable-retry')),
@@ -249,19 +249,19 @@ void main() {
 
       // Decision 0236: the statement is the control's name and the sheet's
       // content, never a printed line.
-      expect(line.text, '来源 DexScreener · GoPlus · 观察于 14:02');
+      expect(line.text, 'Source DexScreener · GoPlus · Observed at 14:02');
       expect(find.text('来源 DexScreener · GoPlus · 观察于 14:02'), findsNothing);
       final trigger = find.byKey(
         const ValueKey<String>('loop-provenance-line'),
       );
       expect(
-        find.descendant(of: trigger, matching: find.text('来源')),
+        find.descendant(of: trigger, matching: find.text('Source')),
         findsOneWidget,
       );
       expect(tester.getSize(trigger).height, greaterThanOrEqualTo(44));
       expect(
         tester.getSemantics(trigger).label,
-        '来源 DexScreener · GoPlus · 观察于 14:02，查看数据来源说明',
+        'Source DexScreener · GoPlus · Observed at 14:02, view data source details',
       );
     });
 
@@ -273,7 +273,7 @@ void main() {
         now: now,
       );
       await tester.pumpWidget(_host(line));
-      expect(line.text, '公式 v3 · 来源 LOOP 链上索引 · 观察于 10-07 09:05');
+      expect(line.text, '公式 v3 · Source LOOP 链上索引 · Observed at 10-07 09:05');
       await tester.tap(
         find.byKey(const ValueKey<String>('loop-provenance-line')),
       );
@@ -319,11 +319,11 @@ void main() {
         find.byKey(const ValueKey<String>('loop-provenance-sheet')),
         findsOneWidget,
       );
-      expect(find.text('数据来源'), findsOneWidget);
+      expect(find.text('Data source'), findsOneWidget);
       expect(find.text('2026-10-08 14:02'), findsOneWidget);
       expect(find.text('价格每 60 秒刷新一次；读不到时显示原因，不显示 0。'), findsOneWidget);
 
-      await tester.tap(find.text('知道了'));
+      await tester.tap(find.text('Got it'));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey<String>('loop-provenance-sheet')),
@@ -352,7 +352,7 @@ void main() {
       ];
       // Decision 0121: the words are the reactions' accessible names; the
       // bar and the capsules draw the sprite glyphs.
-      expect(words, <String>['点赞', '大笑', '喜欢', '惊讶', '难过']);
+      expect(words, <String>['Like', 'Haha', 'Love', 'Wow', 'Sad']);
       for (final word in words) {
         expect(_emoji.hasMatch(word), isFalse, reason: word);
       }
@@ -399,8 +399,8 @@ void main() {
           ),
         ),
       );
-      expect(find.bySemanticsLabel('点赞 18'), findsOneWidget);
-      expect(find.bySemanticsLabel('惊讶 6'), findsOneWidget);
+      expect(find.bySemanticsLabel('Like 18'), findsOneWidget);
+      expect(find.bySemanticsLabel('Wow 6'), findsOneWidget);
       expect(find.text('18'), findsOneWidget);
       expect(find.text('赞 18'), findsNothing);
     });

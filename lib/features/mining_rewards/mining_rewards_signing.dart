@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/security/step_up/step_up_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
@@ -58,44 +59,68 @@ List<IntentField> miningClaimFields(
   MiningClaimIntent intent, {
   required String? walletAddress,
 }) => <IntentField>[
-  const IntentField(label: '操作', value: '领取挖矿奖励'),
-  IntentField(label: '领取数量', value: '${miningLoopFigure(intent.amount)} LOOP'),
   IntentField(
-    label: '收款钱包',
-    value: walletAddress == null ? '读取中' : miningShortHash(walletAddress),
+    label: LoopL10n.current.common_actions,
+    value: LoopL10n.current.miningRewards_signingValue,
   ),
-  IntentField(label: '合约', value: miningShortHash(intent.contractAddress)),
-  IntentField(label: '网络', value: loopChainName(intent.chainId)),
-  const IntentField(label: '网络费', value: '钱包内 BNB 支付'),
-  IntentField(label: '凭证有效至', value: loopDateTimeLabel(intent.deadline)),
+  IntentField(
+    label: LoopL10n.current.miningRewards_signingLabel,
+    value: '${miningLoopFigure(intent.amount)} LOOP',
+  ),
+  IntentField(
+    label: LoopL10n.current.miningRewards_signingLabel2,
+    value: walletAddress == null
+        ? LoopL10n.current.common_loading
+        : miningShortHash(walletAddress),
+  ),
+  IntentField(
+    label: LoopL10n.current.common_contract,
+    value: miningShortHash(intent.contractAddress),
+  ),
+  IntentField(
+    label: LoopL10n.current.common_network,
+    value: loopChainName(intent.chainId),
+  ),
+  IntentField(
+    label: LoopL10n.current.miningRewards_signingLabel3,
+    value: LoopL10n.current.miningRewards_signingValue2,
+  ),
+  IntentField(
+    label: LoopL10n.current.miningRewards_signingLabel4,
+    value: loopDateTimeLabel(intent.deadline),
+  ),
 ];
 
 /// zh-CN for a refusal before or at the wallet. Every line says nothing was
 /// submitted and the balance stays.
 String miningClaimSignReasonText(String reasonCode) => switch (reasonCode) {
   // Decision 0152: the large-amount step-up stopped before the wallet.
-  loopStepUpCancelledCode => '已取消，没有发生任何变化。',
-  loopStepUpFailedCode => '身份验证没有通过，没有发生任何变化。',
-  'INTENT_EXPIRED' => '领取凭证已过期，没有提交任何交易，可领取余额不变。请重新领取。',
-  'REVIEW_PAYLOAD_MISMATCH' => '交易内容与确认内容不一致，已拒绝签名，没有提交任何交易。',
-  'MINING_CLAIM_WALLET_UNKNOWN' => '找不到这笔领取的钱包，没有提交任何交易。',
-  'MINING_CLAIM_WALLET_MISMATCH' => '领取凭证对应的钱包与当前钱包不一致，已拒绝签名，没有提交任何交易。',
+  loopStepUpCancelledCode => LoopL10n.current.miningRewards_signingSwitch,
+  loopStepUpFailedCode => LoopL10n.current.miningRewards_signingSwitch2,
+  'INTENT_EXPIRED' => LoopL10n.current.miningRewards_signingSwitch3,
+  'REVIEW_PAYLOAD_MISMATCH' => LoopL10n.current.miningRewards_signingSwitch4,
+  'MINING_CLAIM_WALLET_UNKNOWN' =>
+    LoopL10n.current.miningRewards_signingSwitch5,
+  'MINING_CLAIM_WALLET_MISMATCH' =>
+    LoopL10n.current.miningRewards_signingSwitch6,
   'INTENT_CHAIN_NOT_PERMITTED' ||
-  'intent_chain_not_permitted' => '这条链不允许签名，没有提交任何交易。',
-  'privy_chain_switch_unsupported' => '钱包暂时不能在这条链上签名，没有提交任何交易。',
-  'privy_wallet_mismatch' => '当前登录的钱包不是这笔领取的钱包，没有提交任何交易。',
-  'MINING_CLAIM_SIMULATION_REVERTED' => '试算没有通过，这笔领取在链上会被拒绝。没有提交任何交易。',
-  _ => '钱包没有完成签名，没有提交任何交易，可领取余额不变。',
+  'intent_chain_not_permitted' => LoopL10n.current.miningRewards_signingSwitch7,
+  'privy_chain_switch_unsupported' =>
+    LoopL10n.current.miningRewards_signingSwitch8,
+  'privy_wallet_mismatch' => LoopL10n.current.miningRewards_signingSwitch9,
+  'MINING_CLAIM_SIMULATION_REVERTED' =>
+    LoopL10n.current.miningRewards_screenSwitch27,
+  _ => LoopL10n.current.miningRewards_signingSwitch10,
 };
 
 /// zh-CN after a broadcast whose report did not land. None says nothing
 /// happened.
 String miningClaimReportReasonText(String reasonCode) => switch (reasonCode) {
   'MINING_CLAIM_TRANSACTION_CONFLICT' =>
-    '这笔领取已经上报过另一笔哈希，本次广播没有被记录。不要重复领取，稍后刷新查看。',
+    LoopL10n.current.miningRewards_signingSwitch11,
   'MINING_CLAIM_TRANSACTION_MISMATCH' =>
-    '链上这笔交易与领取凭证不一致，服务端没有记录它。不要重复领取，并联系支持。',
-  _ => '钱包已经广播，但上报没有送达。交易可能已经上链，可以重新上报同一笔哈希；不要重复领取。',
+    LoopL10n.current.miningRewards_signingSwitch12,
+  _ => LoopL10n.current.miningRewards_signingSwitch13,
 };
 
 /// The one path from a claim voucher to the wallet.
@@ -111,7 +136,7 @@ final class MiningClaimSigner {
   }) => SigningIntent.backendCanonical(
     revision: intent.claimId,
     payloadDigest: intent.payloadDigest,
-    title: '确认领取',
+    title: LoopL10n.current.miningRewards_signingTitle,
     kind: IntentKind.miningClaim,
     chainId: intent.chainId,
     payload: DeviceTransactionPayload(
@@ -339,14 +364,14 @@ class _MiningClaimSignSheetState extends State<MiningClaimSignSheet> {
       child: LoopSignSheet(
         key: const ValueKey<String>('mining-claim-sign-sheet'),
         state: _state,
-        title: '确认领取',
+        title: context.l10n.miningRewards_signingTitle,
         networkBadge: loopTestnetBadgeFor(widget.intent.chainId),
         facts: <LoopSignFact>[
           for (final IntentField field in fields)
             LoopSignFact(field.label, field.value),
         ],
         reason: _reason,
-        confirmLabel: '确认领取',
+        confirmLabel: context.l10n.miningRewards_signingTitle,
         onConfirm: _submitted ? null : _confirm,
         onCancel: () => Navigator.of(context).pop(_outcome),
       ),
@@ -358,11 +383,14 @@ class _MiningClaimSignSheetState extends State<MiningClaimSignSheet> {
 String miningClaimBroadcastText(MiningClaimSignOutcome outcome) {
   final hash = outcome.txHash;
   if (hash == null) {
-    return '钱包的结果未知，这笔领取已锁定。不要重复领取，稍后刷新查看。';
+    return LoopL10n.current.miningRewards_signingIf;
   }
   final short = miningShortHash(hash);
   if (outcome.reported != null) {
-    return '已广播（$short），服务端已记录，正在等待链上确认。';
+    return LoopL10n.current.miningRewards_signingIf2(short);
   }
-  return '已广播（$short）。${miningClaimReportReasonText(outcome.reasonCode)}';
+  return LoopL10n.current.miningRewards_signingIf3(
+    miningClaimReportReasonText(outcome.reasonCode),
+    short,
+  );
 }

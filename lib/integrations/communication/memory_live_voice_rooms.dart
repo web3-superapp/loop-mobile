@@ -1,5 +1,6 @@
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/square/live_voice_rooms.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Development Preview adapter for the plaza's live-room list.
 ///
@@ -22,25 +23,30 @@ final class MemoryLiveVoiceRoomGateway implements LiveVoiceRoomGateway {
         LiveVoiceRoom(
           voiceRoomId: '5cc85f64-5717-4562-b3fc-2c963f66afc8',
           communityId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
-          communityName: '开发预览社区',
+          communityName:
+              LoopL10n.current.integrations_memoryChatGatewaysCommunityName,
           communityLogoRef: 'avatar:preset/community-01',
-          title: '开发预览 · 周五 AMA',
-          host: const LiveVoiceRoomHost(
+          title: LoopL10n.current.integrations_memoryLiveVoiceRoomsTitle,
+          host: LiveVoiceRoomHost(
             publicProfileId: null,
-            displayName: '预览主持人',
+            displayName:
+                LoopL10n.current.integrations_memoryLiveVoiceRoomsDisplayName,
             avatarRef: null,
           ),
           // Decision 0115: host first, then speakers; the last one shows
           // anonymously and carries nothing.
-          speakersPreview: const <LiveVoiceRoomHost>[
+          speakersPreview: <LiveVoiceRoomHost>[
             LiveVoiceRoomHost(
               publicProfileId: null,
-              displayName: '预览主持人',
+              displayName:
+                  LoopL10n.current.integrations_memoryLiveVoiceRoomsDisplayName,
               avatarRef: 'avatar:preset/people-01',
             ),
             LiveVoiceRoomHost(
               publicProfileId: null,
-              displayName: '预览发言人',
+              displayName: LoopL10n
+                  .current
+                  .integrations_memoryLiveVoiceRoomsDisplayName2,
               avatarRef: 'avatar:preset/people-02',
             ),
             LiveVoiceRoomHost(
@@ -58,7 +64,8 @@ final class MemoryLiveVoiceRoomGateway implements LiveVoiceRoomGateway {
         LiveVoiceRoom(
           voiceRoomId: '6dd85f64-5717-4562-b3fc-2c963f66afd9',
           communityId: '4fb85f64-5717-4562-b3fc-2c963f66afb7',
-          communityName: '预览未加入社区',
+          communityName:
+              LoopL10n.current.integrations_memoryLiveVoiceRoomsCommunityName,
           communityLogoRef: 'avatar:preset/community-02',
           title: null,
           host: const LiveVoiceRoomHost(

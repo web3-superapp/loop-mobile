@@ -682,7 +682,7 @@ void main() {
           expected.map((field) => '${field.label}=${field.value}').toList(),
         );
 
-        await tester.tap(find.text('确认签名'));
+        await tester.tap(find.text('Confirm signature'));
         await tester.pumpAndSettle();
 
         // The wallet got the server's transaction verbatim and its digest.
@@ -702,7 +702,7 @@ void main() {
         );
         expect(find.textContaining('succeeded'), findsNothing);
 
-        await tester.tap(find.text('关闭'));
+        await tester.tap(find.text('Close'));
         await tester.pumpAndSettle();
         expect(_key('launch-trade-locked'), findsOneWidget);
         expect(_key('launch-trade-sign'), findsNothing);
@@ -733,10 +733,10 @@ void main() {
       await tester.tap(_key('launch-trade-sign'));
       await tester.pumpAndSettle();
       expect(find.text(loopTestnetBadgeLabel), findsWidgets);
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(find.textContaining('No transaction was submitted'), findsWidgets);
-      await tester.tap(find.text('取消'));
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       // Nothing was broadcast, so the form is not locked.
       expect(_key('launch-trade-locked'), findsNothing);

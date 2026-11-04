@@ -203,7 +203,7 @@ void main() {
 
       // Nothing empty sits under the retry button: the card ends at the
       // button plus its own padding.
-      final buttonBottom = tester.getRect(find.text('重试')).bottom;
+      final buttonBottom = tester.getRect(find.text('Retry')).bottom;
       final cardBottom = tester
           .getRect(find.byKey(const ValueKey<String>('loop-error-state')))
           .bottom;

@@ -236,7 +236,10 @@ void main() {
         tester.widget<Text>(_key('intel-rank-figure-2')).style?.color,
         LoopColors.chalk,
       );
-      expect(find.text('权重 1.5').evaluate().length, greaterThanOrEqualTo(3));
+      expect(
+        find.text('Weight 1.5').evaluate().length,
+        greaterThanOrEqualTo(3),
+      );
       // The crown is wider than half the winner's face and sits on its top.
       final crown = tester.getRect(_key('intel-rank-crown-1'));
       final face = tester.getRect(_key('intel-rank-face-1'));
@@ -257,7 +260,7 @@ void main() {
       expect(_key('intel-rank-community-community-1'), findsOneWidget);
       expect(_key('intel-rank-empty-slot-2'), findsOneWidget);
       expect(_key('intel-rank-empty-slot-3'), findsOneWidget);
-      expect(find.text('虚位以待'), findsNWidgets(2));
+      expect(find.text('Open'), findsNWidgets(2));
     });
   });
 

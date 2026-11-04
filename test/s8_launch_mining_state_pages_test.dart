@@ -410,7 +410,7 @@ void main() {
             findsNothing,
             reason: '暂停的页面不能声称「这里没有内容」',
           );
-          expect(find.text('连不上 LOOP'), findsOneWidget);
+          expect(find.text("Can't reach LOOP"), findsOneWidget);
           _expectNothingRead(testCase);
         });
       }

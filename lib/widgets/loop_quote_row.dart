@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_price_move.dart';
 
 /// The row height of an OKX-shaped quote list (decision 0122, S121 §1.1.1).
@@ -84,7 +85,9 @@ class LoopChangePill extends StatelessWidget {
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Text(
-          move == null ? '未报告' : loopSignedPercent(move),
+          move == null
+              ? context.l10n.widgets_quoteRowSwitch
+              : loopSignedPercent(move),
           maxLines: 1,
           style: move == null
               ? LoopType.caption.copyWith(color: LoopColors.text3)

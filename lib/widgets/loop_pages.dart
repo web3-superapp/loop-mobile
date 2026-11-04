@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_provenance_scope.dart';
@@ -463,7 +464,7 @@ class LoopKeyboardDoneBar extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: Semantics(
             button: true,
-            label: '完成，收起键盘',
+            label: context.l10n.widgets_pagesLoopKeyboardDoneLabel,
             excludeSemantics: true,
             child: InkWell(
               key: const ValueKey<String>('loop-keyboard-done'),
@@ -480,7 +481,7 @@ class LoopKeyboardDoneBar extends StatelessWidget {
                   child: Center(
                     widthFactor: 1,
                     child: Text(
-                      '完成',
+                      context.l10n.common_done,
                       style: LoopType.action.copyWith(color: LoopColors.lime),
                     ),
                   ),

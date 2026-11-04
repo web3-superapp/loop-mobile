@@ -448,15 +448,15 @@ void main() {
       'Platform: Android · test',
       'Time: ',
       'Total time: ',
-      '[Success] LOOP 服务 · 就绪 (api-dev.example.com)',
-      '[Success] LOOP 服务 · 能力清单',
-      '[Reachable] 登录服务 Privy (auth.privy.io)',
-      '[Failed] 聊天服务 Stream (chat.stream-io-api.com)',
-      '[Reachable] 语音服务 Stream (video.stream-io-api.com)',
-      '[Success] 代币图标 (raw.githubusercontent.com)',
-      '[Reachable] 推送服务 Firebase (firebaseinstallations.googleapis.com)',
-      '[Reachable] BSC 主网节点 (bsc-dataseed.bnbchain.org)',
-      '[Reachable] 网络基线 Apple (www.apple.com)',
+      '[Success] LOOP service · Ready (api-dev.example.com)',
+      '[Success] LOOP service · Capabilities',
+      '[Reachable] Sign-in service Privy (auth.privy.io)',
+      '[Failed] Chat service Stream (chat.stream-io-api.com)',
+      '[Reachable] Voice service Stream (video.stream-io-api.com)',
+      '[Success] Token icons (raw.githubusercontent.com)',
+      '[Reachable] Push service Firebase (firebaseinstallations.googleapis.com)',
+      '[Reachable] BSC mainnet node (bsc-dataseed.bnbchain.org)',
+      '[Reachable] Network baseline Apple (www.apple.com)',
     ]) {
       expect(text, contains(fragment));
     }
@@ -519,7 +519,7 @@ void main() {
     expect(text, contains('0 of 9 reachable'));
     expect(
       text,
-      contains('[Timed out] 代币图标 (raw.githubusercontent.com) 8000 ms'),
+      contains('[Timed out] Token icons (raw.githubusercontent.com) 8000 ms'),
     );
     expect(text, contains('2026-09-28 06:00:00 +00:00'));
     expect(text, isNot(contains('secretish-app')));

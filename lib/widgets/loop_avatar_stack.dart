@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
@@ -214,9 +215,9 @@ class _LoopAvatarStackState extends State<LoopAvatarStack>
     final names = <String>[for (final entry in widget.entries) entry.label];
     final semantics = <String>[
       ?widget.semanticLabel,
-      names.join('、'),
-      if (remaining > 0) '另外 $remaining 人',
-    ].join('，');
+      names.join(LoopL10n.current.widgets_enumerationSeparator),
+      if (remaining > 0) context.l10n.widgets_avatarStackBuild(remaining),
+    ].join(LoopL10n.current.common_listSeparator);
 
     Widget face(int index) {
       final Widget inner;

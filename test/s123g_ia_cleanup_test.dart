@@ -168,7 +168,10 @@ void main() {
           find.byKey(const ValueKey<String>('settings-theme')),
         ),
         // The row's own separators and 不可更改 are lib/widgets copy (S355).
-        matchesSemantics(label: 'Theme，Dark，不可更改', isReadOnly: true),
+        matchesSemantics(
+          label: "Theme, Dark, can't be changed",
+          isReadOnly: true,
+        ),
       );
       expect(
         find.byKey(const ValueKey<String>('settings-fixed-values-note')),
@@ -218,7 +221,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('me-sections')),
-          matching: find.text('交易'),
+          matching: find.text('Trades'),
         ),
         findsOneWidget,
       );

@@ -344,9 +344,9 @@ void main() {
       await tester.tap(_key('mining-rules-action'));
       await tester.pumpAndSettle();
       expect(_key('mining-info-sheet'), findsOneWidget);
-      expect(find.text('挖矿说明'), findsOneWidget);
-      expect(find.text('LOOP 算力快照'), findsOneWidget);
-      expect(find.text('观察于'), findsOneWidget);
+      expect(find.text('About mining'), findsOneWidget);
+      expect(find.text('LOOP power snapshot'), findsOneWidget);
+      expect(find.text('Observed at'), findsOneWidget);
     });
 
     testWidgets('交易历史: the source moved to the bar', (tester) async {

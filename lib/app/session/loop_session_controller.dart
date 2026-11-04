@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 enum LoopSessionMode {
   restoring,
@@ -410,7 +411,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // undecided state as well. Dropping the operation identity is what lets
     // `retryRestore` start a second one in the meantime.
     _restoreOperation = null;
-    state = const LoopSessionState.restoreUnavailable(
+    state = LoopSessionState.restoreUnavailable(
       errorMessage: loopUndecidedSessionMessage,
     );
   }
@@ -561,7 +562,9 @@ class LoopSessionController extends Notifier<LoopSessionState> {
 
   void acceptAuthenticated(PrivyAccountSummary account) {
     if (_exitOperation != null || state.mode == LoopSessionMode.signingOut) {
-      throw const PrivyGatewayException('正在退出登录，请完成后再试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.app_sessionControllerPrivyGatewayException,
+      );
     }
     _localSignOutBarrier = false;
     state = LoopSessionState(
@@ -581,7 +584,9 @@ class LoopSessionController extends Notifier<LoopSessionState> {
         expectedPrivyUserId.isEmpty ||
         currentAccount.privyUserId != expectedPrivyUserId ||
         account.privyUserId != expectedPrivyUserId) {
-      throw const PrivyGatewayException('账号已变化，钱包未绑定，请重新尝试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.app_sessionControllerPrivyGatewayException2,
+      );
     }
     state = LoopSessionState(
       mode: LoopSessionMode.authenticated,
@@ -594,7 +599,9 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     final requestedAccount = requestedState.account;
     if (!requestedState.canUseProviderBackedFeatures ||
         requestedAccount == null) {
-      throw const PrivyGatewayException('开发预览或受限会话不会创建真实钱包。');
+      throw PrivyGatewayException(
+        LoopL10n.current.app_sessionControllerPrivyGatewayException3,
+      );
     }
 
     final gateway = ref.read(privyAuthGatewayProvider);
@@ -613,14 +620,18 @@ class LoopSessionController extends Notifier<LoopSessionState> {
         currentAccount.privyUserId != requestedPrincipal ||
         creation.privyUserId != requestedPrincipal ||
         !identical(currentGateway, gateway)) {
-      throw const PrivyGatewayException('账号已变化，请重新检查钱包状态。');
+      throw PrivyGatewayException(
+        LoopL10n.current.app_sessionControllerPrivyGatewayException4,
+      );
     }
 
     final wallet = creation.wallet;
     final currentWalletAddress = currentAccount.wallet?.address;
     if (currentWalletAddress != requestedWalletAddress) {
       if (currentWalletAddress == wallet.address) return;
-      throw const PrivyGatewayException('钱包状态已变化，请重新检查后再继续。');
+      throw PrivyGatewayException(
+        LoopL10n.current.app_sessionControllerPrivyGatewayException5,
+      );
     }
 
     state = currentState.copyWith(
@@ -688,12 +699,12 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     try {
       await gateway.logout();
       if (backendResult == LoopBackendLogoutResult.unconfirmed) {
-        errorMessage = '本地会话已退出，但 LOOP 后端会话撤销尚未确认。';
+        errorMessage = LoopL10n.current.app_sessionControllerErrorMessage;
       }
     } on PrivyGatewayException catch (error) {
       errorMessage = error.userMessage;
     } catch (_) {
-      errorMessage = '本地会话已退出，但 Privy 远端退出尚未确认。';
+      errorMessage = LoopL10n.current.app_sessionControllerErrorMessage2;
     }
     if (ref.mounted &&
         _localSignOutBarrier &&

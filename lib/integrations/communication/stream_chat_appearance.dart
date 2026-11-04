@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/loop_stream_reaction_icon_resolver.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -728,7 +729,9 @@ class _LoopStreamMessageLeading extends StatelessWidget {
     if (profile != null && open != null) {
       return Semantics(
         button: true,
-        label: '查看资料',
+        label: context
+            .l10n
+            .integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel,
         child: GestureDetector(
           key: const ValueKey<String>('loop-message-avatar-open-profile'),
           behavior: HitTestBehavior.opaque,

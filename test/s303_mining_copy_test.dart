@@ -10,10 +10,12 @@ import 'package:loop_mobile/features/mining/mining_screen.dart';
 void main() {
   test('the mining (i) carries the three conditions, one per line', () {
     final notes = miningInfoNotes(null);
-    final conditions = notes.singleWhere((note) => note.title == '哪些持仓计入算力');
+    final conditions = notes.singleWhere(
+      (note) => note.title == 'Which holdings count toward power',
+    );
     final lines = conditions.body.split('\n');
     expect(lines, hasLength(4));
-    expect(lines[0], contains('持有数量 × 资产权重'));
+    expect(lines[0], contains('amount held × asset weight'));
     expect(lines[0], contains('NFT'));
     expect(lines[1], miningConditionVerified);
     expect(lines[2], miningConditionMember);
@@ -22,25 +24,39 @@ void main() {
 
   test('the conditions say verified community, membership and embedded '
       'wallet', () {
-    expect(miningConditionVerified, contains('已通过审核'));
-    expect(miningConditionMember, contains('加入该社区'));
+    expect(miningConditionVerified, contains('approved'));
+    expect(miningConditionMember, contains('join the community'));
     // S304: the embedded-only rule is a server switch, off by default;
     // the copy names every wallet bound to the account.
-    expect(miningConditionEmbedded, '按绑定到 LOOP 账号的钱包持仓计算。');
-    expect(miningConditionEmbedded, isNot(contains('内置')));
-    expect(miningConditionsShort, contains('绑定钱包'));
-    expect(miningConditionsShort, isNot(contains('内置')));
-    expect(miningConditionsShort, contains('加入'));
+    expect(
+      miningConditionEmbedded,
+      'Calculated from holdings in wallets linked to your LOOP account.',
+    );
+    expect(miningConditionEmbedded, isNot(contains('built-in')));
+    expect(miningConditionsShort, contains('linked wallet'));
+    expect(miningConditionsShort, isNot(contains('built-in')));
+    expect(miningConditionsShort, contains('joining'));
   });
 
   test('the baseline detail states quantity times weight and the '
       'conditions', () {
-    expect(miningBaselineDetail, contains('持币算力 = 持有数量 × 资产权重'));
-    expect(miningBaselineDetail, contains('NFT 算力 = 持有数量 × 所属社区系数'));
-    expect(miningBaselineDetail, contains('已加入该社区'));
-    expect(miningBaselineDetail, contains('按绑定到 LOOP 账号的钱包持仓计算'));
-    expect(miningBaselineDetail, isNot(contains('内置')));
-    expect(miningBaselineDetail, isNot(contains('社区币权重')));
+    expect(
+      miningBaselineDetail,
+      contains('Token power = amount held × asset weight'),
+    );
+    expect(
+      miningBaselineDetail,
+      contains('NFT power = amount held × community factor'),
+    );
+    expect(miningBaselineDetail, contains("you've joined it"));
+    expect(
+      miningBaselineDetail,
+      contains(
+        'Calculated from holdings in wallets linked to your LOOP account',
+      ),
+    );
+    expect(miningBaselineDetail, isNot(contains('built-in')));
+    expect(miningBaselineDetail, isNot(contains('Community token weights')));
   });
 
   test('one token, one community', () {

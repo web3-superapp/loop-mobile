@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -142,7 +143,8 @@ class _LoopStatCell extends StatelessWidget {
     };
     return Semantics(
       container: true,
-      label: '${stat.label} ${stat.isUnread ? '未读取' : stat.value}',
+      label:
+          '${stat.label} ${stat.isUnread ? context.l10n.widgets_blocksUnread : stat.value}',
       child: Container(
         key: stat.statKey,
         padding: const EdgeInsets.all(13),
@@ -1172,9 +1174,10 @@ class LoopCompositeDetailRow extends StatelessWidget {
     return Semantics(
       container: true,
       label: <String>[
-        '$label，${spoken ?? value}',
-        if (trailingLabel != null) '$trailingLabel，${trailingValue ?? ''}',
-      ].join('。'),
+        '$label${LoopL10n.current.common_listSeparator}${spoken ?? value}',
+        if (trailingLabel != null)
+          '$trailingLabel${LoopL10n.current.common_listSeparator}${trailingValue ?? ''}',
+      ].join(LoopL10n.current.widgets_sentenceJoin),
       child: ExcludeSemantics(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,

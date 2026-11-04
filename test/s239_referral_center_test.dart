@@ -214,7 +214,7 @@ void main() {
         find.byKey(const ValueKey<String>('referral-link-block')),
         findsNothing,
       );
-      expect(find.text('邀请链接'), findsNothing);
+      expect(find.text('Invite link'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('referral-share-link')),
         findsNothing,
@@ -255,7 +255,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('我的邀请'), findsNothing);
-      expect(find.text('直接邀请'), findsNothing);
+      expect(find.text('Direct invites'), findsNothing);
     });
     testWidgets('an available boost is drawn in power, not money', (
       tester,
@@ -302,8 +302,8 @@ void main() {
       );
       await scrollToS7Section(tester, face);
       expect(find.text('alice'), findsWidgets);
-      expect(find.text('有效'), findsWidgets);
-      expect(find.text('已失效'), findsWidgets);
+      expect(find.text('Active'), findsWidgets);
+      expect(find.text('Invalid'), findsWidgets);
       await tester.tap(face);
       await tester.pump();
       expect(opened, <String>[userProfileLocation(_profileA)]);
@@ -357,7 +357,10 @@ void main() {
         find.byKey(const ValueKey<String>('referral-claim-sheet')),
         findsNothing,
       );
-      expect(find.textContaining('已经绑定过邀请人'), findsOneWidget);
+      expect(
+        find.textContaining('This account already has an inviter'),
+        findsOneWidget,
+      );
       expect(gateway.claims, isEmpty);
       await tester.pumpAndSettle(const Duration(seconds: 5));
     });
@@ -385,7 +388,11 @@ void main() {
       );
       expect(find.text('LOOP-7HJKM'), findsOneWidget);
       // S348: 邀请列表 / 邀请加成 side by side, 我的邀请人 at the foot.
-      for (final label in <String>['邀请列表', '邀请加成', '我的邀请人']) {
+      for (final label in <String>[
+        'Invite list',
+        'Invite boost',
+        'My inviter',
+      ]) {
         expect(find.text(label), findsWidgets, reason: label);
       }
       expect(find.text('我的邀请'), findsNothing);
@@ -462,8 +469,8 @@ void main() {
         findsOneWidget,
       );
       expect(tester.widget(copyCode), isA<ReferralCopyGlyph>());
-      expect(find.text('复制邀请码'), findsNothing);
-      expect(find.text('分享邀请链接'), findsOneWidget);
+      expect(find.text('Copy invite code'), findsNothing);
+      expect(find.text('Share link'), findsOneWidget);
       await tester.tap(copyCode);
       await tester.pump();
       expect(copied, 'LOOP-7HJKM');
@@ -515,7 +522,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(shared, hasLength(1));
       expect(shared.single.$1, referralInviteText('LOOP-7HJKM', link));
-      expect(shared.single.$2, '邀请你加入 LOOP');
+      expect(shared.single.$2, 'Join me on LOOP');
     });
 
     testWidgets('one invite card; no counts under it (S348)', (tester) async {
@@ -545,7 +552,7 @@ void main() {
         find.byKey(const ValueKey<String>('referral-link-block')),
         findsNothing,
       );
-      expect(find.text('邀请链接'), findsNothing);
+      expect(find.text('Invite link'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('referral-copy-link')),
         findsNothing,

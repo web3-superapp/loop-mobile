@@ -99,7 +99,7 @@ void main() {
 
   testWidgets('算力 · 邀请加成', skip: !_shots, (tester) async {
     await s350bPumpPower(tester, sub: 'invite', size: const Size(390, 1600));
-    await s350bSubTab(tester, '邀请加成');
+    await s350bSubTab(tester, 'Invite boost');
     await _shot(tester, 'power-invite-boost');
   });
 

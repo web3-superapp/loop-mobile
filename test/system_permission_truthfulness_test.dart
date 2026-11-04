@@ -52,9 +52,8 @@ void main() {
     expect(find.text('Not now'), findsNothing);
     expect(find.text('Back to LOOP'), findsNothing);
     // The specimen's own exit is the prototype's toast, not a system call.
-    // Decision 0281 transition: the shared permission card is lib/widgets.
-    await scrollPageTo(tester, find.text('前往系统设置'));
-    await tester.tap(find.text('前往系统设置'));
+    await scrollPageTo(tester, find.text('Open system settings'));
+    await tester.tap(find.text('Open system settings'));
     await tester.pump();
     expect(find.text('Allow LOOP in system settings'), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));

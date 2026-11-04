@@ -971,7 +971,7 @@ void main() {
       final wallet = RecordingSigningGateway();
       await _pumpSheet(tester, s6Intent(), wallet, intents: intents);
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
 
       expect(
@@ -1009,11 +1009,11 @@ void main() {
         intents: intents,
       );
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('locked'), findsOneWidget);
-      expect(find.text('确认签名'), findsNothing);
+      expect(find.text('Confirm signature'), findsNothing);
       expect(intents.reportCalls, 1);
     });
   });
@@ -1090,7 +1090,7 @@ void main() {
       final wallet = RecordingSigningGateway()..holdOpen = true;
       await _pumpSheet(tester, s6Intent(), wallet);
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pump();
 
       expect(
@@ -1119,7 +1119,7 @@ void main() {
       final wallet = RecordingSigningGateway();
       await _pumpSheet(tester, s6Intent(), wallet, intents: intents);
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
 
       expect(
@@ -1129,7 +1129,7 @@ void main() {
       expect(find.textContaining('may already be on-chain'), findsOneWidget);
       expect(find.textContaining('No transaction was submitted'), findsNothing);
       // The confirmation is gone: signing again would risk a second broadcast.
-      expect(find.text('确认签名'), findsNothing);
+      expect(find.text('Confirm signature'), findsNothing);
       expect(wallet.handoffs, hasLength(1));
     });
 

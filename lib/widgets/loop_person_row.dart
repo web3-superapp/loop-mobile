@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
@@ -301,10 +302,11 @@ class LoopSectionTitle extends StatelessWidget {
 
 /// The 「查看全部 ›」 control a [LoopSectionTitle] carries.
 class LoopSeeAll extends StatelessWidget {
-  const LoopSeeAll({required this.onPressed, super.key, this.label = '查看全部'});
+  const LoopSeeAll({required this.onPressed, super.key, this._label});
 
   final VoidCallback? onPressed;
-  final String label;
+  final String? _label;
+  String get label => _label ?? LoopL10n.current.widgets_personRowLabel;
 
   @override
   Widget build(BuildContext context) => Semantics(

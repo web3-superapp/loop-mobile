@@ -70,7 +70,7 @@ void main() {
       ),
       findsNothing,
     );
-    final labels = <String>['持仓', '交易', '社区'];
+    final labels = <String>['Holdings', 'Trades', 'Communities'];
     final xs = <double>[
       for (final label in labels)
         tester
@@ -93,7 +93,7 @@ void main() {
 
   testWidgets('the account rows and 邀请好友 are gone', (tester) async {
     await pumpMePage(tester);
-    for (final section in <String>['持仓', '交易', '社区']) {
+    for (final section in <String>['Holdings', 'Trades', 'Communities']) {
       await _section(tester, section);
       for (final gone in <String>[
         'me-account-entries',
@@ -193,7 +193,7 @@ void main() {
       size: const Size(390, 900),
     );
     expect(wallet.activityCursors, isEmpty);
-    await _section(tester, '交易');
+    await _section(tester, 'Trades');
     expect(_key('me-trades-days'), findsOneWidget);
     expect(_key('me-trades-seg-0'), findsOneWidget);
     expect(_key('wallet-asset-list'), findsNothing);
@@ -216,7 +216,7 @@ void main() {
       tester,
       activity: s5Activity(items: const <LoopWalletActivityEntry>[]),
     );
-    await _section(tester, '交易');
+    await _section(tester, 'Trades');
     expect(_key('me-trades-empty'), findsOneWidget);
     expect(find.text('No records in this range'), findsOneWidget);
   });
@@ -224,7 +224,7 @@ void main() {
   testWidgets('社区: joined and created, with the review state', (tester) async {
     final opened = <String>[];
     await pumpMePage(tester, onNavigate: opened.add);
-    await _section(tester, '社区');
+    await _section(tester, 'Communities');
     expect(_key('me-joined-$meJoinedA'), findsOneWidget);
     expect(_key('me-joined-$meJoinedB'), findsOneWidget);
     expect(_key('profile-owned-$meOwnedId'), findsOneWidget);
@@ -244,7 +244,7 @@ void main() {
 
   testWidgets('社区: only joined, no group labels', (tester) async {
     await pumpMePage(tester, home: meHome(owned: const <OwnedCommunity>[]));
-    await _section(tester, '社区');
+    await _section(tester, 'Communities');
     expect(_key('me-joined-$meJoinedA'), findsOneWidget);
     expect(_key('profile-owned-communities'), findsNothing);
     expect(find.text('Joined'), findsNothing);
@@ -258,7 +258,7 @@ void main() {
         owned: const <OwnedCommunity>[],
       ),
     );
-    await _section(tester, '社区');
+    await _section(tester, 'Communities');
     expect(_key('me-communities-empty'), findsOneWidget);
     expect(find.text('No communities joined yet'), findsOneWidget);
   });
@@ -272,9 +272,9 @@ void main() {
       ),
     );
     expect(_key('wallet-capability-block'), findsOneWidget);
-    await _section(tester, '交易');
+    await _section(tester, 'Trades');
     expect(_key('me-trades-capability-block'), findsOneWidget);
-    await _section(tester, '社区');
+    await _section(tester, 'Communities');
     expect(_key('me-joined-$meJoinedA'), findsOneWidget);
   });
 
@@ -290,7 +290,7 @@ void main() {
         ),
       );
       expect(tester.getSize(_key('wallet-address')).height, lessThan(24));
-      for (final section in <String>['持仓', '交易', '社区']) {
+      for (final section in <String>['Holdings', 'Trades', 'Communities']) {
         await _section(tester, section);
         expect(tester.takeException(), isNull, reason: '$width · $section');
       }
@@ -309,13 +309,13 @@ void main() {
         activity: meLongTape(nextCursor: null),
         size: const Size(390, 1500),
       );
-      await _section(tester, '交易');
+      await _section(tester, 'Trades');
       await _shot(tester, 'S349-me-trades');
     });
 
     testWidgets('我的 · 社区', skip: !_shots, (tester) async {
       await pumpMePage(tester, size: const Size(390, 1500));
-      await _section(tester, '社区');
+      await _section(tester, 'Communities');
       await _shot(tester, 'S349-me-communities');
     });
 

@@ -4,6 +4,7 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_gateway.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Development Preview adapter for `user-profile` (decision 0112).
 ///
@@ -28,9 +29,9 @@ final class MemoryPublicProfileGateway implements PublicProfileGateway {
       PublicProfileRecord(
         publicProfileId: previewProfileId,
         loopId: 'LOOP-7KQ2M9XA',
-        alias: '预览用户',
+        alias: LoopL10n.current.integrations_memoryPublicProfilesAlias,
         avatarRef: null,
-        bio: '开发预览账号，资料与持仓都是演示数据。',
+        bio: LoopL10n.current.integrations_memoryPublicProfilesBio,
         joinedAt: DateTime.utc(2026, 9, 1),
         counts: const PublicProfileCounts(
           followers: 128,
@@ -104,17 +105,17 @@ final class MemoryPublicProfileGateway implements PublicProfileGateway {
     items: <ProfileCommunity>[
       ProfileCommunity(
         communityId: '5b0c4f1e-2d3a-4b6c-8d9e-0f1a2b3c4d01',
-        name: '预览社区',
+        name: LoopL10n.current.integrations_memoryPublicProfilesName,
         slug: 'preview-community',
         logoRef: null,
         memberCount: 312,
         verificationStatus: ProfileCommunityVerification.verified,
         joinedAt: _now.subtract(const Duration(days: 12)),
-        label: '精选社区',
+        label: LoopL10n.current.integrations_memoryPublicProfilesLabel,
       ),
       ProfileCommunity(
         communityId: '5b0c4f1e-2d3a-4b6c-8d9e-0f1a2b3c4d02',
-        name: '演示数据小组',
+        name: LoopL10n.current.integrations_memoryPublicProfilesName2,
         slug: 'preview-group',
         logoRef: null,
         memberCount: 18,

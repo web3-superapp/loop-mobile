@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// One read-only `mining` resource, wired to the same five reviewed states the
 /// launch controllers use.
@@ -420,11 +421,14 @@ final referralControllerProvider =
 /// falls back to the generic sentence.
 String referralClaimFailureReason(LaunchFailureKind? kind) => switch (kind) {
   LaunchFailureKind.activationRequired =>
-    '需要先完成 LOOP ID 激活才能绑定邀请码。激活后随时可以再来绑定。',
-  LaunchFailureKind.policyBlocked => '当前不能绑定邀请码。每个账号只能绑定一次，请刷新查看最新状态。',
-  LaunchFailureKind.notFound => '这个邀请码不存在。请向邀请人确认后再试；邀请码不可枚举，多次尝试不会提高成功率。',
-  LaunchFailureKind.validationFailed => '这个邀请码不能绑定：不能邀请自己，也不能绑定自己下级的邀请码。',
-  LaunchFailureKind.stale => '这个账号已经绑定过邀请人。绑定后不能更换。',
-  LaunchFailureKind.idempotencyConflict => '同一次绑定已经用不同的邀请码提交过，请刷新查看最新状态。',
+    LoopL10n.current.mining_controllersActivationRequired,
+  LaunchFailureKind.policyBlocked =>
+    LoopL10n.current.mining_controllersPolicyBlocked,
+  LaunchFailureKind.notFound => LoopL10n.current.mining_controllersNotFound,
+  LaunchFailureKind.validationFailed =>
+    LoopL10n.current.mining_controllersValidationFailed,
+  LaunchFailureKind.stale => LoopL10n.current.mining_controllersStale,
+  LaunchFailureKind.idempotencyConflict =>
+    LoopL10n.current.mining_controllersIdempotencyConflict,
   _ => launchFailureReason(kind),
 };

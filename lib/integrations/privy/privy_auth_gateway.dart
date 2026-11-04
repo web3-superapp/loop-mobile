@@ -7,6 +7,7 @@ import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/privy/privy_production_adapter.dart';
 import 'package:loop_mobile/integrations/privy/privy_mfa_gateway.dart';
 import 'package:privy_flutter/privy_flutter.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 enum PrivySessionKind {
   notReady,
@@ -108,12 +109,14 @@ class PrivySessionSnapshot {
 /// It deliberately names no cause: the failure may be the radio, the provider,
 /// or something neither side explained, and asserting a network problem the
 /// device has not observed would be a claim rather than a fact.
-const loopUndecidedSessionMessage = '暂时无法确认登录状态，请稍后重试。';
+String get loopUndecidedSessionMessage =>
+    LoopL10n.current.integrations_privyAuthGatewayLoopUndecidedSessionMessage;
 
 /// What LOOP says when Privy refuses to link a wallet that already belongs to
 /// another account (S306 ruling 3: accounts are never merged).
-const externalWalletLinkedElsewhereMessage =
-    '这个钱包已绑定在另一个 LOOP 账号上。请先用那个账号登录并解绑，再回来绑定。';
+String get externalWalletLinkedElsewhereMessage => LoopL10n
+    .current
+    .integrations_privyAuthGatewayExternalWalletLinkedElsewhereMessage;
 
 /// What Privy told us about a failure.
 ///
@@ -294,7 +297,8 @@ class UnconfiguredPrivyAuthGateway
     implements PrivyAuthGateway, PrivyCredentialGateway {
   const UnconfiguredPrivyAuthGateway();
 
-  static const _message = 'Privy App Client ID 尚未配置，真实登录暂不可用。';
+  static String get _message =>
+      LoopL10n.current.integrations_privyAuthGatewayMessage;
 
   @override
   Future<PrivySessionSnapshot> restoreSession() async {
@@ -308,12 +312,12 @@ class UnconfiguredPrivyAuthGateway
   Future<PrivyWalletCreationResult> createFirstEthereumWallet({
     required String expectedPrivyUserId,
   }) {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 
   @override
   Future<String> getCurrentAccessToken() {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 
   @override
@@ -321,7 +325,7 @@ class UnconfiguredPrivyAuthGateway
 
   @override
   Future<void> sendEmailCode(String email) {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 
   @override
@@ -329,12 +333,12 @@ class UnconfiguredPrivyAuthGateway
     required String email,
     required String code,
   }) {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 
   @override
   Future<String> generateSiweMessage(PrivySiweRequest request) {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 
   @override
@@ -344,12 +348,12 @@ class UnconfiguredPrivyAuthGateway
     required String signature,
     required String expectedPrivyUserId,
   }) {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 
   @override
   Future<PrivyAccountSummary> loginWithOAuth(PrivyOAuthLoginProvider provider) {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 
   @override
@@ -357,7 +361,7 @@ class UnconfiguredPrivyAuthGateway
     required String address,
     required String expectedPrivyUserId,
   }) {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 
   @override
@@ -366,7 +370,7 @@ class UnconfiguredPrivyAuthGateway
     required String message,
     required String signature,
   }) {
-    throw const PrivyGatewayException(_message);
+    throw PrivyGatewayException(_message);
   }
 }
 
@@ -431,8 +435,10 @@ class PrivySdkAuthGateway
     } on PrivyException catch (error) {
       final kind = PrivyFailureClassifier.of(error.message);
       throw PrivyGatewayException(switch (kind) {
-        PrivyFailureKind.authentication => '登录状态已失效，请重新登录。',
-        PrivyFailureKind.network => '暂时无法确认登录状态，请检查网络后重试。',
+        PrivyFailureKind.authentication =>
+          LoopL10n.current.integrations_privyAuthGatewayAuthentication,
+        PrivyFailureKind.network =>
+          LoopL10n.current.integrations_privyAuthGatewayNetwork,
         // An unclassified failure names no cause, so the copy claims none.
         PrivyFailureKind.unknown => loopUndecidedSessionMessage,
       }, kind: kind);
@@ -451,7 +457,9 @@ class PrivySdkAuthGateway
       case Success<void>():
         return;
       case Failure<void>():
-        throw const PrivyGatewayException('验证码发送失败，请稍后重试。');
+        throw PrivyGatewayException(
+          LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException,
+        );
     }
   }
 
@@ -466,7 +474,9 @@ class PrivySdkAuthGateway
         _currentUser = user;
         return _summarize(user);
       case Failure<PrivyUser>():
-        throw const PrivyGatewayException('验证码无效或已过期，请重新检查。');
+        throw PrivyGatewayException(
+          LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException2,
+        );
     }
   }
 
@@ -495,7 +505,9 @@ class PrivySdkAuthGateway
     } on PrivyGatewayException {
       rethrow;
     } catch (_) {
-      throw const PrivyGatewayException('登录未完成，请检查网络和回跳配置后重试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException3,
+      );
     }
   }
 
@@ -509,14 +521,24 @@ class PrivySdkAuthGateway
             when message.trim().isNotEmpty:
           return message;
         case Success<String>():
-          throw const PrivyGatewayException('Privy 未返回可签名的登录消息，请重试。');
+          throw PrivyGatewayException(
+            LoopL10n
+                .current
+                .integrations_privyAuthGatewayPrivyGatewayException4,
+          );
         case Failure<String>():
-          throw const PrivyGatewayException('无法生成钱包登录消息，请检查网络后重试。');
+          throw PrivyGatewayException(
+            LoopL10n
+                .current
+                .integrations_privyAuthGatewayPrivyGatewayException5,
+          );
       }
     } on PrivyGatewayException {
       rethrow;
     } catch (_) {
-      throw const PrivyGatewayException('无法生成钱包登录消息，请检查网络后重试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException5,
+      );
     }
   }
 
@@ -543,7 +565,9 @@ class PrivySdkAuthGateway
     } on PrivyGatewayException {
       rethrow;
     } catch (_) {
-      throw const PrivyGatewayException('钱包登录未完成，请检查网络后重试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException6,
+      );
     }
   }
 
@@ -559,7 +583,9 @@ class PrivySdkAuthGateway
         expectedPrivyUserId.isEmpty ||
         expectedPrivyUserId != expectedPrivyUserId.trim() ||
         user.id != expectedPrivyUserId) {
-      throw const PrivyGatewayException('账号已变化，钱包未绑定，请重新尝试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.app_sessionControllerPrivyGatewayException2,
+      );
     }
     try {
       final result = await _privy.siwe.link(
@@ -571,7 +597,9 @@ class PrivySdkAuthGateway
       switch (result) {
         case Success<PrivyUser>(value: final linkedUser):
           if (linkedUser.id != expectedPrivyUserId) {
-            throw const PrivyGatewayException('账号已变化，钱包未绑定，请重新尝试。');
+            throw PrivyGatewayException(
+              LoopL10n.current.app_sessionControllerPrivyGatewayException2,
+            );
           }
           _currentUser = linkedUser;
           return _summarize(linkedUser);
@@ -581,7 +609,9 @@ class PrivySdkAuthGateway
     } on PrivyGatewayException {
       rethrow;
     } catch (_) {
-      throw const PrivyGatewayException('钱包绑定未完成，请检查网络后重试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException8,
+      );
     }
   }
 
@@ -595,17 +625,25 @@ class PrivySdkAuthGateway
         expectedPrivyUserId.isEmpty ||
         expectedPrivyUserId != expectedPrivyUserId.trim() ||
         user.id != expectedPrivyUserId) {
-      throw const PrivyGatewayException('账号已变化，钱包没有解绑，请重新尝试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException9,
+      );
     }
     if (!_isEthereumAddress(address)) {
-      throw const PrivyGatewayException('钱包地址无效，没有解绑。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException10,
+      );
     }
     try {
       final result = await _privy.siwe.unlink(address: address);
       switch (result) {
         case Success<PrivyUser>(value: final updatedUser):
           if (updatedUser.id != expectedPrivyUserId) {
-            throw const PrivyGatewayException('账号已变化，请刷新后确认钱包是否已解绑。');
+            throw PrivyGatewayException(
+              LoopL10n
+                  .current
+                  .integrations_privyAuthGatewayPrivyGatewayException11,
+            );
           }
           _currentUser = updatedUser;
           return _summarize(updatedUser);
@@ -615,7 +653,9 @@ class PrivySdkAuthGateway
     } on PrivyGatewayException {
       rethrow;
     } catch (_) {
-      throw const PrivyGatewayException('解绑没有完成，请检查网络后重试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException12,
+      );
     }
   }
 
@@ -628,13 +668,17 @@ class PrivySdkAuthGateway
         expectedPrivyUserId.isEmpty ||
         expectedPrivyUserId != expectedPrivyUserId.trim() ||
         user.id != expectedPrivyUserId) {
-      throw const PrivyGatewayException('账号已变化，请重新检查钱包状态。');
+      throw PrivyGatewayException(
+        LoopL10n.current.app_sessionControllerPrivyGatewayException4,
+      );
     }
 
     final existingOperation = _walletCreation;
     if (existingOperation != null) {
       if (_walletCreationOwner != expectedPrivyUserId) {
-        throw const PrivyGatewayException('上一账号的钱包操作仍在结束，请稍后重试。');
+        throw PrivyGatewayException(
+          LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException14,
+        );
       }
       return existingOperation;
     }
@@ -678,7 +722,9 @@ class PrivySdkAuthGateway
         if (reconciled.isNotEmpty) {
           return _walletCreationResult(user, reconciled.first.address);
         }
-        throw const PrivyGatewayException('钱包创建状态未确认，请稍后刷新重试。');
+        throw PrivyGatewayException(
+          LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException15,
+        );
     }
   }
 
@@ -694,7 +740,9 @@ class PrivySdkAuthGateway
   Future<String> getCurrentAccessToken() async {
     final user = _currentUser;
     if (user == null) {
-      throw const PrivyGatewayException('请先完成 Privy 登录。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException16,
+      );
     }
     final result = await user.getAccessToken();
     switch (result) {
@@ -705,12 +753,16 @@ class PrivySdkAuthGateway
         // network, not a credential answer; the caller says 离线.
         if (PrivyFailureClassifier.of(error.message) ==
             PrivyFailureKind.network) {
-          throw const PrivyGatewayException(
-            '暂时无法连接登录服务，请检查网络后重试。',
+          throw PrivyGatewayException(
+            LoopL10n
+                .current
+                .integrations_privyAuthGatewayPrivyGatewayException17,
             kind: PrivyFailureKind.network,
           );
         }
-        throw const PrivyGatewayException('登录凭证已失效，请重新尝试。');
+        throw PrivyGatewayException(
+          LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException18,
+        );
     }
   }
 
@@ -720,7 +772,9 @@ class PrivySdkAuthGateway
       await _privy.logout();
       _currentUser = null;
     } on PrivyException {
-      throw const PrivyGatewayException('退出登录失败，请稍后重试。');
+      throw PrivyGatewayException(
+        LoopL10n.current.integrations_privyAuthGatewayPrivyGatewayException19,
+      );
     }
   }
 
@@ -811,34 +865,44 @@ class PrivySdkAuthGateway
         ? 'Google'
         : 'Apple';
     final normalized = providerMessage.toLowerCase();
-    if (normalized.contains('cancel')) return '已取消 $label 登录。';
+    if (normalized.contains('cancel')) {
+      return LoopL10n.current.integrations_privyAuthGatewayOauthFailureMessage(
+        label,
+      );
+    }
     if (normalized.contains('network') ||
         normalized.contains('internet') ||
         normalized.contains('timed out') ||
         normalized.contains('timeout')) {
-      return '$label 登录网络不可用，请稍后重试。';
+      return LoopL10n.current.integrations_privyAuthGatewayOauthFailureMessage2(
+        label,
+      );
     }
     if (normalized.contains('redirect') ||
         normalized.contains('callback') ||
         normalized.contains('scheme')) {
-      return '$label 登录回跳失败，请检查应用配置后重试。';
+      return LoopL10n.current.integrations_privyAuthGatewayOauthFailureMessage3(
+        label,
+      );
     }
-    return '$label 登录未完成，请重试。';
+    return LoopL10n.current.integrations_privyAuthGatewayOauthFailureMessage4(
+      label,
+    );
   }
 
   String _siweFailureMessage(String providerMessage) {
     final normalized = providerMessage.toLowerCase();
     if ((normalized.contains('already') || normalized.contains('linked')) &&
         (normalized.contains('user') || normalized.contains('account'))) {
-      return '该钱包已属于另一个 Privy 账号，LOOP 不会自动转移或删除账号。';
+      return LoopL10n.current.integrations_privyAuthGatewaySiweFailureMessage;
     }
     if (normalized.contains('network') ||
         normalized.contains('internet') ||
         normalized.contains('timed out') ||
         normalized.contains('timeout')) {
-      return '钱包凭据提交失败，请检查网络后重试。';
+      return LoopL10n.current.integrations_privyAuthGatewaySiweFailureMessage2;
     }
-    return 'Privy 未接受该钱包凭据；它可能已绑定其他账号。LOOP 不会自动转移或删除账号。';
+    return LoopL10n.current.integrations_privyAuthGatewaySiweFailureMessage3;
   }
 
   /// The sentence a refused `siwe.link` becomes (S306, decision 0246).
@@ -853,9 +917,9 @@ class PrivySdkAuthGateway
       return externalWalletLinkedElsewhereMessage;
     }
     if (_mentionsNetwork(providerMessage.toLowerCase())) {
-      return '钱包凭据提交失败，请检查网络后重试。';
+      return LoopL10n.current.integrations_privyAuthGatewaySiweFailureMessage2;
     }
-    return '钱包绑定没有完成，请重试。';
+    return LoopL10n.current.integrations_privyAuthGatewaySiweLinkFailureMessage;
   }
 
   /// The sentence a refused `siwe.unlink` becomes (platform code
@@ -864,15 +928,21 @@ class PrivySdkAuthGateway
   static String siweUnlinkFailureMessage(String providerMessage) {
     final normalized = providerMessage.toLowerCase();
     if (_mentionsNetwork(normalized)) {
-      return '解绑没有完成，请检查网络后重试。';
+      return LoopL10n
+          .current
+          .integrations_privyAuthGatewayPrivyGatewayException12;
     }
     if (normalized.contains('last') ||
         normalized.contains('at least one') ||
         normalized.contains('only login') ||
         normalized.contains('only linked')) {
-      return '这是账号唯一的登录方式，不能解绑。请先绑定邮箱或其他登录方式。';
+      return LoopL10n
+          .current
+          .integrations_privyAuthGatewaySiweUnlinkFailureMessage;
     }
-    return '解绑没有完成，请稍后重试。';
+    return LoopL10n
+        .current
+        .integrations_privyAuthGatewaySiweUnlinkFailureMessage2;
   }
 
   /// Whether Privy's message says the wallet already belongs to another

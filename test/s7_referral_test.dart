@@ -85,7 +85,7 @@ void main() {
       );
 
       // Decision 0243: the per-level counts and the totals are in the (i).
-      expect(find.textContaining('3 个待验证'), findsNothing);
+      expect(find.textContaining('3 pending verification'), findsNothing);
       await _openInfo(tester);
       for (var level = 1; level <= 5; level += 1) {
         final row = find.byKey(ValueKey<String>('referral-level-$level'));
@@ -93,12 +93,18 @@ void main() {
       }
       // S293b: the per-status counts are not repeated in the (i); the
       // totals in 「关系怎样成立」 are.
-      expect(find.textContaining('待绑定钱包'), findsNothing);
-      expect(find.textContaining('待挖矿生效'), findsNothing);
-      expect(find.text('我直接邀请并已验证的人'), findsOneWidget);
-      expect(find.textContaining('L1 · 我直接邀请'), findsNothing);
-      expect(find.textContaining('0 个有效关系'), findsOneWidget);
-      expect(find.textContaining('3 个待验证'), findsOneWidget);
+      expect(find.textContaining('Pending wallet link'), findsNothing);
+      expect(find.textContaining('Pending mining'), findsNothing);
+      expect(
+        find.text('People I invited directly and verified'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('L1 · People I invited directly'),
+        findsNothing,
+      );
+      expect(find.textContaining('0 active'), findsOneWidget);
+      expect(find.textContaining('3 pending verification'), findsOneWidget);
     });
 
     // S348: the five-depth strip under the invite card is gone; the depths
@@ -266,7 +272,12 @@ void main() {
         find.byKey(const ValueKey<String>('referral-claim-closed')),
         findsOneWidget,
       );
-      expect(find.text('当前不能绑定邀请码，请稍后刷新再试'), findsOneWidget);
+      expect(
+        find.text(
+          'You can\'t bind an invite code right now. Refresh and try again later',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an unactivated account has no window at all', (tester) async {
@@ -312,8 +323,8 @@ void main() {
       final bound = find.byKey(const ValueKey<String>('referral-bound-row'));
       await scrollToS7Section(tester, bound);
       expect(bound, findsOneWidget);
-      expect(find.textContaining('深度 L1'), findsOneWidget);
-      expect(find.textContaining('待挖矿生效'), findsWidgets);
+      expect(find.textContaining('Depth L1'), findsOneWidget);
+      expect(find.textContaining('Pending mining'), findsWidgets);
       _expectClaimDisabled(tester);
       expect(
         find.byKey(const ValueKey<String>('referral-claim-bound-note')),
@@ -370,9 +381,15 @@ void main() {
         }
       }
       // Decision 0243: the disclaimer is said once, in the (i).
-      expect(find.textContaining('不是收入、佣金或返佣'), findsNothing);
+      expect(
+        find.textContaining("It isn't income, commission or a rebate"),
+        findsNothing,
+      );
       await _openInfo(tester);
-      expect(find.textContaining('不是收入、佣金或返佣'), findsOneWidget);
+      expect(
+        find.textContaining("It isn't income, commission or a rebate"),
+        findsOneWidget,
+      );
     });
   });
 
@@ -418,16 +435,18 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.claims, isEmpty);
-      expect(find.textContaining('邀请码格式不对'), findsOneWidget);
+      expect(find.textContaining('Invalid invite code format'), findsOneWidget);
     });
 
     testWidgets('each refusal code gets its own next step', (tester) async {
       final cases = <LaunchFailureKind, String>{
-        LaunchFailureKind.activationRequired: '需要先完成 LOOP ID 激活才能绑定邀请码',
-        LaunchFailureKind.policyBlocked: '当前不能绑定邀请码',
-        LaunchFailureKind.notFound: '这个邀请码不存在',
-        LaunchFailureKind.validationFailed: '不能邀请自己',
-        LaunchFailureKind.stale: '已经绑定过邀请人',
+        LaunchFailureKind.activationRequired:
+            'Activate your LOOP ID before binding an invite code',
+        LaunchFailureKind.policyBlocked:
+            "You can't bind an invite code right now",
+        LaunchFailureKind.notFound: "This invite code doesn't exist",
+        LaunchFailureKind.validationFailed: "you can't invite yourself",
+        LaunchFailureKind.stale: 'This account already has an inviter',
       };
       for (final entry in cases.entries) {
         final gateway = FakeReferralGateway(claimFailure: entry.key);

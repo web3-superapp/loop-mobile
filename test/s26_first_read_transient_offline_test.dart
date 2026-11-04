@@ -59,7 +59,7 @@ void main() {
       );
       expect(find.byType(LoopOfflineState), findsNothing);
       expect(find.text('连不上 LOOP'), findsNothing);
-      expect(find.text('重试连接'), findsNothing);
+      expect(find.text('Reconnect'), findsNothing);
     });
 
     testWidgets('one dropped connection never becomes an outage', (
@@ -127,7 +127,7 @@ void main() {
       );
       expect(find.byType(LoopOfflineState), findsNothing);
       expect(find.text('连不上 LOOP'), findsNothing);
-      expect(find.text('重试连接'), findsNothing);
+      expect(find.text('Reconnect'), findsNothing);
     });
 
     testWidgets('one dropped connection never becomes an outage', (

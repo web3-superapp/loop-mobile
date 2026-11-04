@@ -643,7 +643,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: _key('notification-inbox-state-error'),
-          matching: find.text('重试'),
+          matching: find.text('Retry'),
         ),
       );
       await tester.pumpAndSettle();

@@ -251,8 +251,8 @@ void main() {
           find.byKey(ValueKey<String>('${testCase.slug}-state-error')),
           findsNothing,
         );
-        expect(find.text('连不上 LOOP'), findsOneWidget);
-        expect(find.textContaining('已暂停：'), findsOneWidget);
+        expect(find.text("Can't reach LOOP"), findsOneWidget);
+        expect(find.textContaining('Paused: '), findsOneWidget);
       });
 
       testWidgets('${testCase.slug} an unexpected failure is an error state', (

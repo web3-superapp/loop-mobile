@@ -1349,6 +1349,102 @@ abstract class LoopLocalizations {
   /// **'You can\'t add another one yet'**
   String get account_screensWalletRecoveryUnavailableTitle;
 
+  /// lib/app.dart:2720
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Chat'**
+  String get app_appUnknownRouteHomeLabel;
+
+  /// lib/app.dart:2708
+  ///
+  /// In en, this message translates to:
+  /// **'Page not found'**
+  String get app_appUnknownRouteScreenTitle;
+
+  /// lib/app.dart:2717
+  ///
+  /// In en, this message translates to:
+  /// **'This visit has been logged.'**
+  String get app_appUnknownRouteStateMessage;
+
+  /// lib/app.dart:2716
+  ///
+  /// In en, this message translates to:
+  /// **'This address isn\'t a LOOP page'**
+  String get app_appUnknownRouteStateTitle;
+
+  /// lib/app/session/onboarding_sequence.dart:16
+  ///
+  /// In en, this message translates to:
+  /// **'Create LOOP ID'**
+  String get app_onboardingSequenceLoopId;
+
+  /// lib/app/session/onboarding_sequence.dart:15
+  ///
+  /// In en, this message translates to:
+  /// **'Security settings'**
+  String get app_onboardingSequenceSecurity;
+
+  /// lib/app/session/onboarding_sequence.dart:14
+  ///
+  /// In en, this message translates to:
+  /// **'Set up recovery'**
+  String get app_onboardingSequenceWalletBackup;
+
+  /// lib/app/session/onboarding_sequence.dart:13
+  ///
+  /// In en, this message translates to:
+  /// **'Create wallet'**
+  String get app_onboardingSequenceWalletCreate;
+
+  /// lib/app/session/loop_session_controller.dart:691
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re signed out on this device, but LOOP hasn\'t confirmed the server session was revoked.'**
+  String get app_sessionControllerErrorMessage;
+
+  /// lib/app/session/loop_session_controller.dart:696
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re signed out on this device, but Privy hasn\'t confirmed the remote sign-out.'**
+  String get app_sessionControllerErrorMessage2;
+
+  /// lib/app/session/loop_session_controller.dart:564
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out. Try again when it finishes.'**
+  String get app_sessionControllerPrivyGatewayException;
+
+  /// lib/app/session/loop_session_controller.dart:584
+  ///
+  /// In en, this message translates to:
+  /// **'The account changed and no wallet is linked. Try again.'**
+  String get app_sessionControllerPrivyGatewayException2;
+
+  /// lib/app/session/loop_session_controller.dart:597
+  ///
+  /// In en, this message translates to:
+  /// **'Development previews and restricted sessions don\'t create real wallets.'**
+  String get app_sessionControllerPrivyGatewayException3;
+
+  /// lib/app/session/loop_session_controller.dart:616
+  ///
+  /// In en, this message translates to:
+  /// **'The account changed. Check the wallet status again.'**
+  String get app_sessionControllerPrivyGatewayException4;
+
+  /// lib/app/session/loop_session_controller.dart:623
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet status changed. Check it again before continuing.'**
+  String get app_sessionControllerPrivyGatewayException5;
+
+  /// lib/app/session/wallet_provisioning_controller.dart:134
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet creation didn\'t finish. Your account and sign-in are unchanged. Try again later.'**
+  String get app_walletProvisioningControllerFail;
+
   /// lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94
   ///
   /// In en, this message translates to:
@@ -11915,6 +12011,1055 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Confirm transaction'**
   String get dapp_signingTransaction;
+
+  /// lib/integrations/communication/loop_chat_camera.dart:46
+  ///
+  /// In en, this message translates to:
+  /// **'No camera access. Allow LOOP to use the camera in system settings, then try again.'**
+  String get integrations_chatCameraLoopChatCameraPermissionMessage;
+
+  /// lib/integrations/communication/loop_chat_camera.dart:51
+  ///
+  /// In en, this message translates to:
+  /// **'The camera didn\'t take a photo, so nothing was added.'**
+  String get integrations_chatCameraLoopChatCameraUnavailableMessage;
+
+  /// lib/integrations/communication/loop_chat_image_attachments.dart:60
+  ///
+  /// In en, this message translates to:
+  /// **'Image didn\'t load'**
+  String get integrations_chatImageAttachmentsFailureMessage;
+
+  /// lib/integrations/communication/loop_chat_image_attachments.dart:403
+  ///
+  /// In en, this message translates to:
+  /// **'{page} / {total}'**
+  String integrations_chatImageAttachmentsLoopChatImageViewerCounter(
+    Object? page,
+    Object? total,
+  );
+
+  /// lib/integrations/communication/loop_chat_image_attachments.dart:61
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to retry'**
+  String get integrations_chatImageAttachmentsRetryMessage;
+
+  /// lib/integrations/communication/loop_chat_image_composer.dart:141
+  ///
+  /// In en, this message translates to:
+  /// **'This device is offline. The image wasn\'t uploaded and the message wasn\'t sent.'**
+  String get integrations_chatImageComposerIf;
+
+  /// lib/integrations/communication/loop_chat_image_composer.dart:144
+  ///
+  /// In en, this message translates to:
+  /// **'The server rejected this image upload. The message wasn\'t sent.'**
+  String get integrations_chatImageComposerIf2;
+
+  /// lib/integrations/communication/loop_chat_image_composer.dart:146
+  ///
+  /// In en, this message translates to:
+  /// **'The image didn\'t upload. The message wasn\'t sent.'**
+  String get integrations_chatImageComposerIf3;
+
+  /// lib/integrations/communication/loop_chat_image_policy.dart:67
+  ///
+  /// In en, this message translates to:
+  /// **'Only images can be sent here. What you picked isn\'t an image, so it wasn\'t added.'**
+  String get integrations_chatImagePolicyNotAnImage;
+
+  /// lib/integrations/communication/loop_chat_image_policy.dart:70
+  ///
+  /// In en, this message translates to:
+  /// **'Each image must be 10 MB or less. The larger one wasn\'t added.'**
+  String get integrations_chatImagePolicyTooLarge;
+
+  /// lib/integrations/communication/loop_chat_image_policy.dart:71
+  ///
+  /// In en, this message translates to:
+  /// **'A message can have up to 9 images. The extra ones weren\'t added.'**
+  String get integrations_chatImagePolicyTooMany;
+
+  /// lib/integrations/communication/loop_chat_image_policy.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Only JPG, PNG, WebP and GIF images are supported. Other formats weren\'t added.'**
+  String get integrations_chatImagePolicyUnsupportedFormat;
+
+  /// lib/integrations/reown/external_wallet_credential_gateway.dart:57
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet returned a duplicate sign-in request. Reconnect.'**
+  String
+  get integrations_externalWalletCredentialGatewayExternalWalletConnectorException;
+
+  /// lib/integrations/reown/external_wallet_credential_gateway.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'The address, message or signature from the wallet doesn\'t match this sign-in request.'**
+  String
+  get integrations_externalWalletCredentialGatewayExternalWalletConnectorException2;
+
+  /// lib/integrations/reown/external_wallet_credential_gateway.dart:44
+  ///
+  /// In en, this message translates to:
+  /// **'No current Privy account. The wallet wasn\'t linked.'**
+  String get integrations_externalWalletCredentialGatewayPrivyGatewayException;
+
+  /// lib/integrations/communication/memory_chat_v2_gateways.dart:130, lib/integrations/communication/memory_live_voice_rooms.dart:25
+  ///
+  /// In en, this message translates to:
+  /// **'Preview community'**
+  String get integrations_memoryChatGatewaysCommunityName;
+
+  /// lib/integrations/community/memory_community_gateways.dart:61
+  ///
+  /// In en, this message translates to:
+  /// **'A sample community in development preview. Member counts and roles are local in-memory values.'**
+  String get integrations_memoryCommunityGatewaysDescription;
+
+  /// lib/integrations/community/memory_community_gateways.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Power community'**
+  String get integrations_memoryCommunityGatewaysLabel;
+
+  /// lib/integrations/community/memory_community_gateways.dart:58
+  ///
+  /// In en, this message translates to:
+  /// **'Demo community · Frogs'**
+  String get integrations_memoryCommunityGatewaysName;
+
+  /// lib/integrations/community/memory_community_gateways.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'Demo community · Builders'**
+  String get integrations_memoryCommunityGatewaysName2;
+
+  /// lib/integrations/community/memory_community_gateways.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'Demo community · In review'**
+  String get integrations_memoryCommunityGatewaysName3;
+
+  /// lib/integrations/community/memory_community_gateways.dart:222
+  ///
+  /// In en, this message translates to:
+  /// **'Demo data: this name duplicates a live community. Pick another and resubmit.'**
+  String get integrations_memoryCommunityGatewaysRejectedReason;
+
+  /// lib/integrations/community/memory_community_gateways.dart:149
+  ///
+  /// In en, this message translates to:
+  /// **'Demo notice · This week\'s roadmap'**
+  String get integrations_memoryCommunityGatewaysTitle;
+
+  /// lib/integrations/community/memory_community_gateways.dart:157
+  ///
+  /// In en, this message translates to:
+  /// **'Demo notice · Thursday voice room'**
+  String get integrations_memoryCommunityGatewaysTitle2;
+
+  /// lib/integrations/communication/memory_live_voice_rooms.dart:61
+  ///
+  /// In en, this message translates to:
+  /// **'Preview community (not joined)'**
+  String get integrations_memoryLiveVoiceRoomsCommunityName;
+
+  /// lib/integrations/communication/memory_live_voice_rooms.dart:30, lib/integrations/communication/memory_live_voice_rooms.dart:38
+  ///
+  /// In en, this message translates to:
+  /// **'Preview host'**
+  String get integrations_memoryLiveVoiceRoomsDisplayName;
+
+  /// lib/integrations/communication/memory_live_voice_rooms.dart:43
+  ///
+  /// In en, this message translates to:
+  /// **'Preview speaker'**
+  String get integrations_memoryLiveVoiceRoomsDisplayName2;
+
+  /// lib/integrations/communication/memory_live_voice_rooms.dart:27
+  ///
+  /// In en, this message translates to:
+  /// **'Development preview · Friday AMA'**
+  String get integrations_memoryLiveVoiceRoomsTitle;
+
+  /// lib/integrations/social/memory_public_profiles.dart:31
+  ///
+  /// In en, this message translates to:
+  /// **'Preview user'**
+  String get integrations_memoryPublicProfilesAlias;
+
+  /// lib/integrations/social/memory_public_profiles.dart:33
+  ///
+  /// In en, this message translates to:
+  /// **'Development preview account. Profile and holdings are demo data.'**
+  String get integrations_memoryPublicProfilesBio;
+
+  /// lib/integrations/social/memory_public_profiles.dart:113
+  ///
+  /// In en, this message translates to:
+  /// **'Featured community'**
+  String get integrations_memoryPublicProfilesLabel;
+
+  /// lib/integrations/social/memory_public_profiles.dart:107
+  ///
+  /// In en, this message translates to:
+  /// **'Preview community'**
+  String get integrations_memoryPublicProfilesName;
+
+  /// lib/integrations/social/memory_public_profiles.dart:117
+  ///
+  /// In en, this message translates to:
+  /// **'Demo data group'**
+  String get integrations_memoryPublicProfilesName2;
+
+  /// lib/integrations/market/memory_watchlist_gateway.dart:62
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get integrations_memoryWatchlistGatewayName;
+
+  /// lib/integrations/market/memory_watchlist_gateway.dart:94
+  ///
+  /// In en, this message translates to:
+  /// **'Watching'**
+  String get integrations_memoryWatchlistGatewayName2;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:195
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP service · Ready'**
+  String get integrations_networkProbeName;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:207
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP service · Capabilities'**
+  String get integrations_networkProbeName2;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:220
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in service Privy'**
+  String get integrations_networkProbeName3;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:238
+  ///
+  /// In en, this message translates to:
+  /// **'Chat service Stream'**
+  String get integrations_networkProbeName4;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:248
+  ///
+  /// In en, this message translates to:
+  /// **'Voice service Stream'**
+  String get integrations_networkProbeName5;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:258
+  ///
+  /// In en, this message translates to:
+  /// **'Token icons'**
+  String get integrations_networkProbeName6;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:273
+  ///
+  /// In en, this message translates to:
+  /// **'Push service Firebase'**
+  String get integrations_networkProbeName7;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:285
+  ///
+  /// In en, this message translates to:
+  /// **'BSC mainnet node'**
+  String get integrations_networkProbeName8;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:300
+  ///
+  /// In en, this message translates to:
+  /// **'Network baseline Apple'**
+  String get integrations_networkProbeName9;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:196
+  ///
+  /// In en, this message translates to:
+  /// **'The app\'s main data'**
+  String get integrations_networkProbePurpose;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:208
+  ///
+  /// In en, this message translates to:
+  /// **'Two requests in a row, the second is recorded (reused connection)'**
+  String get integrations_networkProbePurpose2;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:221
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in and built-in wallet'**
+  String get integrations_networkProbePurpose3;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:239
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations and messages'**
+  String get integrations_networkProbePurpose4;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:259
+  ///
+  /// In en, this message translates to:
+  /// **'Icon image source'**
+  String get integrations_networkProbePurpose5;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:274
+  ///
+  /// In en, this message translates to:
+  /// **'System push notifications'**
+  String get integrations_networkProbePurpose6;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:286
+  ///
+  /// In en, this message translates to:
+  /// **'Reference only; the app doesn\'t connect to nodes directly'**
+  String get integrations_networkProbePurpose7;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:301
+  ///
+  /// In en, this message translates to:
+  /// **'Baseline for DNS and secure connections'**
+  String get integrations_networkProbePurpose8;
+
+  /// lib/integrations/diagnostics/loop_network_probe.dart:354
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP network diagnosis'**
+  String get integrations_networkProbeSubject;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:434
+  ///
+  /// In en, this message translates to:
+  /// **'Your sign-in has expired. Sign in again.'**
+  String get integrations_privyAuthGatewayAuthentication;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:116
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet is linked to another LOOP account. Sign in to that account and unlink it first, then come back to link it.'**
+  String get integrations_privyAuthGatewayExternalWalletLinkedElsewhereMessage;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:111
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t confirm your sign-in right now. Try again later.'**
+  String get integrations_privyAuthGatewayLoopUndecidedSessionMessage;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:297
+  ///
+  /// In en, this message translates to:
+  /// **'The Privy App Client ID isn\'t configured, so real sign-in isn\'t available.'**
+  String get integrations_privyAuthGatewayMessage;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:435
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t confirm your sign-in right now. Check your network and retry.'**
+  String get integrations_privyAuthGatewayNetwork;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:814
+  ///
+  /// In en, this message translates to:
+  /// **'{label} sign-in cancelled.'**
+  String integrations_privyAuthGatewayOauthFailureMessage(Object? label);
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:819
+  ///
+  /// In en, this message translates to:
+  /// **'{label} sign-in can\'t reach the network. Try again later.'**
+  String integrations_privyAuthGatewayOauthFailureMessage2(Object? label);
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:824
+  ///
+  /// In en, this message translates to:
+  /// **'{label} sign-in couldn\'t return to the app. Check the app configuration and retry.'**
+  String integrations_privyAuthGatewayOauthFailureMessage3(Object? label);
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:826
+  ///
+  /// In en, this message translates to:
+  /// **'{label} sign-in didn\'t finish. Retry.'**
+  String integrations_privyAuthGatewayOauthFailureMessage4(Object? label);
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:454
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the code. Try again later.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:601
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid wallet address. Nothing was unlinked.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException10;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:608
+  ///
+  /// In en, this message translates to:
+  /// **'The account changed. Refresh to check whether the wallet was unlinked.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException11;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:618, lib/integrations/privy/privy_auth_gateway.dart:867
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinking didn\'t finish. Check your network and retry.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException12;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:637
+  ///
+  /// In en, this message translates to:
+  /// **'The previous account\'s wallet action is still finishing. Try again later.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException14;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:681
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet creation isn\'t confirmed. Refresh and try again later.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException15;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:697
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Privy sign-in first.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException16;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:709
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the sign-in service right now. Check your network and retry.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException17;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:713
+  ///
+  /// In en, this message translates to:
+  /// **'Your sign-in credential has expired. Try again.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException18;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:723
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t sign out. Try again later.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException19;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:469
+  ///
+  /// In en, this message translates to:
+  /// **'The code is invalid or has expired. Check it again.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException2;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:498
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in didn\'t finish. Check your network and return configuration, then retry.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException3;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:512
+  ///
+  /// In en, this message translates to:
+  /// **'Privy didn\'t return a sign-in message to sign. Retry.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException4;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:514, lib/integrations/privy/privy_auth_gateway.dart:519
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the wallet sign-in message. Check your network and retry.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException5;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:546
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet sign-in didn\'t finish. Check your network and retry.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException6;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:584
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet linking didn\'t finish. Check your network and retry.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException8;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:598
+  ///
+  /// In en, this message translates to:
+  /// **'The account changed and the wallet wasn\'t unlinked. Try again.'**
+  String get integrations_privyAuthGatewayPrivyGatewayException9;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:833
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet already belongs to another Privy account. LOOP won\'t move or delete accounts automatically.'**
+  String get integrations_privyAuthGatewaySiweFailureMessage;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:839, lib/integrations/privy/privy_auth_gateway.dart:856
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t submit the wallet credential. Check your network and retry.'**
+  String get integrations_privyAuthGatewaySiweFailureMessage2;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:841
+  ///
+  /// In en, this message translates to:
+  /// **'Privy didn\'t accept this wallet credential; it may be linked to another account. LOOP won\'t move or delete accounts automatically.'**
+  String get integrations_privyAuthGatewaySiweFailureMessage3;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:858
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet linking didn\'t finish. Retry.'**
+  String get integrations_privyAuthGatewaySiweLinkFailureMessage;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:873
+  ///
+  /// In en, this message translates to:
+  /// **'This is the account\'s only sign-in method and can\'t be unlinked. Link an email or another sign-in method first.'**
+  String get integrations_privyAuthGatewaySiweUnlinkFailureMessage;
+
+  /// lib/integrations/privy/privy_auth_gateway.dart:875
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinking didn\'t finish. Try again later.'**
+  String get integrations_privyAuthGatewaySiweUnlinkFailureMessage2;
+
+  /// lib/integrations/privy/privy_mfa_gateway.dart:234
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP doesn\'t yet offer a way to enter a code for actions held by two-step verification. This action was cancelled.'**
+  String get integrations_privyMfaGatewayReleasedMessage;
+
+  /// lib/integrations/communication/loop_reactions.dart:32
+  ///
+  /// In en, this message translates to:
+  /// **'Reaction'**
+  String get integrations_reactionsLoopReactionFallbackLabel;
+
+  /// lib/integrations/communication/loop_reactions.dart:21
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get integrations_reactionsS;
+
+  /// lib/integrations/communication/loop_reactions.dart:22
+  ///
+  /// In en, this message translates to:
+  /// **'Haha'**
+  String get integrations_reactionsS2;
+
+  /// lib/integrations/communication/loop_reactions.dart:23
+  ///
+  /// In en, this message translates to:
+  /// **'Love'**
+  String get integrations_reactionsS3;
+
+  /// lib/integrations/communication/loop_reactions.dart:24
+  ///
+  /// In en, this message translates to:
+  /// **'Wow'**
+  String get integrations_reactionsS4;
+
+  /// lib/integrations/communication/loop_reactions.dart:25
+  ///
+  /// In en, this message translates to:
+  /// **'Sad'**
+  String get integrations_reactionsS5;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:65
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet connection or signature request was rejected.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:290
+  ///
+  /// In en, this message translates to:
+  /// **'The Reown Project ID isn\'t configured, so external wallets aren\'t available.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException10;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:337
+  ///
+  /// In en, this message translates to:
+  /// **'A sign-in or wallet connection is already in progress.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException11;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:343
+  ///
+  /// In en, this message translates to:
+  /// **'This page was closed. Start the wallet connection again.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException12;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:392
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in message is empty. Reconnect the wallet.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException13;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:413
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet connection or return didn\'t finish. Go back to LOOP and retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException14;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:491
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet connection cancelled.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException15;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:501
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet picker didn\'t open. Retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException16;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:518
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet connection timed out. Go back to LOOP and retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException17;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:531
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet session didn\'t authorize personal_sign. Reconnect.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException18;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:543
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet didn\'t return a usable EVM address.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException19;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:71
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet app not found. Install it and retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException2;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:572
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid wallet session. Reconnect.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException20;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:593
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet signature timed out. Go back to LOOP and retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException21;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:599
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet didn\'t return a valid signature.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException22;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:77
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the wallet app or return to LOOP. Retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException3;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:87
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet connection can\'t reach the network. Try again later.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException4;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:92
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet connection or return didn\'t finish. Retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException5;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:176
+  ///
+  /// In en, this message translates to:
+  /// **'Reown setup didn\'t finish. Restart LOOP and retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException6;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:196, lib/integrations/reown/reown_external_wallet_connector.dart:219
+  ///
+  /// In en, this message translates to:
+  /// **'Reown setup failed. Restart LOOP and retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException7;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:208
+  ///
+  /// In en, this message translates to:
+  /// **'The Reown service timed out. Check your network and retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException8;
+
+  /// lib/integrations/reown/reown_external_wallet_connector.dart:232
+  ///
+  /// In en, this message translates to:
+  /// **'The Reown service isn\'t ready. Restart LOOP and retry.'**
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException9;
+
+  /// lib/integrations/communication/stream_chat_appearance.dart:731
+  ///
+  /// In en, this message translates to:
+  /// **'View profile'**
+  String get integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel;
+
+  /// lib/integrations/communication/loop_stream_reaction_icon_resolver.dart:366
+  ///
+  /// In en, this message translates to:
+  /// **'Remove reaction'**
+  String get integrations_streamReactionIconResolverHint;
+
+  /// lib/integrations/communication/loop_stream_reaction_icon_resolver.dart:366
+  ///
+  /// In en, this message translates to:
+  /// **'React with {reactionLabel}'**
+  String integrations_streamReactionIconResolverHint2(Object? reactionLabel);
+
+  /// lib/integrations/communication/stream_unread_pill_band.dart:274
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get integrations_streamUnreadPillBandLoopUnreadPillDismissLabel;
+
+  /// lib/features/intel/intel_rank_board.dart:425
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get intel_rankBoardAlias;
+
+  /// lib/features/intel/intel_rank_board.dart:766
+  ///
+  /// In en, this message translates to:
+  /// **'Not ranked yet'**
+  String get intel_rankBoardBuild;
+
+  /// lib/features/intel/intel_rank_board.dart:819
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard updates live'**
+  String get intel_rankBoardBuild2;
+
+  /// lib/features/intel/intel_rank_board.dart:280
+  ///
+  /// In en, this message translates to:
+  /// **'{participants, plural, =1{1 person has power} other{{participants} people have power}}'**
+  String intel_rankBoardCaption(num participants);
+
+  /// lib/features/intel/intel_rank_board.dart:303, lib/features/intel/intel_rank_board.dart:1272, lib/features/intel/intel_rank_board.dart:1504
+  ///
+  /// In en, this message translates to:
+  /// **'Direct invites'**
+  String get intel_rankBoardCaption2;
+
+  /// lib/features/intel/intel_rank_board.dart:372
+  ///
+  /// In en, this message translates to:
+  /// **'Others see an anonymous member'**
+  String get intel_rankBoardCaption3;
+
+  /// lib/features/intel/intel_rank_board.dart:177
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load Power Ranking'**
+  String get intel_rankBoardEmptyMessage;
+
+  /// lib/features/intel/intel_rank_board.dart:178
+  ///
+  /// In en, this message translates to:
+  /// **'Ranking data can\'t be loaded right now.'**
+  String get intel_rankBoardEmptyReason;
+
+  /// lib/features/intel/intel_rank_board.dart:376
+  ///
+  /// In en, this message translates to:
+  /// **'Only visible to you'**
+  String get intel_rankBoardFigure;
+
+  /// lib/features/intel/intel_rank_board.dart:500
+  ///
+  /// In en, this message translates to:
+  /// **'Members with power: {vString}.'**
+  String intel_rankBoardIf(Object? vString);
+
+  /// lib/features/intel/intel_rank_board.dart:515
+  ///
+  /// In en, this message translates to:
+  /// **'{intelRankLedgerKickerBase}, live'**
+  String intel_rankBoardIf2(Object? intelRankLedgerKickerBase);
+
+  /// lib/features/intel/intel_rank_board.dart:591
+  ///
+  /// In en, this message translates to:
+  /// **'Community {name}, weight {weight}'**
+  String intel_rankBoardIf3(Object? name, Object? weight);
+
+  /// lib/features/intel/intel_rank_board.dart:609
+  ///
+  /// In en, this message translates to:
+  /// **'Invite your first friend to get ranked'**
+  String get intel_rankBoardIf4;
+
+  /// lib/features/intel/intel_rank_board.dart:612
+  ///
+  /// In en, this message translates to:
+  /// **'Direct invites {me}'**
+  String intel_rankBoardIf5(Object? me);
+
+  /// lib/features/intel/intel_rank_board.dart:612
+  ///
+  /// In en, this message translates to:
+  /// **'Power {powerFigure}'**
+  String intel_rankBoardIf6(Object? powerFigure);
+
+  /// lib/features/intel/intel_rank_board.dart:1475
+  ///
+  /// In en, this message translates to:
+  /// **'My communities'**
+  String get intel_rankBoardIf7;
+
+  /// lib/features/intel/intel_rank_board.dart:145, lib/features/intel/intel_rank_board.dart:508
+  ///
+  /// In en, this message translates to:
+  /// **'Power Ranking'**
+  String get intel_rankBoardIntelRankBoardTitle;
+
+  /// lib/features/intel/intel_rank_board.dart:163
+  ///
+  /// In en, this message translates to:
+  /// **'Power Ranking isn\'t available right now'**
+  String get intel_rankBoardIntelRankCapabilityBlockTitle;
+
+  /// lib/features/intel/intel_rank_board.dart:252
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get intel_rankBoardIntelRankEmptyInviteLabel;
+
+  /// lib/features/intel/intel_rank_board.dart:247
+  ///
+  /// In en, this message translates to:
+  /// **'Once you invite your first friend, this ranks by direct invites'**
+  String get intel_rankBoardIntelRankEmptyMessage;
+
+  /// lib/features/intel/intel_rank_board.dart:247
+  ///
+  /// In en, this message translates to:
+  /// **'Check back after the next power snapshot'**
+  String get intel_rankBoardIntelRankEmptyMessage2;
+
+  /// lib/features/intel/intel_rank_board.dart:246
+  ///
+  /// In en, this message translates to:
+  /// **'No one has invited a friend yet'**
+  String get intel_rankBoardIntelRankEmptyTitle;
+
+  /// lib/features/intel/intel_rank_board.dart:246
+  ///
+  /// In en, this message translates to:
+  /// **'No entries ranked this time'**
+  String get intel_rankBoardIntelRankEmptyTitle2;
+
+  /// lib/features/intel/intel_rank_board.dart:573
+  ///
+  /// In en, this message translates to:
+  /// **'{figure} more to reach Rank #{above}'**
+  String intel_rankBoardIntelRankGapToNext(Object? above, Object? figure);
+
+  /// lib/features/intel/intel_rank_board.dart:534
+  ///
+  /// In en, this message translates to:
+  /// **'My rank\nNot ranked yet'**
+  String get intel_rankBoardIntelRankLedgerHeading;
+
+  /// lib/features/intel/intel_rank_board.dart:121
+  ///
+  /// In en, this message translates to:
+  /// **'Loading my rank'**
+  String get intel_rankBoardIntelRankMeLoadingHeading;
+
+  /// lib/features/intel/intel_rank_board.dart:332
+  ///
+  /// In en, this message translates to:
+  /// **'Podium'**
+  String get intel_rankBoardIntelRankPodiumLabel;
+
+  /// lib/features/intel/intel_rank_board.dart:439
+  ///
+  /// In en, this message translates to:
+  /// **'By direct invites'**
+  String get intel_rankBoardIntelRankProvenancePrefix;
+
+  /// lib/features/intel/intel_rank_board.dart:232
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard can\'t be loaded right now · {launchReasonCodeText}'**
+  String intel_rankBoardIntelRankUnavailableMessage(
+    Object? launchReasonCodeText,
+  );
+
+  /// lib/features/intel/intel_rank_board.dart:719
+  ///
+  /// In en, this message translates to:
+  /// **'My live rank'**
+  String get intel_rankBoardIntelReferralLedgerTitle;
+
+  /// lib/features/intel/intel_rank_board.dart:1236
+  ///
+  /// In en, this message translates to:
+  /// **'Rank #{place}, open'**
+  String intel_rankBoardLabel(Object? place);
+
+  /// lib/features/intel/intel_rank_board.dart:444
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP invite relations'**
+  String get intel_rankBoardLoopProvenanceLine;
+
+  /// lib/features/intel/intel_rank_board.dart:453
+  ///
+  /// In en, this message translates to:
+  /// **'The invite board ranks by current active direct invites; ties share a rank. Invite relations are read live, without waiting for a power snapshot.'**
+  String get intel_rankBoardLoopProvenanceLine2;
+
+  /// lib/features/intel/intel_rank_board.dart:455
+  ///
+  /// In en, this message translates to:
+  /// **'Ranks come from the latest power snapshot; power changes on other accounts or communities change ranks. Nothing is calculated on this device.'**
+  String get intel_rankBoardLoopProvenanceLine3;
+
+  /// lib/features/intel/intel_rank_board.dart:456
+  ///
+  /// In en, this message translates to:
+  /// **'{miningRuleKeyText} Anonymous entries show \"{miningRuleKeyText2}\".'**
+  String intel_rankBoardLoopProvenanceLine4(
+    Object? miningRuleKeyText,
+    Object? miningRuleKeyText2,
+  );
+
+  /// lib/features/intel/intel_rank_board.dart:441
+  ///
+  /// In en, this message translates to:
+  /// **'By the current power formula'**
+  String get intel_rankBoardMiningFormulaEffective;
+
+  /// lib/features/intel/intel_rank_board.dart:442
+  ///
+  /// In en, this message translates to:
+  /// **'Power formula not yet in effect'**
+  String get intel_rankBoardMiningFormulaPending;
+
+  /// lib/features/intel/intel_rank_board.dart:519
+  ///
+  /// In en, this message translates to:
+  /// **'{intelRankLedgerKickerBase}, snapshot {intelRankMonthDayClock}'**
+  String intel_rankBoardMiningSnapshotComputed(
+    Object? intelRankLedgerKickerBase,
+    Object? intelRankMonthDayClock,
+  );
+
+  /// lib/features/intel/intel_rank_board.dart:596
+  ///
+  /// In en, this message translates to:
+  /// **'Community {name}'**
+  String intel_rankBoardNull(Object? name);
+
+  /// lib/features/intel/intel_rank_board.dart:500
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ({count})'**
+  String intel_rankBoardParticipantEntry(Object? count, Object? name);
+
+  /// lib/features/intel/intel_rank_board.dart:40
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation'**
+  String get intel_rankBoardReferrals;
+
+  /// lib/features/intel/intel_rank_board.dart:444
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP power snapshot'**
+  String get intel_rankBoardS;
+
+  /// lib/features/intel/intel_rank_board.dart:534
+  ///
+  /// In en, this message translates to:
+  /// **'My rank\nRank #{rank}'**
+  String intel_rankBoardS2(Object? rank);
+
+  /// lib/features/intel/intel_rank_board.dart:574
+  ///
+  /// In en, this message translates to:
+  /// **'{figure} to reach Rank #{above}'**
+  String intel_rankBoardS3(Object? above, Object? figure);
+
+  /// lib/features/intel/intel_rank_board.dart:609
+  ///
+  /// In en, this message translates to:
+  /// **'Once you have power, you\'ll be ranked at the next snapshot'**
+  String get intel_rankBoardS4;
+
+  /// lib/features/intel/intel_rank_board.dart:307, lib/features/intel/intel_rank_board.dart:1507
+  ///
+  /// In en, this message translates to:
+  /// **'Invites'**
+  String get intel_rankBoardSpoken;
+
+  /// lib/features/intel/intel_rank_board.dart:954, lib/features/intel/intel_rank_board.dart:1370, lib/features/intel/intel_rank_board.dart:1430
+  ///
+  /// In en, this message translates to:
+  /// **'Not ranked'**
+  String get intel_rankBoardText3;
+
+  /// lib/features/intel/intel_rank_board.dart:954
+  ///
+  /// In en, this message translates to:
+  /// **'Rank #{position}'**
+  String intel_rankBoardText4(Object? position);
+
+  /// lib/features/intel/intel_rank_board.dart:958, lib/features/intel/intel_rank_board.dart:1211, lib/features/intel/intel_rank_board.dart:1350, lib/features/intel/intel_rank_board.dart:1434
+  ///
+  /// In en, this message translates to:
+  /// **'Weight {weight}'**
+  String intel_rankBoardText5(Object? weight);
+
+  /// lib/features/intel/intel_rank_board.dart:1250
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get intel_rankBoardText6;
+
+  /// lib/features/intel/intel_screen.dart:122
+  ///
+  /// In en, this message translates to:
+  /// **'Intelligence'**
+  String get intel_screenIntelScreenTitle;
 
   /// lib/features/launch2/creator/launch2_creator_widgets.dart:256
   ///
@@ -25672,6 +26817,2579 @@ abstract class LoopLocalizations {
   /// **'Live {age}'**
   String meme_widgetsSemantics2(Object? age);
 
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1356
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get miningRewards_inviteHeadActive;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1356
+  ///
+  /// In en, this message translates to:
+  /// **'Assets'**
+  String get miningRewards_inviteHeadAsset;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1356
+  ///
+  /// In en, this message translates to:
+  /// **'NFT'**
+  String get miningRewards_inviteHeadNft;
+
+  /// lib/features/mining_rewards/mining_rewards_models.dart:449
+  ///
+  /// In en, this message translates to:
+  /// **'Mining starts once the LOOP token launches; until then only power is tracked'**
+  String get miningRewards_modelsMiningPowerOnlyNotice;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1063
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough BNB for the network fee. Swap {from} for {to} first.{need} Come back to claim after the swap; your claimable balance won\'t change.'**
+  String miningRewards_screenBuild(Object? from, Object? need, Object? to);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1130
+  ///
+  /// In en, this message translates to:
+  /// **'Shown after an hour with power is settled'**
+  String get miningRewards_screenBuild2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1207
+  ///
+  /// In en, this message translates to:
+  /// **'No meme coins counted toward mining last hour'**
+  String get miningRewards_screenBuild3;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1361
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get miningRewards_screenBuild4;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1362
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get miningRewards_screenBuild5;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:535, lib/features/mining_rewards/mining_rewards_screen.dart:563
+  ///
+  /// In en, this message translates to:
+  /// **'Updates after the next hour is settled'**
+  String get miningRewards_screenCaption;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:536
+  ///
+  /// In en, this message translates to:
+  /// **'{completedMinutes}/60 · next {clockLabel}'**
+  String miningRewards_screenCaption2(
+    Object? clockLabel,
+    Object? completedMinutes,
+  );
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:731
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming on-chain'**
+  String get miningRewards_screenConfirming;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:751
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain and waiting for confirmation. Don\'t claim again.'**
+  String get miningRewards_screenConfirming2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:875
+  ///
+  /// In en, this message translates to:
+  /// **'Loading the latest claimable amount'**
+  String get miningRewards_screenDisabledReason;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:734
+  ///
+  /// In en, this message translates to:
+  /// **'Voucher expired'**
+  String get miningRewards_screenExpired;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:766
+  ///
+  /// In en, this message translates to:
+  /// **'The claim voucher expired and nothing was paid out. Your claimable balance is unchanged. You can claim again.'**
+  String get miningRewards_screenExpired2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1157
+  ///
+  /// In en, this message translates to:
+  /// **'Own weighted power'**
+  String get miningRewards_screenFact;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1158, lib/features/mining_rewards/mining_rewards_screen.dart:1228
+  ///
+  /// In en, this message translates to:
+  /// **'Invite power'**
+  String get miningRewards_screenFact2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1221
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded ({miningExcludedReasonText})'**
+  String miningRewards_screenFact4(Object? miningExcludedReasonText);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1227
+  ///
+  /// In en, this message translates to:
+  /// **'Own power'**
+  String get miningRewards_screenFact5;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:761
+  ///
+  /// In en, this message translates to:
+  /// **'The on-chain claim failed. Your claimable balance didn\'t go down.{reasonSuffix}'**
+  String miningRewards_screenFailed(Object? reasonSuffix);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:762
+  ///
+  /// In en, this message translates to:
+  /// **' ({code})'**
+  String miningRewards_screenFailedCode(Object? code);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:745
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough BNB for the network fee. Swap USDT first.'**
+  String get miningRewards_screenGasInsufficient;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:503
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement results can\'t be loaded right now'**
+  String get miningRewards_screenHeading;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:886
+  ///
+  /// In en, this message translates to:
+  /// **'No LOOP to claim right now'**
+  String get miningRewards_screenIf;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:892
+  ///
+  /// In en, this message translates to:
+  /// **'Loading wallet'**
+  String get miningRewards_screenIf2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:526
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {figure} LOOP'**
+  String miningRewards_screenLabel(Object? figure);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:655
+  ///
+  /// In en, this message translates to:
+  /// **'Total settled LOOP'**
+  String get miningRewards_screenLabel2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:660
+  ///
+  /// In en, this message translates to:
+  /// **'Total claimed LOOP'**
+  String get miningRewards_screenLabel3;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:665
+  ///
+  /// In en, this message translates to:
+  /// **'Claimable LOOP'**
+  String get miningRewards_screenLabel4;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:708
+  ///
+  /// In en, this message translates to:
+  /// **'Meme coin power'**
+  String get miningRewards_screenLabel6;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:321
+  ///
+  /// In en, this message translates to:
+  /// **'Power summary'**
+  String get miningRewards_screenLoopLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:326
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards summary'**
+  String get miningRewards_screenLoopLabel2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:348
+  ///
+  /// In en, this message translates to:
+  /// **'NFT track'**
+  String get miningRewards_screenLoopLabel3;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:350
+  ///
+  /// In en, this message translates to:
+  /// **'Meme coin track'**
+  String get miningRewards_screenLoopLabel4;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:352
+  ///
+  /// In en, this message translates to:
+  /// **'Five-level invites'**
+  String get miningRewards_screenLoopLabel5;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:355
+  ///
+  /// In en, this message translates to:
+  /// **'Claim history'**
+  String get miningRewards_screenLoopLabel6;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:373
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP hourly settlement'**
+  String get miningRewards_screenLoopProvenanceLine;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1058
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough for network fee'**
+  String get miningRewards_screenLoopSheetHeading;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1027, lib/features/mining_rewards/mining_rewards_screen.dart:1518
+  ///
+  /// In en, this message translates to:
+  /// **'BscScan link copied'**
+  String get miningRewards_screenMessage;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1529
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load earlier records'**
+  String get miningRewards_screenMessage2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1373
+  ///
+  /// In en, this message translates to:
+  /// **'Weighted by amount held: power = average amount held that hour × mining weight'**
+  String get miningRewards_screenMiningAssetBasisNote;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:936
+  ///
+  /// In en, this message translates to:
+  /// **'Claimable now'**
+  String get miningRewards_screenMiningClaimAmountLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:967
+  ///
+  /// In en, this message translates to:
+  /// **'Claim in progress'**
+  String get miningRewards_screenMiningClaimButtonLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:972
+  ///
+  /// In en, this message translates to:
+  /// **'Claim, unavailable'**
+  String get miningRewards_screenMiningClaimButtonSemanticLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1075
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get miningRewards_screenMiningClaimGasGoLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1075
+  ///
+  /// In en, this message translates to:
+  /// **'Top up'**
+  String get miningRewards_screenMiningClaimGasGoLabel2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:944
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum claim'**
+  String get miningRewards_screenMiningClaimMinimumLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:960
+  ///
+  /// In en, this message translates to:
+  /// **'Keep checking'**
+  String get miningRewards_screenMiningClaimResumeLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:953
+  ///
+  /// In en, this message translates to:
+  /// **'Report again'**
+  String get miningRewards_screenMiningClaimRetryReportLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1025
+  ///
+  /// In en, this message translates to:
+  /// **'Copy BscScan link'**
+  String get miningRewards_screenMiningClaimTxSubtitle;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1024
+  ///
+  /// In en, this message translates to:
+  /// **'Successful transaction {miningShortHash}'**
+  String miningRewards_screenMiningClaimTxTitle(Object? miningShortHash);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1487
+  ///
+  /// In en, this message translates to:
+  /// **'No claims yet'**
+  String get miningRewards_screenMiningClaimsEmptyTitle;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1382
+  ///
+  /// In en, this message translates to:
+  /// **'Active last hour and counted toward power'**
+  String get miningRewards_screenMiningHourCountedNote;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1369
+  ///
+  /// In en, this message translates to:
+  /// **'Only invitees\' own power counts; invitees with zero own power don\'t count. Equivalent NFT power is used only for reward calculation.'**
+  String get miningRewards_screenMiningInviteNote;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:545
+  ///
+  /// In en, this message translates to:
+  /// **'Minute {completedMinutes} of 60'**
+  String miningRewards_screenMiningMinuteBarSemanticLabel(
+    Object? completedMinutes,
+  );
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1415
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement period {clockLabel}–{clockLabel2} · this hour\'s rewards are fully claimable after settlement'**
+  String miningRewards_screenMiningMinuteEpochBody(
+    Object? clockLabel,
+    Object? clockLabel2,
+  );
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:431, lib/features/mining_rewards/mining_rewards_screen.dart:1163, lib/features/mining_rewards/mining_rewards_screen.dart:1233
+  ///
+  /// In en, this message translates to:
+  /// **'Last hour rewards'**
+  String get miningRewards_screenMiningMinuteKicker;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1409
+  ///
+  /// In en, this message translates to:
+  /// **'Last hour {miningLoopFigure} LOOP'**
+  String miningRewards_screenMiningMinuteTotalBody(Object? miningLoopFigure);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1376
+  ///
+  /// In en, this message translates to:
+  /// **'NFT power = amount held × community factor'**
+  String get miningRewards_screenMiningNftBasisNote;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1153
+  ///
+  /// In en, this message translates to:
+  /// **'NFTs held (actual count)'**
+  String get miningRewards_screenMiningNftRealCount;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1436
+  ///
+  /// In en, this message translates to:
+  /// **'Period {clockLabel}–{clockLabel2} · counted every hour on the hour'**
+  String miningRewards_screenMiningPowerEpochBody(
+    Object? clockLabel,
+    Object? clockLabel2,
+  );
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:575
+  ///
+  /// In en, this message translates to:
+  /// **'{figure} power'**
+  String miningRewards_screenMiningPowerFolioHeading(Object? figure);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1429
+  ///
+  /// In en, this message translates to:
+  /// **'NFT power {nftPower} · Meme coin power {assetPower}'**
+  String miningRewards_screenMiningPowerTracksBody(
+    Object? assetPower,
+    Object? nftPower,
+  );
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:267, lib/features/mining_rewards/mining_rewards_screen.dart:268
+  ///
+  /// In en, this message translates to:
+  /// **'About mining rewards'**
+  String get miningRewards_screenMiningRewardsInfoActionTitle;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:377
+  ///
+  /// In en, this message translates to:
+  /// **'Every hour on the hour (UTC), the previous hour\'s NFT and meme coin tracks are settled; that hour\'s rewards are claimable once settled. The per-minute growth only displays last hour\'s rewards and doesn\'t change the claimable amount.'**
+  String get miningRewards_screenMiningRewardsProvenanceDetail;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:380
+  ///
+  /// In en, this message translates to:
+  /// **'Every hour on the hour (UTC), power on the previous hour\'s NFT and meme coin tracks is counted.'**
+  String get miningRewards_screenMiningRewardsProvenanceDetail2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:375
+  ///
+  /// In en, this message translates to:
+  /// **'Last read'**
+  String get miningRewards_screenMiningRewardsProvenancePrefix;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:297
+  ///
+  /// In en, this message translates to:
+  /// **'No reward records yet'**
+  String get miningRewards_screenMiningRewardsStateEmptyMessage;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:746
+  ///
+  /// In en, this message translates to:
+  /// **'There\'s no BNB in your wallet for the network fee. Top up BNB first.'**
+  String get miningRewards_screenNoGasSource;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:563
+  ///
+  /// In en, this message translates to:
+  /// **'No power last hour'**
+  String get miningRewards_screenNull;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:758
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast, but no confirmation read yet. It may still be confirming; check again later and don\'t claim again.'**
+  String get miningRewards_screenPollTimedOut;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:593
+  ///
+  /// In en, this message translates to:
+  /// **'The previous hour settles every hour on the hour; the next hour displays by the minute.'**
+  String get miningRewards_screenPowerFolio;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:741
+  ///
+  /// In en, this message translates to:
+  /// **'Creating the claim voucher. The wallet hasn\'t opened yet.'**
+  String get miningRewards_screenPreparing;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1334
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level}'**
+  String miningRewards_screenRow(Object? level);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1343
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get miningRewards_screenRow2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:419
+  ///
+  /// In en, this message translates to:
+  /// **'Power appears after the first hour is settled'**
+  String get miningRewards_screenS;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:593
+  ///
+  /// In en, this message translates to:
+  /// **'Power for the previous hour is counted every hour on the hour.'**
+  String get miningRewards_screenS2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:729, lib/features/mining_rewards/mining_rewards_screen.dart:779
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to claim'**
+  String get miningRewards_screenS3;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:783
+  ///
+  /// In en, this message translates to:
+  /// **'Claimable amount is below the minimum claim'**
+  String get miningRewards_screenS4;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:892
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet available'**
+  String get miningRewards_screenS5;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1048
+  ///
+  /// In en, this message translates to:
+  /// **' This claim needs about {requiredNative} BNB.'**
+  String miningRewards_screenS6(Object? requiredNative);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1058
+  ///
+  /// In en, this message translates to:
+  /// **'BNB needed for network fee'**
+  String get miningRewards_screenS7;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1065
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet has no BNB and no USDT to swap.{need} Top up a little BNB first, then come back to claim.'**
+  String miningRewards_screenS8(Object? need);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:537, lib/features/mining_rewards/mining_rewards_screen.dart:581
+  ///
+  /// In en, this message translates to:
+  /// **'Settling'**
+  String get miningRewards_screenStamp;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:759
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed. LOOP has arrived.'**
+  String get miningRewards_screenSucceeded;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:399
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rules aren\'t in effect yet, so nothing is settled.'**
+  String get miningRewards_screenSwitch;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:756
+  ///
+  /// In en, this message translates to:
+  /// **'This claim is locked. Don\'t claim again.'**
+  String get miningRewards_screenSwitch10;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:776
+  ///
+  /// In en, this message translates to:
+  /// **'The settlement service isn\'t available right now, so you can\'t claim'**
+  String get miningRewards_screenSwitch11;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:777
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rules aren\'t in effect yet, so you can\'t claim'**
+  String get miningRewards_screenSwitch12;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:778
+  ///
+  /// In en, this message translates to:
+  /// **'Claimable after an hour with power is settled'**
+  String get miningRewards_screenSwitch13;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:782, lib/features/mining_rewards/mining_rewards_screen.dart:889
+  ///
+  /// In en, this message translates to:
+  /// **'Claimable at {miningLoopFigure} LOOP'**
+  String miningRewards_screenSwitch14(Object? miningLoopFigure);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:784
+  ///
+  /// In en, this message translates to:
+  /// **'The previous claim is still processing. Claim after it finishes'**
+  String get miningRewards_screenSwitch15;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:788
+  ///
+  /// In en, this message translates to:
+  /// **'The claim chain isn\'t configured yet, so you can\'t claim'**
+  String get miningRewards_screenSwitch16;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:789
+  ///
+  /// In en, this message translates to:
+  /// **'Claim voucher issuing isn\'t configured yet, so you can\'t claim'**
+  String get miningRewards_screenSwitch17;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:790
+  ///
+  /// In en, this message translates to:
+  /// **'On-chain writes are off right now, so you can\'t claim'**
+  String get miningRewards_screenSwitch18;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:791
+  ///
+  /// In en, this message translates to:
+  /// **'Mainnet claims aren\'t open yet'**
+  String get miningRewards_screenSwitch19;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:402
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rules are in effect. Power for the previous hour is counted every hour on the hour and shown here.'**
+  String get miningRewards_screenSwitch2;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:794
+  ///
+  /// In en, this message translates to:
+  /// **'The claim contract is paused, so you can\'t claim'**
+  String get miningRewards_screenSwitch20;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:795
+  ///
+  /// In en, this message translates to:
+  /// **'The claim contract can\'t be read right now, so you can\'t claim'**
+  String get miningRewards_screenSwitch21;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:796
+  ///
+  /// In en, this message translates to:
+  /// **'The claim contract\'s balance is too low, so you can\'t claim'**
+  String get miningRewards_screenSwitch22;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:797
+  ///
+  /// In en, this message translates to:
+  /// **'Claims aren\'t available right now'**
+  String get miningRewards_screenSwitch23;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:803
+  ///
+  /// In en, this message translates to:
+  /// **'No LOOP to claim right now.'**
+  String get miningRewards_screenSwitch24;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:804
+  ///
+  /// In en, this message translates to:
+  /// **'Claimable amount is below the minimum claim.'**
+  String get miningRewards_screenSwitch25;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:805
+  ///
+  /// In en, this message translates to:
+  /// **'The previous claim is still processing. Claim after it finishes.'**
+  String get miningRewards_screenSwitch26;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:807, lib/features/mining_rewards/mining_rewards_signing.dart:87
+  ///
+  /// In en, this message translates to:
+  /// **'The simulation didn\'t pass; this claim would be rejected on-chain. No transaction was submitted.'**
+  String get miningRewards_screenSwitch27;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:808
+  ///
+  /// In en, this message translates to:
+  /// **'The claim contract is paused. Your balance is unchanged.'**
+  String get miningRewards_screenSwitch28;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:809
+  ///
+  /// In en, this message translates to:
+  /// **'The claim contract can\'t be read right now. No voucher was created and your balance is unchanged.'**
+  String get miningRewards_screenSwitch29;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:403
+  ///
+  /// In en, this message translates to:
+  /// **'The settlement service isn\'t available right now. The numbers below may not be current.'**
+  String get miningRewards_screenSwitch3;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:810
+  ///
+  /// In en, this message translates to:
+  /// **'The claim contract\'s balance is too low to claim right now. Your balance is unchanged.'**
+  String get miningRewards_screenSwitch30;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:811
+  ///
+  /// In en, this message translates to:
+  /// **'The claim voucher expired. No transaction was submitted. Claim again.'**
+  String get miningRewards_screenSwitch31;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:812
+  ///
+  /// In en, this message translates to:
+  /// **'Claims go only to your LOOP built-in wallet.'**
+  String get miningRewards_screenSwitch32;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:817
+  ///
+  /// In en, this message translates to:
+  /// **'No voucher was created and no transaction was submitted.'**
+  String get miningRewards_screenSwitch33;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:924
+  ///
+  /// In en, this message translates to:
+  /// **'Claim status'**
+  String get miningRewards_screenSwitch34;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1178
+  ///
+  /// In en, this message translates to:
+  /// **'Graduated; DEX pool holdings are still syncing'**
+  String get miningRewards_screenSwitch35;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1179
+  ///
+  /// In en, this message translates to:
+  /// **'Graduated; DEX pool holdings can\'t be read right now'**
+  String get miningRewards_screenSwitch36;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1180
+  ///
+  /// In en, this message translates to:
+  /// **'Mining weight not configured yet'**
+  String get miningRewards_screenSwitch37;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1181
+  ///
+  /// In en, this message translates to:
+  /// **'Not counted yet'**
+  String get miningRewards_screenSwitch38;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:409
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rules are in effect. The previous hour settles every hour on the hour; it\'s then shown here by the minute and can be claimed.'**
+  String get miningRewards_screenSwitch4;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:410
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement data can\'t be loaded right now. The numbers below may not be current.'**
+  String get miningRewards_screenSwitch5;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:418
+  ///
+  /// In en, this message translates to:
+  /// **'Hours you had power in aren\'t settled yet'**
+  String get miningRewards_screenSwitch6;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:419
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards appear after the first hour is settled'**
+  String get miningRewards_screenSwitch7;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:729
+  ///
+  /// In en, this message translates to:
+  /// **'Claimable'**
+  String get miningRewards_screenSwitch8;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:752
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted and waiting to land on-chain (checked {attempts} times). Don\'t claim again.'**
+  String miningRewards_screenSwitch9(Object? attempts);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:815
+  ///
+  /// In en, this message translates to:
+  /// **'Network unavailable. No claim voucher was created.'**
+  String get miningRewards_screenTimedOut;
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:1504
+  ///
+  /// In en, this message translates to:
+  /// **'Claim {miningLoopFigure} LOOP'**
+  String miningRewards_screenTitle(Object? miningLoopFigure);
+
+  /// lib/features/mining_rewards/mining_rewards_screen.dart:816
+  ///
+  /// In en, this message translates to:
+  /// **'Claims aren\'t available right now. Your balance is unchanged.'**
+  String get miningRewards_screenUnavailable;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:361
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet result is unknown, so this claim is locked. Don\'t claim again; refresh later to check.'**
+  String get miningRewards_signingIf;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:365
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast ({short}) and recorded by the server; waiting for on-chain confirmation.'**
+  String miningRewards_signingIf2(Object? short);
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:367
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast ({short}). {miningClaimReportReasonText}'**
+  String miningRewards_signingIf3(
+    Object? miningClaimReportReasonText,
+    Object? short,
+  );
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:62
+  ///
+  /// In en, this message translates to:
+  /// **'Claim amount'**
+  String get miningRewards_signingLabel;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:64
+  ///
+  /// In en, this message translates to:
+  /// **'Receiving wallet'**
+  String get miningRewards_signingLabel2;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Network fee'**
+  String get miningRewards_signingLabel3;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:70
+  ///
+  /// In en, this message translates to:
+  /// **'Voucher valid until'**
+  String get miningRewards_signingLabel4;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:77
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled. Nothing changed.'**
+  String get miningRewards_signingSwitch;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:88
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet didn\'t finish signing. No transaction was submitted and your claimable balance is unchanged.'**
+  String get miningRewards_signingSwitch10;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:95
+  ///
+  /// In en, this message translates to:
+  /// **'A different hash was already reported for this claim, so this broadcast wasn\'t recorded. Don\'t claim again; refresh later to check.'**
+  String get miningRewards_signingSwitch11;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:97
+  ///
+  /// In en, this message translates to:
+  /// **'This on-chain transaction doesn\'t match the claim voucher, so the server didn\'t record it. Don\'t claim again, and contact support.'**
+  String get miningRewards_signingSwitch12;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:98
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet broadcast it, but the report didn\'t arrive. The transaction may be on-chain; you can report the same hash again. Don\'t claim again.'**
+  String get miningRewards_signingSwitch13;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'Verification didn\'t pass. Nothing changed.'**
+  String get miningRewards_signingSwitch2;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:79
+  ///
+  /// In en, this message translates to:
+  /// **'The claim voucher expired. No transaction was submitted and your claimable balance is unchanged. Claim again.'**
+  String get miningRewards_signingSwitch3;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction doesn\'t match what you confirmed, so signing was refused. No transaction was submitted.'**
+  String get miningRewards_signingSwitch4;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:81
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find the wallet for this claim. No transaction was submitted.'**
+  String get miningRewards_signingSwitch5;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:82
+  ///
+  /// In en, this message translates to:
+  /// **'The voucher\'s wallet doesn\'t match the current wallet, so signing was refused. No transaction was submitted.'**
+  String get miningRewards_signingSwitch6;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:84
+  ///
+  /// In en, this message translates to:
+  /// **'Signing isn\'t allowed on this chain. No transaction was submitted.'**
+  String get miningRewards_signingSwitch7;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:85
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet can\'t sign on this chain right now. No transaction was submitted.'**
+  String get miningRewards_signingSwitch8;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:86
+  ///
+  /// In en, this message translates to:
+  /// **'The signed-in wallet isn\'t the one for this claim. No transaction was submitted.'**
+  String get miningRewards_signingSwitch9;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:114, lib/features/mining_rewards/mining_rewards_signing.dart:342, lib/features/mining_rewards/mining_rewards_signing.dart:349
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm claim'**
+  String get miningRewards_signingTitle;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:61
+  ///
+  /// In en, this message translates to:
+  /// **'Claim mining rewards'**
+  String get miningRewards_signingValue;
+
+  /// lib/features/mining_rewards/mining_rewards_signing.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Paid with BNB in wallet'**
+  String get miningRewards_signingValue2;
+
+  /// lib/features/mining/mining_controllers.dart:423
+  ///
+  /// In en, this message translates to:
+  /// **'Activate your LOOP ID before binding an invite code. You can bind any time after activation.'**
+  String get mining_controllersActivationRequired;
+
+  /// lib/features/mining/mining_controllers.dart:428
+  ///
+  /// In en, this message translates to:
+  /// **'This binding was already submitted with a different invite code. Refresh to see the latest status.'**
+  String get mining_controllersIdempotencyConflict;
+
+  /// lib/features/mining/mining_controllers.dart:425
+  ///
+  /// In en, this message translates to:
+  /// **'This invite code doesn\'t exist. Check with the person who invited you and try again; codes can\'t be guessed, so more attempts won\'t help.'**
+  String get mining_controllersNotFound;
+
+  /// lib/features/mining/mining_controllers.dart:424
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t bind an invite code right now. Each account can bind only once. Refresh to see the latest status.'**
+  String get mining_controllersPolicyBlocked;
+
+  /// lib/features/mining/mining_controllers.dart:427
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has an inviter. It can\'t be changed after binding.'**
+  String get mining_controllersStale;
+
+  /// lib/features/mining/mining_controllers.dart:426
+  ///
+  /// In en, this message translates to:
+  /// **'This invite code can\'t be bound: you can\'t invite yourself or bind a code from someone you invited.'**
+  String get mining_controllersValidationFailed;
+
+  /// lib/features/mining/mining_copy.dart:150
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the power snapshot from {computedAtLabel}'**
+  String mining_copyHead(Object? computedAtLabel);
+
+  /// lib/features/mining/mining_copy.dart:66
+  ///
+  /// In en, this message translates to:
+  /// **'Block and time appear here after the next power snapshot.'**
+  String get mining_copyIf;
+
+  /// lib/features/mining/mining_copy.dart:73
+  ///
+  /// In en, this message translates to:
+  /// **'The latest calculation didn\'t finish and there\'s no complete snapshot to fall back on.'**
+  String get mining_copyIf2;
+
+  /// lib/features/mining/mining_copy.dart:118
+  ///
+  /// In en, this message translates to:
+  /// **'{named}, and {rest} more assets'**
+  String mining_copyIf3(Object? named, Object? rest);
+
+  /// lib/features/mining/mining_copy.dart:121
+  ///
+  /// In en, this message translates to:
+  /// **'Reference prices for some assets couldn\'t be read this time'**
+  String get mining_copyIncomplete;
+
+  /// lib/features/mining/mining_copy.dart:25
+  ///
+  /// In en, this message translates to:
+  /// **'Calculated from holdings in wallets linked to your LOOP account.'**
+  String get mining_copyMiningConditionEmbedded;
+
+  /// lib/features/mining/mining_copy.dart:24
+  ///
+  /// In en, this message translates to:
+  /// **'You must join the community; only the time you\'re a member counts. Tokens without a bound community don\'t require this.'**
+  String get mining_copyMiningConditionMember;
+
+  /// lib/features/mining/mining_copy.dart:23
+  ///
+  /// In en, this message translates to:
+  /// **'Community tokens count only when their bound community is approved; communities in review don\'t count.'**
+  String get mining_copyMiningConditionVerified;
+
+  /// lib/features/mining/mining_copy.dart:28
+  ///
+  /// In en, this message translates to:
+  /// **'Calculated from linked wallet holdings. Community tokens require joining their approved community.'**
+  String get mining_copyMiningConditionsShort;
+
+  /// lib/features/mining/mining_copy.dart:18
+  ///
+  /// In en, this message translates to:
+  /// **'Holdings × weight'**
+  String get mining_copyMiningPowerFormulaHeading;
+
+  /// lib/features/mining/mining_copy.dart:31
+  ///
+  /// In en, this message translates to:
+  /// **'Latest power snapshot'**
+  String get mining_copyMiningSnapshotRowTitle;
+
+  /// lib/features/mining/mining_copy.dart:30
+  ///
+  /// In en, this message translates to:
+  /// **'Power snapshot'**
+  String get mining_copyMiningSnapshotSectionLabel;
+
+  /// lib/features/mining/mining_copy.dart:145
+  ///
+  /// In en, this message translates to:
+  /// **'The latest snapshot was invalidated'**
+  String get mining_copyMiningStaleLine;
+
+  /// lib/features/mining/mining_copy.dart:74
+  ///
+  /// In en, this message translates to:
+  /// **'The latest calculation didn\'t finish ({cause}) and there\'s no complete snapshot to fall back on.'**
+  String mining_copyS(Object? cause);
+
+  /// lib/features/mining/mining_copy.dart:146
+  ///
+  /// In en, this message translates to:
+  /// **'The latest snapshot didn\'t finish'**
+  String get mining_copyS2;
+
+  /// lib/features/mining/mining_copy.dart:152
+  ///
+  /// In en, this message translates to:
+  /// **'{head} · {tail} ({cause})'**
+  String mining_copyStaleWithCause(Object? cause, Object? head, Object? tail);
+
+  /// lib/features/mining/mining_copy.dart:43
+  ///
+  /// In en, this message translates to:
+  /// **'No power snapshot has been taken yet'**
+  String get mining_copySwitch;
+
+  /// lib/features/mining/mining_copy.dart:46
+  ///
+  /// In en, this message translates to:
+  /// **'No complete power snapshot yet'**
+  String get mining_copySwitch2;
+
+  /// lib/features/mining/mining_copy.dart:47
+  ///
+  /// In en, this message translates to:
+  /// **'Shown after the next power snapshot'**
+  String get mining_copySwitch3;
+
+  /// lib/features/mining/mining_copy.dart:48
+  ///
+  /// In en, this message translates to:
+  /// **'Power snapshot can\'t be loaded right now'**
+  String get mining_copySwitch4;
+
+  /// lib/features/mining/mining_copy.dart:94
+  ///
+  /// In en, this message translates to:
+  /// **'{label} has no available quote right now'**
+  String mining_copySwitch5(Object? label);
+
+  /// lib/features/mining/mining_copy.dart:95
+  ///
+  /// In en, this message translates to:
+  /// **'{label}\'s reference price isn\'t recent enough'**
+  String mining_copySwitch6(Object? label);
+
+  /// lib/features/mining/mining_copy.dart:96
+  ///
+  /// In en, this message translates to:
+  /// **'{label}\'s reference price comes from an unregistered token'**
+  String mining_copySwitch7(Object? label);
+
+  /// lib/features/mining/mining_copy.dart:97
+  ///
+  /// In en, this message translates to:
+  /// **'{label}\'s reference price couldn\'t be read this time'**
+  String mining_copySwitch8(Object? label);
+
+  /// lib/features/mining/mining_copy.dart:124
+  ///
+  /// In en, this message translates to:
+  /// **'That snapshot\'s data was incomplete'**
+  String get mining_copySwitch9;
+
+  /// lib/features/mining/mining_models.dart:1059, lib/features/mining/mining_secondary_screens.dart:581
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get mining_modelsApproved;
+
+  /// lib/features/mining/mining_models.dart:615
+  ///
+  /// In en, this message translates to:
+  /// **'Communities'**
+  String get mining_modelsCommunities;
+
+  /// lib/features/mining/mining_models.dart:577
+  ///
+  /// In en, this message translates to:
+  /// **'{chainName} native token'**
+  String mining_modelsMiningAssetLabel(Object? chainName);
+
+  /// lib/features/mining/mining_models.dart:235
+  ///
+  /// In en, this message translates to:
+  /// **'Token power = amount held × asset weight, not multiplied by price; NFT power = amount held × community factor. Community tokens count only when their bound community is approved and you\'ve joined it. Calculated from holdings in wallets linked to your LOOP account. Current version: every asset\'s weight is 1, the daily output is an estimate, and the reward token isn\'t decided yet. These numbers aren\'t earnings or a promise.'**
+  String get mining_modelsMiningBaselineDetail;
+
+  /// lib/features/mining/mining_models.dart:231
+  ///
+  /// In en, this message translates to:
+  /// **'Current power formula'**
+  String get mining_modelsMiningBaselineLabel;
+
+  /// lib/features/mining/mining_models.dart:620
+  ///
+  /// In en, this message translates to:
+  /// **'Invites'**
+  String get mining_modelsMiningReferralRankLabel;
+
+  /// lib/features/mining/mining_models.dart:1058, lib/features/mining/mining_secondary_screens.dart:582, lib/features/mining/mining_widgets.dart:43
+  ///
+  /// In en, this message translates to:
+  /// **'Pending approval'**
+  String get mining_modelsPendingApproval;
+
+  /// lib/features/mining/mining_models.dart:1060
+  ///
+  /// In en, this message translates to:
+  /// **'Retired'**
+  String get mining_modelsRetired;
+
+  /// lib/features/mining/mining_models.dart:578
+  ///
+  /// In en, this message translates to:
+  /// **'Native token'**
+  String get mining_modelsS;
+
+  /// lib/features/mining/mining_models.dart:1227
+  ///
+  /// In en, this message translates to:
+  /// **'Power = holdings × weight'**
+  String get mining_modelsSwitch;
+
+  /// lib/features/mining/mining_models.dart:1240
+  ///
+  /// In en, this message translates to:
+  /// **'Market stability'**
+  String get mining_modelsSwitch10;
+
+  /// lib/features/mining/mining_models.dart:1241
+  ///
+  /// In en, this message translates to:
+  /// **'User quality'**
+  String get mining_modelsSwitch11;
+
+  /// lib/features/mining/mining_models.dart:1243
+  ///
+  /// In en, this message translates to:
+  /// **'Depth of partnership with LOOP'**
+  String get mining_modelsSwitch12;
+
+  /// lib/features/mining/mining_models.dart:1244
+  ///
+  /// In en, this message translates to:
+  /// **'TWAP (time-weighted average price): keeps a single trade from skewing the reference price.'**
+  String get mining_modelsSwitch13;
+
+  /// lib/features/mining/mining_models.dart:1245
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-period, multi-source comparison to cross-check unusual moves.'**
+  String get mining_modelsSwitch14;
+
+  /// lib/features/mining/mining_models.dart:1246
+  ///
+  /// In en, this message translates to:
+  /// **'Liquidity cap: limits the value counted for low-liquidity assets.'**
+  String get mining_modelsSwitch15;
+
+  /// lib/features/mining/mining_models.dart:1247
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous member'**
+  String get mining_modelsSwitch16;
+
+  /// lib/features/mining/mining_models.dart:1249
+  ///
+  /// In en, this message translates to:
+  /// **'Whether others see an alias or \"Anonymous member\" depends only on that account\'s anonymous mode; \"Discoverable\" isn\'t involved, and you always see your own alias.'**
+  String get mining_modelsSwitch17;
+
+  /// lib/features/mining/mining_models.dart:1251
+  ///
+  /// In en, this message translates to:
+  /// **'Power values follow that account\'s own \"Mining power\" visibility; when set to only me, others can\'t see the value, but rank and entry counts stay public.'**
+  String get mining_modelsSwitch18;
+
+  /// lib/features/mining/mining_models.dart:1252
+  ///
+  /// In en, this message translates to:
+  /// **'A rule item defined by LOOP.'**
+  String get mining_modelsSwitch19;
+
+  /// lib/features/mining/mining_models.dart:1231
+  ///
+  /// In en, this message translates to:
+  /// **'Power = holdings × reference price × weight'**
+  String get mining_modelsSwitch2;
+
+  /// lib/features/mining/mining_models.dart:1232
+  ///
+  /// In en, this message translates to:
+  /// **'Daily output = my power ÷ network power × daily output'**
+  String get mining_modelsSwitch3;
+
+  /// lib/features/mining/mining_models.dart:1233
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP uses a fixed top weight tier (value pending approval).'**
+  String get mining_modelsSwitch4;
+
+  /// lib/features/mining/mining_models.dart:1234
+  ///
+  /// In en, this message translates to:
+  /// **'Community token weights are granted by review; the range is pending approval.'**
+  String get mining_modelsSwitch5;
+
+  /// lib/features/mining/mining_models.dart:1235
+  ///
+  /// In en, this message translates to:
+  /// **'Community quality'**
+  String get mining_modelsSwitch6;
+
+  /// lib/features/mining/mining_models.dart:1237
+  ///
+  /// In en, this message translates to:
+  /// **'Community size'**
+  String get mining_modelsSwitch7;
+
+  /// lib/features/mining/mining_models.dart:1238
+  ///
+  /// In en, this message translates to:
+  /// **'Token liquidity'**
+  String get mining_modelsSwitch8;
+
+  /// lib/features/mining/mining_models.dart:1239
+  ///
+  /// In en, this message translates to:
+  /// **'Project quality'**
+  String get mining_modelsSwitch9;
+
+  /// lib/features/mining/mining_models.dart:614
+  ///
+  /// In en, this message translates to:
+  /// **'Users'**
+  String get mining_modelsUsers;
+
+  /// lib/features/mining/referral_screen.dart:342
+  ///
+  /// In en, this message translates to:
+  /// **'mining power'**
+  String get mining_referralAppliesMiningPower;
+
+  /// lib/features/mining/referral_screen.dart:228
+  ///
+  /// In en, this message translates to:
+  /// **'Close invite code binding'**
+  String get mining_referralBarrierLabel;
+
+  /// lib/features/mining/referral_screen.dart:509
+  ///
+  /// In en, this message translates to:
+  /// **'Close invite poster'**
+  String get mining_referralBarrierLabel2;
+
+  /// lib/features/mining/referral_screen.dart:423, lib/features/mining/referral_screen.dart:983
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code'**
+  String get mining_referralBuild;
+
+  /// lib/features/mining/referral_screen.dart:456
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link'**
+  String get mining_referralBuild2;
+
+  /// lib/features/mining/referral_screen.dart:960
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the invite code any time after signing up and mine together.'**
+  String get mining_referralBuild3;
+
+  /// lib/features/mining/referral_screen.dart:994
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the invite code after signing up on LOOP'**
+  String get mining_referralBuild4;
+
+  /// lib/features/mining/referral_screen.dart:1032
+  ///
+  /// In en, this message translates to:
+  /// **'Inviter bound. The relation is locked and can\'t be changed'**
+  String get mining_referralBuild5;
+
+  /// lib/features/mining/referral_screen.dart:1184
+  ///
+  /// In en, this message translates to:
+  /// **'Each account can bind only once, and the relation can\'t be changed once locked. You can\'t bind your own code or a code from someone you invited.'**
+  String get mining_referralBuild6;
+
+  /// lib/features/mining/referral_screen.dart:313
+  ///
+  /// In en, this message translates to:
+  /// **', up to L{maximumDepth}'**
+  String mining_referralDepthMax(Object? maximumDepth);
+
+  /// lib/features/mining/referral_screen.dart:128
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load invite relations'**
+  String get mining_referralEmptyMessage;
+
+  /// lib/features/mining/referral_screen.dart:714, lib/features/mining/referral_screen.dart:723
+  ///
+  /// In en, this message translates to:
+  /// **'No invitations yet'**
+  String get mining_referralEmptyMessage2;
+
+  /// lib/features/mining/referral_screen.dart:129
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code and invite count can\'t be loaded right now.'**
+  String get mining_referralEmptyReason;
+
+  /// lib/features/mining/referral_screen.dart:1195
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid invite code format. Check it and try again.'**
+  String get mining_referralErrorText;
+
+  /// lib/features/mining/referral_screen.dart:545
+  ///
+  /// In en, this message translates to:
+  /// **'Mine with me on LOOP. Sign up and enter my invite code {code}'**
+  String mining_referralIf(Object? code);
+
+  /// lib/features/mining/referral_screen.dart:83
+  ///
+  /// In en, this message translates to:
+  /// **'Invite list'**
+  String get mining_referralInvitees;
+
+  /// lib/features/mining/referral_screen.dart:429
+  ///
+  /// In en, this message translates to:
+  /// **'My invite code {code}'**
+  String mining_referralLabel(Object? code);
+
+  /// lib/features/mining/referral_screen.dart:1194
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code (like LOOP-XXXXX)'**
+  String get mining_referralLabelText;
+
+  /// lib/features/mining/referral_screen.dart:178
+  ///
+  /// In en, this message translates to:
+  /// **'My inviter'**
+  String get mining_referralLoopLabel;
+
+  /// lib/features/mining/referral_screen.dart:674
+  ///
+  /// In en, this message translates to:
+  /// **'{shown, plural, =1{1 active member} other{{shown} active members}}'**
+  String mining_referralLoopRecordRow(num shown);
+
+  /// lib/features/mining/referral_screen.dart:823
+  ///
+  /// In en, this message translates to:
+  /// **'Invite poster'**
+  String get mining_referralLoopSheetHeading;
+
+  /// lib/features/mining/referral_screen.dart:217
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has an inviter, so {code} from the invite link won\'t be bound'**
+  String mining_referralMessage(Object? code);
+
+  /// lib/features/mining/referral_screen.dart:218
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t bind an invite code right now, so {code} from the invite link wasn\'t submitted'**
+  String mining_referralMessage2(Object? code);
+
+  /// lib/features/mining/referral_screen.dart:237
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code bound'**
+  String get mining_referralMessage3;
+
+  /// lib/features/mining/referral_screen.dart:536
+  ///
+  /// In en, this message translates to:
+  /// **'The share sheet didn\'t open. Copy the link instead'**
+  String get mining_referralMessage4;
+
+  /// lib/features/mining/referral_models.dart:338
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid'**
+  String get mining_referralModelsInvalid;
+
+  /// lib/features/mining/referral_models.dart:80
+  ///
+  /// In en, this message translates to:
+  /// **'Invalidated'**
+  String get mining_referralModelsInvalidated;
+
+  /// lib/features/mining/referral_models.dart:337
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get mining_referralModelsPending;
+
+  /// lib/features/mining/referral_models.dart:76
+  ///
+  /// In en, this message translates to:
+  /// **'Pending activation'**
+  String get mining_referralModelsPendingActivation;
+
+  /// lib/features/mining/referral_models.dart:78
+  ///
+  /// In en, this message translates to:
+  /// **'Pending mining'**
+  String get mining_referralModelsPendingMining;
+
+  /// lib/features/mining/referral_models.dart:77
+  ///
+  /// In en, this message translates to:
+  /// **'Pending wallet link'**
+  String get mining_referralModelsPendingWallet;
+
+  /// lib/features/mining/referral_models.dart:379
+  ///
+  /// In en, this message translates to:
+  /// **'People I invited directly and verified'**
+  String get mining_referralModelsSwitch;
+
+  /// lib/features/mining/referral_models.dart:380
+  ///
+  /// In en, this message translates to:
+  /// **'People my L1 invited'**
+  String get mining_referralModelsSwitch2;
+
+  /// lib/features/mining/referral_models.dart:381
+  ///
+  /// In en, this message translates to:
+  /// **'People my L2 invited'**
+  String get mining_referralModelsSwitch3;
+
+  /// lib/features/mining/referral_models.dart:382
+  ///
+  /// In en, this message translates to:
+  /// **'People my L3 invited'**
+  String get mining_referralModelsSwitch4;
+
+  /// lib/features/mining/referral_models.dart:383
+  ///
+  /// In en, this message translates to:
+  /// **'People my L4 invited'**
+  String get mining_referralModelsSwitch5;
+
+  /// lib/features/mining/referral_models.dart:384
+  ///
+  /// In en, this message translates to:
+  /// **'Invite relation level'**
+  String get mining_referralModelsSwitch6;
+
+  /// lib/features/mining/referral_models.dart:79, lib/features/mining/referral_models.dart:336
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get mining_referralModelsValid;
+
+  /// lib/features/mining/referral_screen.dart:306
+  ///
+  /// In en, this message translates to:
+  /// **'\n{valid} active · {pending} pending verification.'**
+  String mining_referralOverviewCounts(Object? pending, Object? valid);
+
+  /// lib/features/mining/referral_screen.dart:659
+  ///
+  /// In en, this message translates to:
+  /// **'Total boost'**
+  String get mining_referralReferralBoostTotalTitle;
+
+  /// lib/features/mining/referral_screen.dart:1056
+  ///
+  /// In en, this message translates to:
+  /// **'Depth L{depth} · {referralValidationStatusLabel} · locked {launchTimestampLabel}'**
+  String mining_referralReferralBoundRowSubtitle(
+    Object? depth,
+    Object? launchTimestampLabel,
+    Object? referralValidationStatusLabel,
+  );
+
+  /// lib/features/mining/referral_screen.dart:1053
+  ///
+  /// In en, this message translates to:
+  /// **'Inviter bound'**
+  String get mining_referralReferralBoundRowTitle;
+
+  /// lib/features/mining/referral_screen.dart:117
+  ///
+  /// In en, this message translates to:
+  /// **'Invite relations aren\'t available right now'**
+  String get mining_referralReferralCapabilityInlineMessage;
+
+  /// lib/features/mining/referral_screen.dart:1107
+  ///
+  /// In en, this message translates to:
+  /// **'This binding didn\'t finish'**
+  String get mining_referralReferralClaimFailureTitle;
+
+  /// lib/features/mining/referral_screen.dart:1094
+  ///
+  /// In en, this message translates to:
+  /// **'An invite code is LOOP- followed by 5 characters. Clearly invalid codes aren\'t submitted, so your one binding isn\'t wasted.'**
+  String get mining_referralReferralClaimShapeInvalidBody;
+
+  /// lib/features/mining/referral_screen.dart:1093
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid invite code format'**
+  String get mining_referralReferralClaimShapeInvalidTitle;
+
+  /// lib/features/mining/referral_screen.dart:1204
+  ///
+  /// In en, this message translates to:
+  /// **'Bind'**
+  String get mining_referralReferralClaimSubmitLabel;
+
+  /// lib/features/mining/referral_screen.dart:1121
+  ///
+  /// In en, this message translates to:
+  /// **'This relation is confirmed. It can\'t be changed after binding.'**
+  String get mining_referralReferralClaimSuccessBody;
+
+  /// lib/features/mining/referral_screen.dart:1120
+  ///
+  /// In en, this message translates to:
+  /// **'Relation locked'**
+  String get mining_referralReferralClaimSuccessTitle;
+
+  /// lib/features/mining/referral_screen.dart:1036
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t bind an invite code right now. Refresh and try again later'**
+  String get mining_referralReferralClaimWindowTimed;
+
+  /// lib/features/mining/referral_screen.dart:1035
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t bind yet: {launchReasonCodeText}'**
+  String mining_referralReferralClaimWindowUnavailable(
+    Object? launchReasonCodeText,
+  );
+
+  /// lib/features/mining/referral_screen.dart:443
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite code'**
+  String get mining_referralReferralCopyCodeLabel;
+
+  /// lib/features/mining/referral_screen.dart:444
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code copied'**
+  String get mining_referralReferralCopyCodeMessage;
+
+  /// lib/features/mining/referral_screen.dart:476
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite link'**
+  String get mining_referralReferralCopyLinkLabel;
+
+  /// lib/features/mining/referral_screen.dart:477
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link copied'**
+  String get mining_referralReferralCopyLinkMessage;
+
+  /// lib/features/mining/referral_screen.dart:333
+  ///
+  /// In en, this message translates to:
+  /// **'Invitees can bind any time after activating their LOOP ID; each account can bind only once, and the relation can\'t be changed once locked. You can\'t bind your own code or a code from someone you invited.'**
+  String get mining_referralReferralInfoBindingBody;
+
+  /// lib/features/mining/referral_screen.dart:331, lib/features/mining/referral_screen.dart:1066, lib/features/mining/referral_screen.dart:1176
+  ///
+  /// In en, this message translates to:
+  /// **'Bind invite code'**
+  String get mining_referralReferralInfoBindingTitle;
+
+  /// lib/features/mining/referral_screen.dart:308
+  ///
+  /// In en, this message translates to:
+  /// **'People you invite directly and who are verified are L1, people L1 invites are L2, and so on{rules}. Each level\'s boost rate follows what the server publishes and counts only that level\'s active relations.'**
+  String mining_referralReferralInfoDepthBody(Object? rules);
+
+  /// lib/features/mining/referral_screen.dart:306
+  ///
+  /// In en, this message translates to:
+  /// **'How depth is counted'**
+  String get mining_referralReferralInfoDepthTitle;
+
+  /// lib/features/mining/referral_screen.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'Invite boost counts only toward mining power. It isn\'t income, commission or a rebate.'**
+  String get mining_referralReferralInfoMiningOnlyBody;
+
+  /// lib/features/mining/referral_screen.dart:292
+  ///
+  /// In en, this message translates to:
+  /// **'Counts only toward mining power'**
+  String get mining_referralReferralInfoMiningOnlyTitle;
+
+  /// lib/features/mining/referral_screen.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'Each account has one invite code. Sharing doesn\'t create a relation until it\'s verified; \"Active\" counts only verified relations, and the rest show as pending verification and add no boost.{overview}'**
+  String mining_referralReferralInfoRelationshipBody(Object? overview);
+
+  /// lib/features/mining/referral_screen.dart:297
+  ///
+  /// In en, this message translates to:
+  /// **'How a relation is formed'**
+  String get mining_referralReferralInfoRelationshipTitle;
+
+  /// lib/features/mining/referral_screen.dart:341
+  ///
+  /// In en, this message translates to:
+  /// **'Effective {launchTimestampLabel} · max depth L{maximumDepth} · applies to {rules}'**
+  String mining_referralReferralInfoRulesBody(
+    Object? launchTimestampLabel,
+    Object? maximumDepth,
+    Object? rules,
+  );
+
+  /// lib/features/mining/referral_screen.dart:339
+  ///
+  /// In en, this message translates to:
+  /// **'Rule version'**
+  String get mining_referralReferralInfoRulesTitle;
+
+  /// lib/features/mining/referral_screen.dart:322
+  ///
+  /// In en, this message translates to:
+  /// **'An invitee is an active member only if they had power in the latest settled hour.{stats}'**
+  String mining_referralReferralInfoValidMemberBody(Object? stats);
+
+  /// lib/features/mining/referral_screen.dart:320
+  ///
+  /// In en, this message translates to:
+  /// **'Active members'**
+  String get mining_referralReferralInfoValidMemberTitle;
+
+  /// lib/features/mining/referral_screen.dart:462
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link {link}'**
+  String mining_referralReferralInviteLinkLabel(Object? link);
+
+  /// lib/features/mining/referral_screen.dart:505
+  ///
+  /// In en, this message translates to:
+  /// **'Create poster'**
+  String get mining_referralReferralPosterLabel;
+
+  /// lib/features/mining/referral_screen.dart:937
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP invite poster, invite code {code}'**
+  String mining_referralReferralPosterLabel2(Object? code);
+
+  /// lib/features/mining/referral_screen.dart:851
+  ///
+  /// In en, this message translates to:
+  /// **'Invite links aren\'t open yet, so the poster shows only the invite code.'**
+  String get mining_referralReferralPosterNoLink;
+
+  /// lib/features/mining/referral_screen.dart:977
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link QR code'**
+  String get mining_referralReferralPosterQrSemanticLabel;
+
+  /// lib/features/mining/referral_screen.dart:862
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get mining_referralReferralPosterShareLabel;
+
+  /// lib/features/mining/referral_screen.dart:862
+  ///
+  /// In en, this message translates to:
+  /// **'Save or share poster'**
+  String get mining_referralReferralPosterShareLabel2;
+
+  /// lib/features/mining/referral_screen.dart:492
+  ///
+  /// In en, this message translates to:
+  /// **'Share link'**
+  String get mining_referralReferralShareLinkLabel;
+
+  /// lib/features/mining/referral_screen.dart:749
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden member'**
+  String get mining_referralRow;
+
+  /// lib/features/mining/referral_screen.dart:546
+  ///
+  /// In en, this message translates to:
+  /// **'Mine with me on LOOP. Sign up and enter my invite code {code}\n{link}'**
+  String mining_referralS(Object? code, Object? link);
+
+  /// lib/features/mining/referral_screen.dart:994
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to open the invite page'**
+  String get mining_referralS2;
+
+  /// lib/features/mining/referral_screen.dart:788
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, joined {launchTimestampLabel}, {referralInviteeStatusLabel}'**
+  String mining_referralSemanticLabel(
+    Object? launchTimestampLabel,
+    Object? name,
+    Object? referralInviteeStatusLabel,
+  );
+
+  /// lib/features/mining/referral_screen.dart:531, lib/features/mining/referral_screen.dart:957
+  ///
+  /// In en, this message translates to:
+  /// **'Join me on LOOP'**
+  String get mining_referralSubject;
+
+  /// lib/features/mining/referral_screen.dart:677
+  ///
+  /// In en, this message translates to:
+  /// **'NFT {powerFigure} · Assets {powerFigure2}'**
+  String mining_referralSubtitle(Object? powerFigure, Object? powerFigure2);
+
+  /// lib/features/mining/referral_screen.dart:775
+  ///
+  /// In en, this message translates to:
+  /// **'Joined {launchTimestampLabel}'**
+  String mining_referralSubtitle2(Object? launchTimestampLabel);
+
+  /// lib/features/mining/referral_screen.dart:315
+  ///
+  /// In en, this message translates to:
+  /// **'L{level} · Boost {boostPercent}%'**
+  String mining_referralTitle(Object? boostPercent, Object? level);
+
+  /// lib/features/mining/referral_screen.dart:329
+  ///
+  /// In en, this message translates to:
+  /// **'\nFigures as of {time}.'**
+  String mining_referralValidAsOf(Object? time);
+
+  /// lib/features/mining/referral_screen.dart:328
+  ///
+  /// In en, this message translates to:
+  /// **'\nNo settled hour yet, so active members are 0 for now.'**
+  String get mining_referralValidNoHour;
+
+  /// lib/features/mining/mining_screen.dart:499
+  ///
+  /// In en, this message translates to:
+  /// **'Token power'**
+  String get mining_screenCell;
+
+  /// lib/features/mining/mining_screen.dart:500, lib/features/mining/mining_widgets.dart:1165
+  ///
+  /// In en, this message translates to:
+  /// **'NFT power'**
+  String get mining_screenCell2;
+
+  /// lib/features/mining/mining_screen.dart:511
+  ///
+  /// In en, this message translates to:
+  /// **'Token power · Last hour'**
+  String get mining_screenCell3;
+
+  /// lib/features/mining/mining_screen.dart:512
+  ///
+  /// In en, this message translates to:
+  /// **'NFT power · Last hour'**
+  String get mining_screenCell4;
+
+  /// lib/features/mining/mining_screen.dart:187
+  ///
+  /// In en, this message translates to:
+  /// **'Claim rewards, open rewards and claims'**
+  String get mining_screenClaimSemanticLabel;
+
+  /// lib/features/mining/mining_screen.dart:573
+  ///
+  /// In en, this message translates to:
+  /// **'No power snapshot yet'**
+  String get mining_screenEmptyLine;
+
+  /// lib/features/mining/mining_screen.dart:152
+  ///
+  /// In en, this message translates to:
+  /// **'No power data yet'**
+  String get mining_screenEmptyMessage;
+
+  /// lib/features/mining/mining_screen.dart:551
+  ///
+  /// In en, this message translates to:
+  /// **'No power breakdown yet'**
+  String get mining_screenEmptyMessage2;
+
+  /// lib/features/mining/mining_screen.dart:599
+  ///
+  /// In en, this message translates to:
+  /// **'No NFT power yet'**
+  String get mining_screenEmptyTitle;
+
+  /// lib/features/mining/mining_screen.dart:478, lib/features/mining/mining_secondary_screens.dart:288
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get mining_screenHeading;
+
+  /// lib/features/mining/mining_screen.dart:477
+  ///
+  /// In en, this message translates to:
+  /// **'Total power'**
+  String get mining_screenKicker;
+
+  /// lib/features/mining/mining_screen.dart:168
+  ///
+  /// In en, this message translates to:
+  /// **'Total mined'**
+  String get mining_screenLabel;
+
+  /// lib/features/mining/mining_screen.dart:176
+  ///
+  /// In en, this message translates to:
+  /// **'Claimable'**
+  String get mining_screenLabel2;
+
+  /// lib/features/mining/mining_screen.dart:433
+  ///
+  /// In en, this message translates to:
+  /// **'Last hour power'**
+  String get mining_screenLabel3;
+
+  /// lib/features/mining/mining_screen.dart:439
+  ///
+  /// In en, this message translates to:
+  /// **'Active invites'**
+  String get mining_screenLabel4;
+
+  /// lib/features/mining/mining_screen.dart:449, lib/features/mining/mining_screen.dart:455
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s estimate'**
+  String get mining_screenLabel5;
+
+  /// lib/features/mining/mining_screen.dart:369
+  ///
+  /// In en, this message translates to:
+  /// **'No power snapshot loaded yet.'**
+  String get mining_screenLoopInfoNote;
+
+  /// lib/features/mining/mining_screen.dart:384
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP doesn\'t accumulate points or estimate earnings on this device. Not loaded doesn\'t mean \"zero power\".'**
+  String get mining_screenLoopInfoNote2;
+
+  /// lib/features/mining/mining_screen.dart:142
+  ///
+  /// In en, this message translates to:
+  /// **'Mining isn\'t available right now'**
+  String get mining_screenMiningCapabilityUnavailableLabel;
+
+  /// lib/features/mining/mining_screen.dart:563
+  ///
+  /// In en, this message translates to:
+  /// **'NFT power isn\'t provided separately yet'**
+  String get mining_screenMiningCompositionNftUnavailableMessage;
+
+  /// lib/features/mining/mining_screen.dart:383
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP doesn\'t accumulate points or estimate earnings on this device. Every number on this page comes from the latest power snapshot.'**
+  String get mining_screenMiningFormulaEffective;
+
+  /// lib/features/mining/mining_screen.dart:393
+  ///
+  /// In en, this message translates to:
+  /// **'Token power = amount held × asset weight, not multiplied by price; NFTs use their community factor.\n{miningConditionVerified}\n{miningConditionMember}\n{miningConditionEmbedded}'**
+  String mining_screenMiningInfoConditionsBody(
+    Object? miningConditionEmbedded,
+    Object? miningConditionMember,
+    Object? miningConditionVerified,
+  );
+
+  /// lib/features/mining/mining_screen.dart:391
+  ///
+  /// In en, this message translates to:
+  /// **'Which holdings count toward power'**
+  String get mining_screenMiningInfoConditionsTitle;
+
+  /// lib/features/mining/mining_screen.dart:362
+  ///
+  /// In en, this message translates to:
+  /// **'Formula version'**
+  String get mining_screenMiningInfoFormulaTitle;
+
+  /// lib/features/mining/mining_screen.dart:307
+  ///
+  /// In en, this message translates to:
+  /// **'View mining rules'**
+  String get mining_screenMiningInfoOpenRulesLabel;
+
+  /// lib/features/mining/mining_screen.dart:381
+  ///
+  /// In en, this message translates to:
+  /// **'No local estimates'**
+  String get mining_screenMiningInfoTruthTitle;
+
+  /// lib/features/mining/mining_screen.dart:216, lib/features/mining/mining_screen.dart:217
+  ///
+  /// In en, this message translates to:
+  /// **'About invites'**
+  String get mining_screenMiningInviteInfoTitle;
+
+  /// lib/features/mining/mining_screen.dart:299, lib/features/mining/mining_screen.dart:300
+  ///
+  /// In en, this message translates to:
+  /// **'About mining'**
+  String get mining_screenMiningRulesActionTitle;
+
+  /// lib/features/mining/mining_screen.dart:374, lib/features/mining/mining_secondary_screens.dart:486
+  ///
+  /// In en, this message translates to:
+  /// **'Block {groupedFigure} · {launchTimestampLabel} · when power was calculated'**
+  String mining_screenMiningSnapshotComputed(
+    Object? groupedFigure,
+    Object? launchTimestampLabel,
+  );
+
+  /// lib/features/mining/mining_screen.dart:419
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot · {launchTimestampLabel}{stale}'**
+  String mining_screenMiningSnapshotComputed2(
+    Object? launchTimestampLabel,
+    Object? stale,
+  );
+
+  /// lib/features/mining/mining_screen.dart:345
+  ///
+  /// In en, this message translates to:
+  /// **' ({text})'**
+  String mining_screenParenthetical(Object? text);
+
+  /// lib/features/mining/mining_screen.dart:573, lib/features/mining/mining_screen.dart:625
+  ///
+  /// In en, this message translates to:
+  /// **'No token power yet'**
+  String get mining_screenS;
+
+  /// lib/features/mining/mining_screen.dart:283, lib/features/mining/mining_screen.dart:441, lib/features/mining/mining_secondary_screens.dart:118
+  ///
+  /// In en, this message translates to:
+  /// **'Not loaded yet'**
+  String get mining_screenSpoken;
+
+  /// lib/features/mining/mining_screen.dart:435, lib/features/mining/mining_screen.dart:508
+  ///
+  /// In en, this message translates to:
+  /// **'No settled hour yet'**
+  String get mining_screenSpoken2;
+
+  /// lib/features/mining/mining_screen.dart:325
+  ///
+  /// In en, this message translates to:
+  /// **'Mining summary not loaded yet. The formula version appears here once loaded.'**
+  String get mining_screenSwitch;
+
+  /// lib/features/mining/mining_screen.dart:327
+  ///
+  /// In en, this message translates to:
+  /// **'No approved mining formula version: {launchReasonCodeText}'**
+  String mining_screenSwitch2(Object? launchReasonCodeText);
+
+  /// lib/features/mining/mining_screen.dart:332
+  ///
+  /// In en, this message translates to:
+  /// **'Mining formula pending approval. Numbers on this page have a source only after approval.'**
+  String get mining_screenSwitch3;
+
+  /// lib/features/mining/mining_screen.dart:333, lib/features/mining/mining_widgets.dart:46
+  ///
+  /// In en, this message translates to:
+  /// **'Formula version pending approval'**
+  String get mining_screenSwitch4;
+
+  /// lib/features/mining/mining_screen.dart:342
+  ///
+  /// In en, this message translates to:
+  /// **'Mining formula in effect{scope} · effective {launchTimestampLabel}'**
+  String mining_screenSwitch5(Object? launchTimestampLabel, Object? scope);
+
+  /// lib/features/mining/mining_screen.dart:344, lib/features/mining/mining_widgets.dart:58
+  ///
+  /// In en, this message translates to:
+  /// **'Formula version in effect'**
+  String get mining_screenSwitch6;
+
+  /// lib/features/mining/mining_screen.dart:440, lib/features/mining/mining_screen.dart:441
+  ///
+  /// In en, this message translates to:
+  /// **'{invites, plural, =1{1 person} other{{invites} people}}'**
+  String mining_screenValue(num invites);
+
+  /// lib/features/mining/mining_secondary_screens.dart:374
+  ///
+  /// In en, this message translates to:
+  /// **'My power'**
+  String get mining_secondaryScreensCell;
+
+  /// lib/features/mining/mining_secondary_screens.dart:142
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this community'**
+  String get mining_secondaryScreensEmptyMessage;
+
+  /// lib/features/mining/mining_secondary_screens.dart:631
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load rules'**
+  String get mining_secondaryScreensEmptyMessage2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:143
+  ///
+  /// In en, this message translates to:
+  /// **'The community may not exist or isn\'t visible to this account.'**
+  String get mining_secondaryScreensEmptyReason;
+
+  /// lib/features/mining/mining_secondary_screens.dart:632
+  ///
+  /// In en, this message translates to:
+  /// **'Formula version can\'t be loaded right now.'**
+  String get mining_secondaryScreensEmptyReason2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:573
+  ///
+  /// In en, this message translates to:
+  /// **'Weights and power rules'**
+  String get mining_secondaryScreensHeading;
+
+  /// lib/features/mining/mining_secondary_screens.dart:590, lib/features/mining/mining_secondary_screens.dart:785
+  ///
+  /// In en, this message translates to:
+  /// **'Daily output'**
+  String get mining_secondaryScreensIf;
+
+  /// lib/features/mining/mining_secondary_screens.dart:567
+  ///
+  /// In en, this message translates to:
+  /// **'Power rules'**
+  String get mining_secondaryScreensKicker;
+
+  /// lib/features/mining/mining_secondary_screens.dart:366
+  ///
+  /// In en, this message translates to:
+  /// **'My power, {spokenContribution}. Community weight, {spokenWeight}'**
+  String mining_secondaryScreensLabel(
+    Object? spokenContribution,
+    Object? spokenWeight,
+  );
+
+  /// lib/features/mining/mining_secondary_screens.dart:644
+  ///
+  /// In en, this message translates to:
+  /// **'Approved formula version'**
+  String get mining_secondaryScreensLabel2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:575
+  ///
+  /// In en, this message translates to:
+  /// **'No approved formula and no draft pending approval.'**
+  String get mining_secondaryScreensLoopFolioPrimary;
+
+  /// lib/features/mining/mining_secondary_screens.dart:576
+  ///
+  /// In en, this message translates to:
+  /// **'No approved formula yet. The one below is a draft pending approval.'**
+  String get mining_secondaryScreensLoopFolioPrimary2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:577
+  ///
+  /// In en, this message translates to:
+  /// **'This version is approved and in effect; no draft pending approval.'**
+  String get mining_secondaryScreensLoopFolioPrimary3;
+
+  /// lib/features/mining/mining_secondary_screens.dart:578
+  ///
+  /// In en, this message translates to:
+  /// **'This version is approved and in effect. A draft pending approval is below.'**
+  String get mining_secondaryScreensLoopFolioPrimary4;
+
+  /// lib/features/mining/mining_secondary_screens.dart:152
+  ///
+  /// In en, this message translates to:
+  /// **'My contribution'**
+  String get mining_secondaryScreensLoopLabel;
+
+  /// lib/features/mining/mining_secondary_screens.dart:154
+  ///
+  /// In en, this message translates to:
+  /// **'Community record'**
+  String get mining_secondaryScreensLoopLabel2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:156, lib/features/mining/mining_secondary_screens.dart:376
+  ///
+  /// In en, this message translates to:
+  /// **'Community weight'**
+  String get mining_secondaryScreensLoopLabel3;
+
+  /// lib/features/mining/mining_secondary_screens.dart:160, lib/features/mining/mining_secondary_screens.dart:166
+  ///
+  /// In en, this message translates to:
+  /// **'Bound assets'**
+  String get mining_secondaryScreensLoopLabel4;
+
+  /// lib/features/mining/mining_secondary_screens.dart:636
+  ///
+  /// In en, this message translates to:
+  /// **'Approved version'**
+  String get mining_secondaryScreensLoopLabel5;
+
+  /// lib/features/mining/mining_secondary_screens.dart:667
+  ///
+  /// In en, this message translates to:
+  /// **'Version pending approval'**
+  String get mining_secondaryScreensLoopLabel6;
+
+  /// lib/features/mining/mining_secondary_screens.dart:684
+  ///
+  /// In en, this message translates to:
+  /// **'Invite relation rules'**
+  String get mining_secondaryScreensLoopLabel7;
+
+  /// lib/features/mining/mining_secondary_screens.dart:868
+  ///
+  /// In en, this message translates to:
+  /// **'Asset weights'**
+  String get mining_secondaryScreensLoopLabel8;
+
+  /// lib/features/mining/mining_secondary_screens.dart:663, lib/features/mining/mining_widgets.dart:279
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP mining rules'**
+  String get mining_secondaryScreensLoopProvenanceLine;
+
+  /// lib/features/mining/mining_secondary_screens.dart:168
+  ///
+  /// In en, this message translates to:
+  /// **'This community has no bound assets yet'**
+  String get mining_secondaryScreensMiningCommunityAssetRowSubtitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:172
+  ///
+  /// In en, this message translates to:
+  /// **'Bound'**
+  String get mining_secondaryScreensMiningCommunityAssetRowTrailing;
+
+  /// lib/features/mining/mining_secondary_screens.dart:295
+  ///
+  /// In en, this message translates to:
+  /// **'Community power'**
+  String get mining_secondaryScreensMiningCommunityLogoKicker;
+
+  /// lib/features/mining/mining_secondary_screens.dart:423
+  ///
+  /// In en, this message translates to:
+  /// **'Holders mining'**
+  String get mining_secondaryScreensMiningCommunityMetricParticipantsTitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:438
+  ///
+  /// In en, this message translates to:
+  /// **'Community total power'**
+  String get mining_secondaryScreensMiningCommunityMetricPowerTitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:181
+  ///
+  /// In en, this message translates to:
+  /// **'Weights come from review; the review factors are public, the exact scores aren\'t. Communities that aren\'t approved have no weight and no power. Holders must join the community for their holdings to count.'**
+  String get mining_secondaryScreensMiningCommunityNoticeBody;
+
+  /// lib/features/mining/mining_secondary_screens.dart:179
+  ///
+  /// In en, this message translates to:
+  /// **'Weights are set by platform review'**
+  String get mining_secondaryScreensMiningCommunityNoticeTitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:100
+  ///
+  /// In en, this message translates to:
+  /// **'View leaderboard'**
+  String get mining_secondaryScreensMiningCommunityRankActionLabel;
+
+  /// lib/features/mining/mining_secondary_screens.dart:109
+  ///
+  /// In en, this message translates to:
+  /// **'Community rank'**
+  String get mining_secondaryScreensMiningCommunityReadingLabel;
+
+  /// lib/features/mining/mining_secondary_screens.dart:120
+  ///
+  /// In en, this message translates to:
+  /// **'Participants'**
+  String get mining_secondaryScreensMiningCommunityReadingTrailingLabel;
+
+  /// lib/features/mining/mining_secondary_screens.dart:94, lib/features/mining/mining_secondary_screens.dart:131
+  ///
+  /// In en, this message translates to:
+  /// **'Community mining'**
+  String get mining_secondaryScreensMiningCommunityScreenTitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:258
+  ///
+  /// In en, this message translates to:
+  /// **'No weight to review'**
+  String get mining_secondaryScreensMiningCommunityWeightNotApplicableMessage;
+
+  /// lib/features/mining/mining_secondary_screens.dart:251
+  ///
+  /// In en, this message translates to:
+  /// **'Weight in review'**
+  String get mining_secondaryScreensMiningCommunityWeightPendingMessage;
+
+  /// lib/features/mining/mining_secondary_screens.dart:221
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed {launchTimestampLabel}'**
+  String mining_secondaryScreensMiningCommunityWeightRowSubtitle(
+    Object? launchTimestampLabel,
+  );
+
+  /// lib/features/mining/mining_secondary_screens.dart:220
+  ///
+  /// In en, this message translates to:
+  /// **'Weight granted'**
+  String get mining_secondaryScreensMiningCommunityWeightRowTitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:232
+  ///
+  /// In en, this message translates to:
+  /// **'Formula version in effect {identifier}'**
+  String mining_secondaryScreensMiningCommunityWeightVersion(
+    Object? identifier,
+  );
+
+  /// lib/features/mining/mining_secondary_screens.dart:442
+  ///
+  /// In en, this message translates to:
+  /// **'Sum of members\' power on bound assets'**
+  String get mining_secondaryScreensMiningFigureValue;
+
+  /// lib/features/mining/mining_secondary_screens.dart:427
+  ///
+  /// In en, this message translates to:
+  /// **'Members with power in the latest power snapshot'**
+  String get mining_secondaryScreensMiningParticipantsCount;
+
+  /// lib/features/mining/mining_secondary_screens.dart:673
+  ///
+  /// In en, this message translates to:
+  /// **'No draft version right now.'**
+  String get mining_secondaryScreensMiningRulesNoPendingMessage;
+
+  /// lib/features/mining/mining_secondary_screens.dart:672
+  ///
+  /// In en, this message translates to:
+  /// **'No version pending approval'**
+  String get mining_secondaryScreensMiningRulesNoPendingTitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:728
+  ///
+  /// In en, this message translates to:
+  /// **'Versions pending approval aren\'t used in any calculation. Weight ranges list rule items only, with no values; values are published after approval.'**
+  String get mining_secondaryScreensMiningRulesNoticeBody;
+
+  /// lib/features/mining/mining_secondary_screens.dart:727
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts aren\'t rules in effect'**
+  String get mining_secondaryScreensMiningRulesNoticeTitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:714
+  ///
+  /// In en, this message translates to:
+  /// **'View my invite relations'**
+  String get mining_secondaryScreensMiningRulesOpenReferralLabel;
+
+  /// lib/features/mining/mining_secondary_screens.dart:700
+  ///
+  /// In en, this message translates to:
+  /// **'Effective {launchTimestampLabel}'**
+  String mining_secondaryScreensMiningRulesReferralLSubtitle(
+    Object? launchTimestampLabel,
+  );
+
+  /// lib/features/mining/mining_secondary_screens.dart:561, lib/features/mining/mining_secondary_screens.dart:620
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rules'**
+  String get mining_secondaryScreensMiningRulesScreenTitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:805
+  ///
+  /// In en, this message translates to:
+  /// **'Invite boost counts only toward power'**
+  String get mining_secondaryScreensSubtitle;
+
+  /// lib/features/mining/mining_secondary_screens.dart:282
+  ///
+  /// In en, this message translates to:
+  /// **'Sum of members\' power on bound assets, weights included.'**
+  String get mining_secondaryScreensSwitch;
+
+  /// lib/features/mining/mining_secondary_screens.dart:288
+  ///
+  /// In en, this message translates to:
+  /// **'Community total power appears here once loaded.'**
+  String get mining_secondaryScreensSwitch2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:289
+  ///
+  /// In en, this message translates to:
+  /// **'This page hasn\'t loaded this community\'s power yet.'**
+  String get mining_secondaryScreensSwitch3;
+
+  /// lib/features/mining/mining_secondary_screens.dart:384
+  ///
+  /// In en, this message translates to:
+  /// **'Weights are granted by platform review and are already included in the power above.'**
+  String get mining_secondaryScreensSwitch4;
+
+  /// lib/features/mining/mining_secondary_screens.dart:861
+  ///
+  /// In en, this message translates to:
+  /// **'Approved {launchTimestampLabel}'**
+  String mining_secondaryScreensSwitch5(Object? launchTimestampLabel);
+
+  /// lib/features/mining/mining_secondary_screens.dart:596
+  ///
+  /// In en, this message translates to:
+  /// **'Daily output '**
+  String get mining_secondaryScreensText;
+
+  /// lib/features/mining/mining_secondary_screens.dart:928
+  ///
+  /// In en, this message translates to:
+  /// **'Exact scores aren\'t public; weights follow the platform\'s overall review.'**
+  String get mining_secondaryScreensText2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:36
+  ///
+  /// In en, this message translates to:
+  /// **'{subject} isn\'t available right now'**
+  String mining_secondaryScreensTitle(Object? subject);
+
+  /// lib/features/mining/mining_secondary_screens.dart:773
+  ///
+  /// In en, this message translates to:
+  /// **'Power formula'**
+  String get mining_secondaryScreensTitle2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:804, lib/features/mining/referral_screen.dart:84
+  ///
+  /// In en, this message translates to:
+  /// **'Invite boost'**
+  String get mining_secondaryScreensTitle3;
+
+  /// lib/features/mining/mining_secondary_screens.dart:831
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed community tokens'**
+  String get mining_secondaryScreensTitle4;
+
+  /// lib/features/mining/mining_secondary_screens.dart:798
+  ///
+  /// In en, this message translates to:
+  /// **'Published after the LOOP token launches'**
+  String get mining_secondaryScreensTrailingCaption;
+
+  /// lib/features/mining/mining_secondary_screens.dart:799
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated output'**
+  String get mining_secondaryScreensTrailingCaption2;
+
+  /// lib/features/mining/mining_secondary_screens.dart:799
+  ///
+  /// In en, this message translates to:
+  /// **'Daily output'**
+  String get mining_secondaryScreensTrailingCaption3;
+
+  /// lib/features/mining/mining_widgets.dart:1137
+  ///
+  /// In en, this message translates to:
+  /// **'Holding {amountFigure}'**
+  String mining_widgetsLoopRecordRow(Object? amountFigure);
+
+  /// lib/features/mining/mining_widgets.dart:1168
+  ///
+  /// In en, this message translates to:
+  /// **'NFT power {powerFigure}'**
+  String mining_widgetsLoopRecordRow4(Object? powerFigure);
+
+  /// lib/features/mining/mining_widgets.dart:291
+  ///
+  /// In en, this message translates to:
+  /// **'Not updated'**
+  String get mining_widgetsMarker;
+
+  /// lib/features/mining/mining_widgets.dart:1179
+  ///
+  /// In en, this message translates to:
+  /// **'{amountFigure} × weight {weight}'**
+  String mining_widgetsMiningCompositionExpression(
+    Object? amountFigure,
+    Object? weight,
+  );
+
+  /// lib/features/mining/mining_widgets.dart:234
+  ///
+  /// In en, this message translates to:
+  /// **'This power includes demo holdings: they aren\'t on-chain, nobody actually holds them, and the numbers are for trying things out.'**
+  String get mining_widgetsMiningDemoHoldingsDetail;
+
+  /// lib/features/mining/mining_widgets.dart:44
+  ///
+  /// In en, this message translates to:
+  /// **'Mining formula not decided yet'**
+  String get mining_widgetsMiningFormulaRowSemanticLabel;
+
+  /// lib/features/mining/mining_widgets.dart:44
+  ///
+  /// In en, this message translates to:
+  /// **'Mining formula pending approval'**
+  String get mining_widgetsMiningFormulaRowSemanticLabel2;
+
+  /// lib/features/mining/mining_widgets.dart:56
+  ///
+  /// In en, this message translates to:
+  /// **'Mining formula in effect'**
+  String get mining_widgetsMiningFormulaRowSemanticLabel3;
+
+  /// lib/features/mining/mining_widgets.dart:42
+  ///
+  /// In en, this message translates to:
+  /// **'The numbers above have a source only after approval.'**
+  String get mining_widgetsMiningFormulaRowSubtitle;
+
+  /// lib/features/mining/mining_widgets.dart:54
+  ///
+  /// In en, this message translates to:
+  /// **'In effect · {launchTimestampLabel}'**
+  String mining_widgetsMiningFormulaRowSubtitle2(Object? launchTimestampLabel);
+
+  /// lib/features/mining/mining_widgets.dart:36, lib/features/mining/mining_widgets.dart:51
+  ///
+  /// In en, this message translates to:
+  /// **'Mining formula'**
+  String get mining_widgetsMiningFormulaRowTitle;
+
+  /// lib/features/mining/mining_widgets.dart:55
+  ///
+  /// In en, this message translates to:
+  /// **'In effect'**
+  String get mining_widgetsMiningFormulaRowTrailing;
+
+  /// lib/features/mining/mining_widgets.dart:689, lib/features/mining/mining_widgets.dart:781
+  ///
+  /// In en, this message translates to:
+  /// **'Network power · Last hour'**
+  String get mining_widgetsMiningNetworkKicker;
+
+  /// lib/features/mining/mining_widgets.dart:689, lib/features/mining/mining_widgets.dart:781
+  ///
+  /// In en, this message translates to:
+  /// **'Network power'**
+  String get mining_widgetsMiningNetworkKicker2;
+
+  /// lib/features/mining/mining_widgets.dart:592
+  ///
+  /// In en, this message translates to:
+  /// **'Power Ranking, my rank {place}'**
+  String mining_widgetsMiningNetworkRankActionLabel2(Object? place);
+
+  /// lib/features/mining/mining_widgets.dart:706, lib/features/mining/mining_widgets.dart:791
+  ///
+  /// In en, this message translates to:
+  /// **'Network power, {spoken}'**
+  String mining_widgetsMiningNetworkTotalLabel(Object? spoken);
+
+  /// lib/features/mining/mining_widgets.dart:555
+  ///
+  /// In en, this message translates to:
+  /// **'Power details'**
+  String get mining_widgetsMiningSummaryHeroAssetsLabel;
+
+  /// lib/features/mining/mining_widgets.dart:536
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rewards'**
+  String get mining_widgetsMiningSummaryHeroClaimLabel;
+
+  /// lib/features/mining/mining_widgets.dart:536
+  ///
+  /// In en, this message translates to:
+  /// **'Claim rewards'**
+  String get mining_widgetsMiningSummaryHeroClaimLabel2;
+
+  /// lib/features/mining/mining_widgets.dart:540
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rewards, open the mining rewards page'**
+  String get mining_widgetsMiningSummaryHeroClaimSemanticLabel;
+
+  /// lib/features/mining/mining_widgets.dart:455
+  ///
+  /// In en, this message translates to:
+  /// **'My total power'**
+  String get mining_widgetsText;
+
   /// lib/features/notifications/community_application_notifications.dart:93
   ///
   /// In en, this message translates to:
@@ -36916,6 +40634,560 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Confirmations can\'t be loaded'**
   String get wallet_txResultWalletMoneyActionsMoneyFactsFooterText;
+
+  /// lib/widgets/loop_assets.dart:686
+  ///
+  /// In en, this message translates to:
+  /// **'{slot} avatar'**
+  String widgets_assetsBuild(Object? slot);
+
+  /// lib/widgets/loop_atmosphere.dart:807
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, view all'**
+  String widgets_atmosphereLabel(Object? title);
+
+  /// lib/widgets/loop_avatar_stack.dart:218
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} more'**
+  String widgets_avatarStackBuild(Object? remaining);
+
+  /// lib/widgets/loop_blocks.dart:145
+  ///
+  /// In en, this message translates to:
+  /// **'Not loaded'**
+  String get widgets_blocksUnread;
+
+  /// lib/widgets/loop_token_card.dart:651
+  ///
+  /// In en, this message translates to:
+  /// **'; '**
+  String get widgets_clauseJoin;
+
+  /// lib/widgets/loop_components.dart:4405
+  ///
+  /// In en, this message translates to:
+  /// **'Trace ID {traceId}'**
+  String widgets_componentsBuild(Object? traceId);
+
+  /// lib/widgets/loop_components.dart:4406
+  ///
+  /// In en, this message translates to:
+  /// **'Source {source}'**
+  String widgets_componentsBuild2(Object? source);
+
+  /// lib/widgets/loop_components.dart:4491
+  ///
+  /// In en, this message translates to:
+  /// **'Cached values may be out of date.'**
+  String get widgets_componentsCacheStale;
+
+  /// lib/widgets/loop_components.dart:4463
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · Showing cache'**
+  String get widgets_componentsCachedHeadline;
+
+  /// lib/widgets/loop_components.dart:4464
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP timed out · Showing cache'**
+  String get widgets_componentsCachedTimeoutHeadline;
+
+  /// lib/widgets/loop_components.dart:3752
+  ///
+  /// In en, this message translates to:
+  /// **'Loading card'**
+  String get widgets_componentsCard;
+
+  /// lib/widgets/loop_components.dart:3751
+  ///
+  /// In en, this message translates to:
+  /// **'Loading chart'**
+  String get widgets_componentsChart;
+
+  /// lib/widgets/loop_components.dart:4465
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach LOOP'**
+  String get widgets_componentsConnectionHeadline;
+
+  /// lib/widgets/loop_components.dart:3750
+  ///
+  /// In en, this message translates to:
+  /// **'Loading details'**
+  String get widgets_componentsDetail;
+
+  /// lib/widgets/loop_components.dart:3753
+  ///
+  /// In en, this message translates to:
+  /// **'Loading figures'**
+  String get widgets_componentsFigure;
+
+  /// lib/widgets/loop_components.dart:3318
+  ///
+  /// In en, this message translates to:
+  /// **'Send a message'**
+  String get widgets_componentsHintText;
+
+  /// lib/widgets/loop_components.dart:1868, lib/widgets/loop_components.dart:1996
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {trailing}, can\'t be changed'**
+  String widgets_componentsLabel(Object? title, Object? trailing);
+
+  /// lib/widgets/loop_components.dart:2276
+  ///
+  /// In en, this message translates to:
+  /// **'What happened'**
+  String get widgets_componentsLabel2;
+
+  /// lib/widgets/loop_components.dart:2281
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s affected'**
+  String get widgets_componentsLabel3;
+
+  /// lib/widgets/loop_components.dart:4127
+  ///
+  /// In en, this message translates to:
+  /// **'Updating'**
+  String get widgets_componentsLabel4;
+
+  /// lib/widgets/loop_components.dart:4418
+  ///
+  /// In en, this message translates to:
+  /// **'Other options'**
+  String get widgets_componentsLabel5;
+
+  /// lib/widgets/loop_components.dart:4541
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect'**
+  String get widgets_componentsLabel6;
+
+  /// lib/widgets/loop_components.dart:4530
+  ///
+  /// In en, this message translates to:
+  /// **'Cached {cachedAt}'**
+  String widgets_componentsLoopOfflineCachedAt(Object? cachedAt);
+
+  /// lib/widgets/loop_components.dart:4533
+  ///
+  /// In en, this message translates to:
+  /// **'Cached at {cachedAt}'**
+  String widgets_componentsLoopOfflineCachedAtSemanticsLabel(Object? cachedAt);
+
+  /// lib/widgets/loop_components.dart:4467
+  ///
+  /// In en, this message translates to:
+  /// **'This read didn\'t finish and there\'s no cache to show yet.'**
+  String get widgets_componentsNoCacheBody;
+
+  /// lib/widgets/loop_components.dart:3749
+  ///
+  /// In en, this message translates to:
+  /// **'Loading list'**
+  String get widgets_componentsPriceRow;
+
+  /// lib/widgets/loop_components.dart:4200
+  ///
+  /// In en, this message translates to:
+  /// **'Still couldn\'t connect. Try again once the network is back.'**
+  String get widgets_componentsRetryFailedMessage;
+
+  /// lib/widgets/loop_components.dart:4199
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying…'**
+  String get widgets_componentsRetryingLabel;
+
+  /// lib/widgets/loop_components.dart:4490
+  ///
+  /// In en, this message translates to:
+  /// **'Paused: {pausedActions}.'**
+  String widgets_componentsS(Object? pausedActions);
+
+  /// lib/widgets/loop_components.dart:4563
+  ///
+  /// In en, this message translates to:
+  /// **'Open system settings'**
+  String get widgets_componentsSettingsLabel;
+
+  /// lib/widgets/loop_components.dart:2227
+  ///
+  /// In en, this message translates to:
+  /// **'What happened: {happened}'**
+  String widgets_componentsSwitch(Object? happened);
+
+  /// lib/widgets/loop_components.dart:2228
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s affected: {impact}'**
+  String widgets_componentsSwitch2(Object? impact);
+
+  /// lib/widgets/loop_components.dart:2229
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {next}'**
+  String widgets_componentsSwitch3(Object? next);
+
+  /// lib/widgets/loop_components.dart:4466
+  ///
+  /// In en, this message translates to:
+  /// **'LOOP timed out'**
+  String get widgets_componentsTimeoutHeadline;
+
+  /// lib/widgets/loop_components.dart:4345
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t complete right now'**
+  String get widgets_componentsTitle;
+
+  /// lib/widgets/loop_components.dart:4194
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was loaded on this page and nothing was submitted. Check your network and retry.'**
+  String get widgets_componentsUnreachableMessage;
+
+  /// lib/widgets/loop_components.dart:4190
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach LOOP right now'**
+  String get widgets_componentsUnreachableTitle;
+
+  /// lib/widgets/loop_components.dart:4490
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get widgets_enumerationSeparator;
+
+  /// lib/widgets/loop_environment_tag.dart:22
+  ///
+  /// In en, this message translates to:
+  /// **'Server {label}'**
+  String widgets_environmentTagLabel(Object? label);
+
+  /// lib/widgets/loop_flat.dart:79
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}, {label}'**
+  String widgets_flatLoopStepDotsLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  );
+
+  /// lib/widgets/loop_info_sheet.dart:50, lib/widgets/loop_provenance_scope.dart:331
+  ///
+  /// In en, this message translates to:
+  /// **'Close details'**
+  String get widgets_infoSheetBarrierLabel;
+
+  /// lib/widgets/loop_info_sheet.dart:118
+  ///
+  /// In en, this message translates to:
+  /// **'About {title}'**
+  String widgets_infoSheetLabel(Object? title);
+
+  /// lib/widgets/loop_inline_states.dart:355
+  ///
+  /// In en, this message translates to:
+  /// **'Scope'**
+  String get widgets_inlineStatesLabel;
+
+  /// lib/widgets/loop_inline_states.dart:357, lib/widgets/loop_inline_states.dart:397, lib/widgets/loop_provenance_scope.dart:400
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get widgets_inlineStatesLabel2;
+
+  /// lib/widgets/loop_inline_states.dart:363, lib/widgets/loop_provenance_scope.dart:408
+  ///
+  /// In en, this message translates to:
+  /// **'Observed at'**
+  String get widgets_inlineStatesLabel3;
+
+  /// lib/widgets/loop_inline_states.dart:111
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying'**
+  String get widgets_inlineStatesLoopInlineUnavailableRetryLabel;
+
+  /// lib/widgets/loop_inline_states.dart:311
+  ///
+  /// In en, this message translates to:
+  /// **'{text}, view data source details'**
+  String widgets_inlineStatesLoopProvenanceLineSemanticsLabel(Object? text);
+
+  /// lib/widgets/loop_inline_states.dart:293
+  ///
+  /// In en, this message translates to:
+  /// **'{text}, data source is in the details at the top right'**
+  String widgets_inlineStatesLoopProvenanceMarkerLabel(Object? text);
+
+  /// lib/widgets/loop_inline_states.dart:344
+  ///
+  /// In en, this message translates to:
+  /// **'Close data source details'**
+  String get widgets_inlineStatesLoopProvenanceSheetBarrierLabel;
+
+  /// lib/widgets/loop_inline_states.dart:250
+  ///
+  /// In en, this message translates to:
+  /// **'Observed at {timeLabel}'**
+  String widgets_inlineStatesText2(Object? timeLabel);
+
+  /// lib/widgets/loop_inline_states.dart:358, lib/widgets/loop_provenance_scope.dart:402
+  ///
+  /// In en, this message translates to:
+  /// **'Source not labeled'**
+  String get widgets_inlineStatesValue;
+
+  /// lib/widgets/loop_toast.dart:360
+  ///
+  /// In en, this message translates to:
+  /// **': '**
+  String get widgets_labelColon;
+
+  /// lib/widgets/loop_loading.dart:61
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed. Showing the last data read'**
+  String get widgets_loadingIf;
+
+  /// lib/widgets/loop_loading.dart:65
+  ///
+  /// In en, this message translates to:
+  /// **'Data from {age}, updating'**
+  String widgets_loadingIf2(Object? age);
+
+  /// lib/widgets/loop_loading.dart:11
+  ///
+  /// In en, this message translates to:
+  /// **'{inSeconds}s ago'**
+  String widgets_loadingLoopAgeLabel(Object? inSeconds);
+
+  /// lib/widgets/loop_loading.dart:12
+  ///
+  /// In en, this message translates to:
+  /// **'{inMinutes}m ago'**
+  String widgets_loadingLoopAgeLabel2(Object? inMinutes);
+
+  /// lib/widgets/loop_loading.dart:13
+  ///
+  /// In en, this message translates to:
+  /// **'{inHours}h ago'**
+  String widgets_loadingLoopAgeLabel3(Object? inHours);
+
+  /// lib/widgets/loop_loading.dart:14
+  ///
+  /// In en, this message translates to:
+  /// **'{inDays}d ago'**
+  String widgets_loadingLoopAgeLabel4(Object? inDays);
+
+  /// lib/widgets/loop_loading.dart:62
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed. Last read {ageLabel}'**
+  String widgets_loadingS(Object? ageLabel);
+
+  /// lib/widgets/loop_loading.dart:65
+  ///
+  /// In en, this message translates to:
+  /// **'Data from {age}'**
+  String widgets_loadingS2(Object? age);
+
+  /// lib/widgets/loop_pages.dart:466
+  ///
+  /// In en, this message translates to:
+  /// **'Done, hide keyboard'**
+  String get widgets_pagesLoopKeyboardDoneLabel;
+
+  /// lib/widgets/loop_person_row.dart:304
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get widgets_personRowLabel;
+
+  /// lib/widgets/loop_profile_sections.dart:13
+  ///
+  /// In en, this message translates to:
+  /// **'Communities'**
+  String get widgets_profileSectionCommunities;
+
+  /// lib/widgets/loop_profile_sections.dart:12
+  ///
+  /// In en, this message translates to:
+  /// **'Trades'**
+  String get widgets_profileSectionTrades;
+
+  /// lib/widgets/loop_provenance_scope.dart:304
+  ///
+  /// In en, this message translates to:
+  /// **'Data sources and details'**
+  String get widgets_provenanceScopeLabel;
+
+  /// lib/widgets/loop_quote_row.dart:87
+  ///
+  /// In en, this message translates to:
+  /// **'Not reported'**
+  String get widgets_quoteRowSwitch;
+
+  /// lib/widgets/loop_round_key.dart:113
+  ///
+  /// In en, this message translates to:
+  /// **', unavailable'**
+  String get widgets_roundKeyLabel;
+
+  /// lib/widgets/loop_components.dart:4491
+  ///
+  /// In en, this message translates to:
+  /// **' '**
+  String get widgets_sentenceGap;
+
+  /// lib/widgets/loop_blocks.dart:1179
+  ///
+  /// In en, this message translates to:
+  /// **'. '**
+  String get widgets_sentenceJoin;
+
+  /// lib/widgets/loop_sheet.dart:11
+  ///
+  /// In en, this message translates to:
+  /// **'Close sheet'**
+  String get widgets_sheetBarrierLabel;
+
+  /// lib/widgets/loop_sign_sheet.dart:299
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t close the app'**
+  String get widgets_signSheetBuild;
+
+  /// lib/widgets/loop_sign_sheet.dart:47
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm signature'**
+  String get widgets_signSheetConfirmLabel;
+
+  /// lib/widgets/loop_sign_sheet.dart:207
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust policy'**
+  String get widgets_signSheetLabel;
+
+  /// lib/widgets/loop_sign_sheet.dart:122
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected by policy'**
+  String get widgets_signSheetPolicyRejected;
+
+  /// lib/widgets/loop_sign_sheet.dart:121, lib/widgets/loop_sign_sheet.dart:308
+  ///
+  /// In en, this message translates to:
+  /// **'Signing'**
+  String get widgets_signSheetSigning;
+
+  /// lib/widgets/loop_sign_sheet.dart:49
+  ///
+  /// In en, this message translates to:
+  /// **'Signing and broadcasting'**
+  String get widgets_signSheetSigningTitle;
+
+  /// lib/widgets/loop_sign_sheet.dart:120
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation failed'**
+  String get widgets_signSheetSimulationFailed;
+
+  /// lib/widgets/loop_sign_sheet.dart:41
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm transaction'**
+  String get widgets_signSheetTitle;
+
+  /// lib/widgets/loop_sign_steps.dart:69
+  ///
+  /// In en, this message translates to:
+  /// **'Step {number} {label}, {caption}'**
+  String widgets_signStepsLabel(Object? caption, Object? label, Object? number);
+
+  /// lib/widgets/loop_sign_steps.dart:125
+  ///
+  /// In en, this message translates to:
+  /// **'Next, {waitingCaption}'**
+  String widgets_signStepsStep(Object? waitingCaption);
+
+  /// lib/widgets/loop_toast.dart:295
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get widgets_toastSwitch;
+
+  /// lib/widgets/loop_toast.dart:296
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get widgets_toastSwitch2;
+
+  /// lib/widgets/loop_token_card.dart:702
+  ///
+  /// In en, this message translates to:
+  /// **'{fact} — source {source}, observed at {observedLabel}'**
+  String widgets_tokenCardBuild(
+    Object? fact,
+    Object? observedLabel,
+    Object? source,
+  );
+
+  /// lib/widgets/loop_token_card.dart:169, lib/widgets/loop_token_card.dart:390
+  ///
+  /// In en, this message translates to:
+  /// **'Identifying'**
+  String get widgets_tokenCardLoading;
+
+  /// lib/widgets/loop_token_card.dart:171
+  ///
+  /// In en, this message translates to:
+  /// **'Data missing'**
+  String get widgets_tokenCardPartial;
+
+  /// lib/widgets/loop_token_card.dart:172
+  ///
+  /// In en, this message translates to:
+  /// **'Risk facts'**
+  String get widgets_tokenCardRisk;
+
+  /// lib/widgets/loop_token_card.dart:358
+  ///
+  /// In en, this message translates to:
+  /// **'Identifying…'**
+  String get widgets_tokenCardSwitch;
+
+  /// lib/widgets/loop_ui.dart:497
+  ///
+  /// In en, this message translates to:
+  /// **'Discover'**
+  String get widgets_uiDiscover;
+
+  /// lib/widgets/loop_ui.dart:498
+  ///
+  /// In en, this message translates to:
+  /// **'Discuss'**
+  String get widgets_uiDiscuss;
+
+  /// lib/widgets/loop_ui.dart:499
+  ///
+  /// In en, this message translates to:
+  /// **'Execute'**
+  String get widgets_uiExecute;
+
+  /// lib/widgets/loop_ui.dart:525
+  ///
+  /// In en, this message translates to:
+  /// **'Current stage: {label}'**
+  String widgets_uiLabel(Object? label);
 }
 
 class _LoopLocalizationsDelegate

@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/core/text/loop_power_text.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // S138 · 挖矿奖励 (decisions 0140, 0141)
@@ -446,7 +447,8 @@ bool miningTokenLive(MiningRewardsView? view) =>
 
 /// The one line that stands where the claim block was while the token is not
 /// live (decision 0184; it replaces 0155's Coming soon button and its note).
-const String miningPowerOnlyNotice = 'LOOP 代币上线后开始正式开挖，上线前只统计算力';
+String get miningPowerOnlyNotice =>
+    LoopL10n.current.miningRewards_modelsMiningPowerOnlyNotice;
 
 /// The account's power in the last settled hour: the NFT track plus the Meme
 /// track, as the server settled them. `null` when neither track was read.

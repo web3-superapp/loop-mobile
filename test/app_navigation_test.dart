@@ -47,7 +47,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LoopFocusPage), findsOneWidget);
-    expect(find.text('页面不存在'), findsOneWidget);
+    expect(find.text('Page not found'), findsOneWidget);
     expect(find.text('/nowhere'), findsOneWidget);
     expect(
       tester.widget(find.byKey(const ValueKey<String>('unknown-route-state'))),
@@ -57,7 +57,7 @@ void main() {
     expect(find.byType(FilledButton), findsNothing);
     expect(find.byType(Icon), findsNothing);
     final home = find.byKey(const ValueKey<String>('unknown-route-home'));
-    expect(tester.widget<LoopButton>(home).label, '回到聊天');
+    expect(tester.widget<LoopButton>(home).label, 'Back to Chat');
     await tester.tap(home);
     await tester.pumpAndSettle();
     expect(find.text('chat-home'), findsOneWidget);

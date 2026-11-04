@@ -194,7 +194,7 @@ void main() {
       expect(state.asked, <String>['c1']);
 
       fail = false;
-      await tester.tap(find.text('重试'));
+      await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(state.asked, <String>['c1', 'c1']);
       expect(
@@ -264,7 +264,9 @@ void main() {
       );
       expect(failed, findsOneWidget);
       await tester.ensureVisible(failed);
-      await tester.tap(find.descendant(of: failed, matching: find.text('重试')));
+      await tester.tap(
+        find.descendant(of: failed, matching: find.text('Retry')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('toad_member'), findsOneWidget);

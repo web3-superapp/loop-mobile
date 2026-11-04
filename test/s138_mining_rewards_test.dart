@@ -1199,20 +1199,26 @@ void main() {
       expect(_key('mining-minute-figure-20.0000'), findsOneWidget);
       // S336 · decision 0265 (补): the strip is the minute bar alone; the
       // hour's total and period are in the page's (i), live only.
-      expect(find.text('上一小时 60.0000 LOOP'), findsNothing);
-      expect(find.textContaining('本小时奖励结算后'), findsNothing);
-      expect(find.textContaining('结算时段'), findsNothing);
+      expect(find.text('Last hour 60.0000 LOOP'), findsNothing);
+      expect(
+        find.textContaining("this hour's rewards are fully claimable"),
+        findsNothing,
+      );
+      expect(find.textContaining('Settlement period'), findsNothing);
       expect(_key('mining-minute-bar'), findsOneWidget);
-      expect(_infoBodies(tester), contains('上一小时 60.0000 LOOP'));
+      expect(_infoBodies(tester), contains('Last hour 60.0000 LOOP'));
       final period = _infoBodies(tester)
-          .where((body) => body.startsWith('结算时段 '))
+          .where((body) => body.startsWith('Settlement period '))
           .toList();
       expect(period, hasLength(1));
-      expect(period.single, endsWith(' · 本小时奖励结算后已全部计入可领取'));
+      expect(
+        period.single,
+        endsWith(" · this hour's rewards are fully claimable after settlement"),
+      );
       // Live, the (i) does not say the page only counts power.
       expect(_powerOnly(tester), isFalse);
       expect(
-        _infoBodies(tester).any((body) => body.startsWith('统计时段 ')),
+        _infoBodies(tester).any((body) => body.startsWith('Period ')),
         isFalse,
       );
       expect(_key('mining-summary-settled'), findsOneWidget);
@@ -1239,20 +1245,25 @@ void main() {
       expect(find.text('0'), findsWidgets);
       await _scrollTo(tester, _key('mining-asset-excluded-$_graduated'));
       expect(_key('mining-asset-$_asset'), findsOneWidget);
-      expect(find.text('已退出（已毕业，外盘持有数量暂读不到）'), findsOneWidget);
+      expect(
+        find.text(
+          "Excluded (Graduated; DEX pool holdings can't be read right now)",
+        ),
+        findsOneWidget,
+      );
       // Decision 0123: the asset track is weighted by quantity, never value.
       // S336 · decision 0265: the basis lines are said in the page's (i).
       for (final line in <String>[
-        '按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重',
+        'Weighted by amount held: power = average amount held that hour × mining weight',
         // Decision 0183: the NFT track and the conditions, one line each.
-        'NFT 算力 = 持有数量 × 所属社区系数',
-        '按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。',
+        'NFT power = amount held × community factor',
+        'Calculated from linked wallet holdings. Community tokens require joining their approved community.',
       ]) {
         expect(find.text(line), findsNothing, reason: line);
         expect(_infoBodies(tester), contains(line), reason: line);
       }
-      expect(find.textContaining('估值'), findsNothing);
-      expect(find.textContaining('价格'), findsNothing);
+      expect(find.textContaining('valuation'), findsNothing);
+      expect(find.textContaining('price'), findsNothing);
       await _scrollTo(tester, _key('mining-invite-total'));
       expect(_key('mining-invite-level-5'), findsOneWidget);
       expect(find.text('10%'), findsOneWidget);
@@ -1280,9 +1291,9 @@ void main() {
       // S241b (decision 0210): the flat dark card, not a full-Yellow block.
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.archetype, LoopFolioArchetype.record);
-      expect(folio.kicker, '上一小时奖励');
+      expect(folio.kicker, 'Last hour rewards');
       expect(folio.heading, '20.0000 LOOP');
-      expect(folio.caption, matches(RegExp(r'^20/60 · 下次 \d\d:\d\d$')));
+      expect(folio.caption, matches(RegExp(r'^20/60 · next \d\d:\d\d$')));
       expect(folio.stamp, isNull);
       expect(
         find.descendant(
@@ -1366,8 +1377,8 @@ void main() {
       var folio = _heroFolio(tester);
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.headingTone, LoopFolioHeadingTone.neutral);
-      expect(folio.kicker, '上一小时算力');
-      expect(folio.heading, '你有算力的小时还没有结算');
+      expect(folio.kicker, 'Last hour power');
+      expect(folio.heading, 'Hours you had power in aren\'t settled yet');
       await _drain(tester);
 
       await _pump(
@@ -1385,7 +1396,7 @@ void main() {
       folio = _heroFolio(tester);
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.headingTone, LoopFolioHeadingTone.neutral);
-      expect(folio.heading, '暂时读不到结算结果');
+      expect(folio.heading, 'Settlement results can\'t be loaded right now');
       await _drain(tester);
     });
 
@@ -1410,7 +1421,7 @@ void main() {
         ],
       );
       await _pump(tester, rewards: below);
-      expect(find.text('满 1.0000 LOOP 可领取'), findsOneWidget);
+      expect(find.text('Claimable at 1.0000 LOOP'), findsOneWidget);
       expect(
         tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
         isNull,
@@ -1423,7 +1434,10 @@ void main() {
         ],
       );
       await _pump(tester, rewards: closed);
-      expect(find.text('链上写入暂时关闭，暂不能领取'), findsOneWidget);
+      expect(
+        find.text('On-chain writes are off right now, so you can\'t claim'),
+        findsOneWidget,
+      );
       // The balance is still shown.
       expect(find.text('120.0000 LOOP'), findsOneWidget);
       await _drain(tester);
@@ -1433,16 +1447,21 @@ void main() {
       tester,
     ) async {
       const expected = <String, String>{
-        'MINING_SETTLEMENT_UNAVAILABLE': '结算服务暂时不可用，暂不能领取',
-        'MINING_PARAMETERS_PENDING': '挖矿规则待生效，暂不能领取',
-        'MINING_NOTHING_SETTLED': '有算力的小时结算后可领取',
-        'MINING_CLAIM_NOTHING_TO_CLAIM': '暂无可领取',
-        'MINING_CLAIM_BELOW_MINIMUM': '满 1.0000 LOOP 可领取',
-        'MINING_CLAIM_IN_FLIGHT': '上一笔领取还在处理中，完成后再领取',
-        'MINING_CLAIM_MAINNET_CLOSED': '主网领取尚未开放',
+        'MINING_SETTLEMENT_UNAVAILABLE': 'The settlement service isn\'t available right now, so you can\'t claim',
+        'MINING_PARAMETERS_PENDING':
+            'Mining rules aren\'t in effect yet, so you can\'t claim',
+        'MINING_NOTHING_SETTLED':
+            'Claimable after an hour with power is settled',
+        'MINING_CLAIM_NOTHING_TO_CLAIM': 'Nothing to claim',
+        'MINING_CLAIM_BELOW_MINIMUM': 'Claimable at 1.0000 LOOP',
+        'MINING_CLAIM_IN_FLIGHT':
+            'The previous claim is still processing. Claim after it finishes',
+        'MINING_CLAIM_MAINNET_CLOSED': 'Mainnet claims aren\'t open yet',
         // MINING_CLAIM_CONTRACT_NOT_CONFIGURED is the power-only page (0184).
-        'MINING_CLAIM_CHAIN_NOT_CONFIGURED': '领取所在的链尚未配置，暂不能领取',
-        'MINING_CLAIM_SIGNER_NOT_CONFIGURED': '领取凭证签发尚未配置，暂不能领取',
+        'MINING_CLAIM_CHAIN_NOT_CONFIGURED':
+            'The claim chain isn\'t configured yet, so you can\'t claim',
+        'MINING_CLAIM_SIGNER_NOT_CONFIGURED':
+            'Claim voucher issuing isn\'t configured yet, so you can\'t claim',
       };
       for (final MapEntry(key: reason, value: text) in expected.entries) {
         expect(
@@ -1487,9 +1506,12 @@ void main() {
       // Without a minimum the below-minimum line still says why.
       expect(
         miningClaimUnavailableText('MINING_CLAIM_BELOW_MINIMUM'),
-        '可领取数量未达到最低领取数量',
+        'Claimable amount is below the minimum claim',
       );
-      expect(miningClaimUnavailableText('SOMETHING_NEW'), '领取暂不可用');
+      expect(
+        miningClaimUnavailableText('SOMETHING_NEW'),
+        'Claims aren\'t available right now',
+      );
     });
 
     testWidgets('0123 nothing settled: hero and claim both say so', (
@@ -1508,18 +1530,21 @@ void main() {
       expect(_key('mining-minute-awaiting'), findsOneWidget);
       // Decision 0184: this answer does not say the token is live, so the
       // page counts power only and the claim block is one notice.
-      expect(_heroFolio(tester).caption, '挖矿规则已生效。每个整点统计上一小时的算力，统计后显示在这里。');
+      expect(
+        _heroFolio(tester).caption,
+        'Mining rules are in effect. Power for the previous hour is counted every hour on the hour and shown here.',
+      );
       expect(_powerOnly(tester), isTrue);
       expect(_key('mining-claim-button'), findsNothing);
       expect(_key('mining-rewards-unavailable'), findsNothing);
       // The live wording is unchanged.
       expect(
         miningDisplayReasonText('MINING_NOTHING_SETTLED'),
-        '挖矿规则已生效。每个整点结算上一小时，结算后这里按分钟展示，并可领取。',
+        'Mining rules are in effect. The previous hour settles every hour on the hour; it\'s then shown here by the minute and can be claimed.',
       );
       expect(
         miningClaimUnavailableText('MINING_NOTHING_SETTLED'),
-        '有算力的小时结算后可领取',
+        'Claimable after an hour with power is settled',
       );
       await _drain(tester);
 
@@ -1534,7 +1559,10 @@ void main() {
         ],
       );
       await _pump(tester, rewards: pending);
-      expect(_heroFolio(tester).caption, '挖矿规则待生效，暂时没有结算。');
+      expect(
+        _heroFolio(tester).caption,
+        'Mining rules aren\'t in effect yet, so nothing is settled.',
+      );
       await _drain(tester);
 
       // The store is down: the inline notice names that cause.
@@ -1549,7 +1577,12 @@ void main() {
       );
       await _pump(tester, rewards: down);
       expect(_key('mining-rewards-unavailable'), findsOneWidget);
-      expect(find.textContaining('结算服务暂时不可用，下面的数字可能不是最新的。'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'The settlement service isn\'t available right now. The numbers below may not be current.',
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1580,7 +1613,10 @@ void main() {
         tester.widget<LoopButton>(_key('mining-claim-button')).onPressed,
         isNull,
       );
-      expect(find.text('已上链，正在等待确认。不要重复领取。'), findsOneWidget);
+      expect(
+        find.text('On-chain and waiting for confirmation. Don\'t claim again.'),
+        findsOneWidget,
+      );
       // The same claim is followed; nothing new is prepared.
       expect(rewards.prepareCalls, isEmpty);
       expect(
@@ -1604,7 +1640,7 @@ void main() {
       );
       await _pump(tester, rewards: rewards);
       await _scrollTo(tester, _key('mining-claim-record-$_claimId'));
-      expect(find.text('领取 40.0000 LOOP'), findsOneWidget);
+      expect(find.text('Claim 40.0000 LOOP'), findsOneWidget);
       expect(find.textContaining(miningShortHash(_hash)), findsOneWidget);
       await _drain(tester);
     });
@@ -1647,7 +1683,10 @@ void main() {
         ],
       );
       await _pump(tester, rewards: awaiting);
-      expect(find.text('首个小时结算后开始展示奖励'), findsOneWidget);
+      expect(
+        find.text('Rewards appear after the first hour is settled'),
+        findsOneWidget,
+      );
       expect(_key('mining-nft-pending'), findsOneWidget);
       await _drain(tester);
 
@@ -1667,12 +1706,15 @@ void main() {
       await _pump(tester, rewards: settling);
       // 「结算中」 is the folio's stamp, inside the settling composite.
       expect(_key('mining-minute-settling'), findsOneWidget);
-      expect(_heroFolio(tester).stamp, '结算中');
-      expect(_heroFolio(tester).caption, '下一小时结算后更新');
+      expect(_heroFolio(tester).stamp, 'Settling');
+      expect(
+        _heroFolio(tester).caption,
+        'Updates after the next hour is settled',
+      );
       expect(
         find.descendant(
           of: _key('mining-minute-settling'),
-          matching: find.text('结算中'),
+          matching: find.text('Settling'),
         ),
         findsOneWidget,
       );
@@ -1697,7 +1739,12 @@ void main() {
       await _pump(tester, rewards: rewards);
       expect(_key('mining-minute-unavailable'), findsOneWidget);
       expect(_key('mining-rewards-unavailable'), findsOneWidget);
-      expect(find.text('结算服务暂时不可用，下面的数字可能不是最新的。'), findsOneWidget);
+      expect(
+        find.text(
+          'The settlement service isn\'t available right now. The numbers below may not be current.',
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1726,7 +1773,7 @@ void main() {
       expect(_key('mining-minute-figure-20.0000'), findsOneWidget);
       expect(find.text('120.0000 LOOP'), findsOneWidget);
       expect(_key('mining-claim-disabled'), findsOneWidget);
-      expect(find.text('正在读取最新的可领取数量'), findsOneWidget);
+      expect(find.text('Loading the latest claimable amount'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1883,7 +1930,7 @@ void main() {
       expect(wallet.handed.single.kind, IntentKind.miningClaim);
       expect(rewards.reportCalls.single, (_claimId, _hash));
       await tester.tap(
-        find.text('关闭').hitTestable().first,
+        find.text('Close').hitTestable().first,
         warnIfMissed: false,
       );
       await tester.pumpAndSettle();
@@ -1898,7 +1945,7 @@ void main() {
         (_claimId, _hash),
       });
       expect(_key('mining-claim-status-succeeded'), findsOneWidget);
-      expect(find.text('领取成功，LOOP 已到账。'), findsOneWidget);
+      expect(find.text('Claimed. LOOP has arrived.'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1949,7 +1996,9 @@ void main() {
       expect(
         find.descendant(
           of: _key('mining-claim-gas-swap'),
-          matching: find.textContaining('BNB 不足以支付网络费，先用 USDT 兑换'),
+          matching: find.textContaining(
+            'Not enough BNB for the network fee. Swap USDT for BNB first.',
+          ),
         ),
         findsOneWidget,
       );
@@ -2043,9 +2092,15 @@ void main() {
       await _pump(tester, rewards: rewards);
       expect(tester.takeException(), isNull);
       expect(_key('mining-minute-awaiting'), findsOneWidget);
-      expect(find.text('你有算力的小时还没有结算'), findsOneWidget);
+      expect(
+        find.text('Hours you had power in aren\'t settled yet'),
+        findsOneWidget,
+      );
       // Decision 0184: the gate stopped before the contract check.
-      expect(_heroFolio(tester).caption, '挖矿规则已生效。每个整点统计上一小时的算力，统计后显示在这里。');
+      expect(
+        _heroFolio(tester).caption,
+        'Mining rules are in effect. Power for the previous hour is counted every hour on the hour and shown here.',
+      );
       expect(_powerOnly(tester), isTrue);
       expect(_key('mining-claim-button'), findsNothing);
       expect(_key('mining-rewards-unavailable'), findsNothing);
@@ -2059,12 +2114,12 @@ void main() {
         (
           'rewards_claim_contract_paused',
           'MINING_CLAIM_CONTRACT_PAUSED',
-          '领取合约已暂停，暂不能领取',
+          'The claim contract is paused, so you can\'t claim',
         ),
         (
           'rewards_claim_chain_read_failed',
           'MINING_CLAIM_CHAIN_READ_FAILED',
-          '领取合约暂时读不到，暂不能领取',
+          'The claim contract can\'t be read right now, so you can\'t claim',
         ),
       ]) {
         final view = parse(name);
@@ -2097,7 +2152,7 @@ void main() {
             reasonCode: 'MINING_CLAIM_CHAIN_READ_FAILED',
           ),
         ),
-        '领取合约暂时读不到，没有生成领取凭证，余额不变。',
+        'The claim contract can\'t be read right now. No voucher was created and your balance is unchanged.',
       );
       expect(
         miningClaimPrepareFailureText(
@@ -2106,7 +2161,7 @@ void main() {
             reasonCode: 'MINING_CLAIM_CONTRACT_PAUSED',
           ),
         ),
-        '领取合约已暂停，余额不变。',
+        'The claim contract is paused. Your balance is unchanged.',
       );
     });
   });
@@ -2136,30 +2191,47 @@ void main() {
       expect(loopAmounts(tester), isEmpty);
       // The hero is the hour's power.
       final folio = _heroFolio(tester);
-      expect(folio.kicker, '上一小时算力');
-      expect(folio.heading, '1,236 算力');
+      expect(folio.kicker, 'Last hour power');
+      expect(folio.heading, '1,236 power');
       // S336 · decision 0265: the folio carries no explanation; the hour's
       // caption and strip are said in the page's (i).
       expect(folio.caption, isNull);
       expect(_key('mining-minute-bar'), findsNothing);
       expect(_key('mining-power-tracks'), findsNothing);
-      expect(find.textContaining('上一小时有效'), findsNothing);
-      expect(find.textContaining('每个整点统计一次'), findsNothing);
-      expect(_infoBodies(tester), contains('上一小时有效，已计入算力统计'));
-      expect(_infoBodies(tester), contains('NFT 算力 0 · Meme 币算力 1,235'));
+      expect(find.textContaining('Active last hour'), findsNothing);
+      expect(
+        find.textContaining('counted every hour on the hour'),
+        findsNothing,
+      );
+      expect(
+        _infoBodies(tester),
+        contains('Active last hour and counted toward power'),
+      );
+      expect(
+        _infoBodies(tester),
+        contains('NFT power 0 · Meme coin power 1,235'),
+      );
       // 奖励汇总 is 算力汇总.
-      expect(find.text('算力汇总'), findsOneWidget);
-      expect(find.text('奖励汇总'), findsNothing);
+      expect(find.text('Power summary'), findsOneWidget);
+      expect(find.text('Rewards summary'), findsNothing);
       expect(_key('mining-power-summary-total'), findsOneWidget);
       expect(_key('mining-summary-settled'), findsNothing);
       expect(_key('mining-summary-claimable'), findsNothing);
       // The claim block is gone; its one sentence is in the page's (i).
-      expect(find.textContaining('LOOP 代币上线后开始正式开挖'), findsNothing);
-      expect(_infoBodies(tester), contains('LOOP 代币上线后开始正式开挖，上线前只统计算力'));
+      expect(
+        find.textContaining('Mining starts once the LOOP token launches'),
+        findsNothing,
+      );
+      expect(
+        _infoBodies(tester),
+        contains(
+          'Mining starts once the LOOP token launches; until then only power is tracked',
+        ),
+      );
       expect(_key('mining-claim-panel'), findsNothing);
       expect(_key('mining-claim-button'), findsNothing);
       expect(find.text('Coming soon'), findsNothing);
-      expect(find.textContaining('尚未配置'), findsNothing);
+      expect(find.textContaining('configured yet'), findsNothing);
       expect(find.textContaining(reason), findsNothing);
 
       await _scrollTo(tester, _key('mining-rewards-provenance'));
@@ -2168,8 +2240,8 @@ void main() {
       expect(_key('mining-nft-reward'), findsNothing);
       expect(_key('mining-asset-reward'), findsNothing);
       expect(_key('mining-invite-table'), findsOneWidget);
-      expect(find.text('领取记录'), findsNothing);
-      expect(find.textContaining('已记在账上'), findsNothing);
+      expect(find.text('Claim history'), findsNothing);
+      expect(find.textContaining('recorded'), findsNothing);
       await _drain(tester);
     });
 
@@ -2197,14 +2269,14 @@ void main() {
       await _pump(tester, rewards: closedWith(reason));
       await _scrollTo(tester, _key('mining-invite-total'));
       for (final line in <String>[
-        '上一小时有效',
-        '每个整点统计一次',
-        '统计时段',
-        'LOOP 代币上线后开始正式开挖',
-        '按持有数量加权',
-        'NFT 算力 = 持有数量',
-        '按绑定钱包持仓计算',
-        '只计下级本人算力',
+        'Active last hour',
+        'counted every hour on the hour',
+        'Period ',
+        'Mining starts once the LOOP token launches',
+        'Weighted by amount held',
+        'NFT power = amount held',
+        'Calculated from linked wallet holdings',
+        "Only invitees' own power counts",
       ]) {
         expect(
           find.textContaining(line, skipOffstage: false),
@@ -2222,23 +2294,25 @@ void main() {
       );
 
       final sentences = <String>[
-        '上一小时有效，已计入算力统计',
-        'NFT 算力 0 · Meme 币算力 1,235',
-        'LOOP 代币上线后开始正式开挖，上线前只统计算力',
-        '按持有数量加权：算力 = 该小时平均持有数量 × 挖矿权重',
-        'NFT 算力 = 持有数量 × 所属社区系数',
-        '按绑定钱包持仓计算，社区币须加入已通过审核的绑定社区。',
-        '只计下级本人算力，本人算力为 0 的下级不计；等效 NFT 算力只用于奖励计算。',
+        'Active last hour and counted toward power',
+        'NFT power 0 · Meme coin power 1,235',
+        'Mining starts once the LOOP token launches; until then only power is tracked',
+        'Weighted by amount held: power = average amount held that hour × mining weight',
+        'NFT power = amount held × community factor',
+        'Calculated from linked wallet holdings. Community tokens require joining their approved community.',
+        'Only invitees\' own power counts; invitees with zero own power don\'t count. Equivalent NFT power is used only for reward calculation.',
       ];
       expect(_infoBodies(tester), containsAll(sentences));
       // The live strip's two notes are said only once the token is live.
       expect(
-        _infoBodies(tester)
-            .any((body) => body.startsWith('结算时段 ') || body.endsWith(' LOOP')),
+        _infoBodies(tester).any(
+          (body) =>
+              body.startsWith('Settlement period ') || body.endsWith(' LOOP'),
+        ),
         isFalse,
       );
       expect(
-        _infoBodies(tester).where((body) => body.startsWith('统计时段 ')),
+        _infoBodies(tester).where((body) => body.startsWith('Period ')),
         hasLength(1),
       );
       final info = _key('mining-rewards-info-action');
@@ -2263,7 +2337,13 @@ void main() {
     testWidgets('S336 · the 五级邀请 heads read whole at 390 wide', (tester) async {
       await _pump(tester, rewards: closedWith(reason));
       await _scrollTo(tester, _key('mining-invite-total'));
-      expect(miningInviteHeads, <String>['层级', '比例', '有效邀请', 'NFT 算力', '资产算力']);
+      expect(miningInviteHeads, <String>[
+        'Level',
+        'Rate',
+        'Active',
+        'NFT',
+        'Assets',
+      ]);
       final widths = <double>[];
       for (var index = 0; index < miningInviteHeads.length; index += 1) {
         final head = _key('mining-invite-head-$index');
@@ -2296,14 +2376,14 @@ void main() {
         ),
       );
       expect(_heroFolio(tester).heading, '20.0000 LOOP');
-      expect(find.text('奖励汇总'), findsOneWidget);
+      expect(find.text('Rewards summary'), findsOneWidget);
       expect(_key('mining-summary-settled'), findsOneWidget);
       expect(_powerOnly(tester), isFalse);
       expect(_key('mining-power-summary'), findsNothing);
       final button = tester.widget<LoopButton>(_key('mining-claim-button'));
-      expect(button.label, '领取');
+      expect(button.label, 'Claim');
       expect(button.onPressed, isNotNull);
-      await _scrollTo(tester, find.text('领取记录'));
+      await _scrollTo(tester, find.text('Claim history'));
       expect(_key('mining-nft-reward'), findsOneWidget);
       await _drain(tester);
 
@@ -2316,7 +2396,7 @@ void main() {
       ]) {
         await _pump(tester, rewards: closedWith(code));
         final closed = tester.widget<LoopButton>(_key('mining-claim-button'));
-        expect(closed.label, '领取', reason: code);
+        expect(closed.label, 'Claim', reason: code);
         expect(closed.onPressed, isNull, reason: code);
         expect(
           tester.widget<Text>(_key('mining-claim-disabled')).data,
@@ -2430,16 +2510,16 @@ void main() {
       ]) {
         expect(_key('mining-summary-hero-$slug'), findsNothing, reason: slug);
       }
-      expect(find.text('今日预估'), findsNothing);
-      expect(find.text('累计已挖'), findsNothing);
-      expect(find.text('待领取'), findsNothing);
+      expect(find.text('Today\'s estimate'), findsNothing);
+      expect(find.text('Total mined'), findsNothing);
+      expect(find.text('Claimable'), findsNothing);
       expect(
         tester.widget<Text>(_key('mining-summary-hero-last-hour-power')).data,
         '1,236',
       );
       expect(
         tester.widget<Text>(_key('mining-summary-hero-active-invites')).data,
-        '15 人',
+        '15 people',
       );
       // Decision 0272: 全网算力 is the network card's, not a hero cell.
       expect(_key('mining-summary-hero-network-power'), findsNothing);
@@ -2447,7 +2527,7 @@ void main() {
       // The first step opens the hour's power, still a way in.
       final claim = _key('mining-summary-hero-claim');
       expect(
-        find.descendant(of: claim, matching: find.text('挖矿奖励')),
+        find.descendant(of: claim, matching: find.text('Mining rewards')),
         findsOneWidget,
       );
       expect(
@@ -2474,7 +2554,7 @@ void main() {
       );
       final claim = _key('mining-summary-hero-claim');
       expect(
-        find.descendant(of: claim, matching: find.text('领取奖励')),
+        find.descendant(of: claim, matching: find.text('Claim rewards')),
         findsOneWidget,
       );
       expect(_key('mining-summary-hero-estimated-today'), findsOneWidget);
@@ -2626,7 +2706,7 @@ void main() {
       expect(_powerOnly(tester), isFalse);
       expect(_key('mining-summary-settled'), findsOneWidget);
       final closed = tester.widget<LoopButton>(_key('mining-claim-button'));
-      expect(closed.label, '领取');
+      expect(closed.label, 'Claim');
       expect(closed.onPressed, isNull);
       await _drain(tester);
 

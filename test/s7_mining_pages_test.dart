@@ -110,7 +110,7 @@ void main() {
       );
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
-      expect(find.textContaining('待批准'), findsNothing);
+      expect(find.textContaining('Pending approval'), findsNothing);
     });
 
     testWidgets('the loading frame states no cause it has not been told', (
@@ -135,8 +135,8 @@ void main() {
         );
       }
       expect(find.textContaining(launchReasonCodeText(null)), findsNothing);
-      expect(find.textContaining('挖矿公式'), findsNothing);
-      expect(find.text('正在读取'), findsOneWidget);
+      expect(find.textContaining('Mining formula'), findsNothing);
+      expect(find.text('Loading'), findsOneWidget);
       // Nor is the absence itself settled while the read is in flight.
       expect(find.text(launchMissingHeading), findsNothing);
     });
@@ -153,8 +153,8 @@ void main() {
         ),
       );
 
-      expect(find.text('正在读取'), findsNothing);
-      expect(find.textContaining('挖矿公式'), findsNothing);
+      expect(find.text('Loading'), findsNothing);
+      expect(find.textContaining('Mining formula'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('mining-state-error')),
         findsOneWidget,
@@ -242,7 +242,7 @@ void main() {
         find.byKey(const ValueKey<String>('mining-rules-action')),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('待批准'), findsWidgets);
+      expect(find.textContaining('pending approval'), findsWidgets);
     });
 
     // Decision 0243: the version is in the header (i), not on the page.
@@ -265,11 +265,16 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('mining-info-formula')),
-          matching: find.textContaining('待批准的公式版本 miningFormulaV1-draft'),
+          matching: find.textContaining(
+            'Formula version pending approval miningFormulaV1-draft',
+          ),
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('读不到不等于「算力为零」'), findsOneWidget);
+      expect(
+        find.textContaining('Not loaded doesn\'t mean "zero power"'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('one missing baseline is explained once, not per metric', (
@@ -393,7 +398,7 @@ void main() {
       // Decision 0146 / 0183: the drawer states the quantity basis, no price
       // (S325: 挖矿说明 and the snapshot source share one sheet, and both
       // name it).
-      expect(find.textContaining('持有数量 × 资产权重'), findsWidgets);
+      expect(find.textContaining('amount held × asset weight'), findsWidgets);
       expect(find.textContaining('参考价'), findsNothing);
     });
 
@@ -418,7 +423,7 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
-      expect(find.textContaining('10 × 权重 0.8'), findsOneWidget);
+      expect(find.textContaining('10 × weight 0.8'), findsOneWidget);
       expect(find.textContaining(r'$2.26'), findsNothing);
     });
 
@@ -433,11 +438,16 @@ void main() {
       );
 
       expect(find.textContaining(s7BaselineVersion), findsNothing);
-      expect(find.text('不做本地估算'), findsNothing);
+      expect(find.text('No local estimates'), findsNothing);
       await _openMiningInfo(tester);
       expect(find.textContaining(s7BaselineVersion), findsOneWidget);
-      expect(find.text('不做本地估算'), findsOneWidget);
-      expect(find.textContaining('页面上的数字都来自最近一次算力快照'), findsOneWidget);
+      expect(find.text('No local estimates'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Every number on this page comes from the latest power snapshot',
+        ),
+        findsOneWidget,
+      );
 
       // The (i) still leads on to 挖矿规则.
       await tester.tap(
@@ -495,10 +505,16 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      expect(find.textContaining('还没有算力快照'), findsNothing);
+      expect(
+        find.textContaining('No power snapshot has been taken yet'),
+        findsNothing,
+      );
       await _openMiningInfo(tester);
       // The one code that means "there is none" says so.
-      expect(_infoSnapshotText(tester), contains('还没有算力快照'));
+      expect(
+        _infoSnapshotText(tester),
+        contains('No power snapshot has been taken yet'),
+      );
     });
 
     testWidgets('a repository that did not answer is not an absence of '
@@ -519,8 +535,8 @@ void main() {
 
       await _openMiningInfo(tester);
       final text = _infoSnapshotText(tester);
-      expect(text, contains('暂时读不到算力快照'));
-      expect(text, isNot(contains('还没有算力快照')));
+      expect(text, contains('Power snapshot can\'t be loaded right now'));
+      expect(text, isNot(contains('No power snapshot has been taken yet')));
       expect(
         text,
         contains(launchReasonCodeText('MINING_RUNTIME_UNAVAILABLE')),
@@ -640,7 +656,7 @@ void main() {
         find.byKey(const ValueKey<String>('mining-community-weight-pending')),
         findsNothing,
       );
-      expect(find.text('没有可审的权重'), findsOneWidget);
+      expect(find.text('No weight to review'), findsOneWidget);
       expect(
         find.textContaining('mining weight is still in review'),
         findsNothing,
@@ -710,7 +726,7 @@ void main() {
         const ValueKey<String>('mining-community-snapshot'),
       );
       await scrollToS7Section(tester, snapshot);
-      expect(find.textContaining('区块 122,037,728'), findsOneWidget);
+      expect(find.textContaining('Block 122,037,728'), findsOneWidget);
     });
 
     testWidgets('a ranked community says its place, not a bare number', (
@@ -737,7 +753,7 @@ void main() {
         const ValueKey<String>('mining-community-reading'),
       );
       expect(
-        find.descendant(of: reading, matching: find.textContaining('第 7 名')),
+        find.descendant(of: reading, matching: find.textContaining('Rank #7')),
         findsOneWidget,
       );
       expect(
@@ -793,8 +809,8 @@ void main() {
           reason: code,
         );
       }
-      expect(find.textContaining('挖矿公式'), findsNothing);
-      expect(find.text('正在读取'), findsOneWidget);
+      expect(find.textContaining('Mining formula'), findsNothing);
+      expect(find.text('Loading'), findsOneWidget);
       expect(find.text(launchMissingHeading), findsNothing);
       expect(find.text('0'), findsNothing);
     });
@@ -845,8 +861,11 @@ void main() {
         const ValueKey<String>('mining-community-snapshot-unavailable'),
       );
       await scrollToS7Section(tester, snapshot);
-      expect(find.text('暂时读不到算力快照'), findsOneWidget);
-      expect(find.text('还没有算力快照'), findsNothing);
+      expect(
+        find.text('Power snapshot can\'t be loaded right now'),
+        findsOneWidget,
+      );
+      expect(find.text('No power snapshot has been taken yet'), findsNothing);
       expect(
         find.text(launchReasonCodeText('MINING_RUNTIME_UNAVAILABLE')),
         findsWidgets,
@@ -877,11 +896,17 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      expect(find.text('待批准'), findsWidgets);
+      expect(find.text('Pending approval'), findsWidgets);
       expect(find.textContaining('MININGFORMULAV1-DRAFT'), findsNothing);
-      expect(find.text('算力 = 持有量 × 权重'), findsWidgets);
-      expect(find.text('算力 = 持有量 × 参考价 × 权重'), findsNothing);
-      expect(find.textContaining('每日产出 = 我的算力 ÷ 全网算力'), findsOneWidget);
+      expect(find.text('Power = holdings × weight'), findsWidgets);
+      expect(
+        find.text('Power = holdings × reference price × weight'),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('Daily output = my power ÷ network power'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('weight bands carry a key and a state, never a range', (
@@ -945,7 +970,9 @@ void main() {
       );
 
       expect(
-        find.byKey(const ValueKey<String>('launch-unavailable-已批准的公式版本')),
+        find.byKey(
+          const ValueKey<String>('launch-unavailable-Approved formula version'),
+        ),
         findsOneWidget,
       );
       expect(
@@ -1000,10 +1027,10 @@ void main() {
       expect(tester.widget<LoopRecordRow>(output).trailing, isNull);
       expect(
         tester.widget<LoopRecordRow>(output).trailingCaption,
-        'LOOP 代币上线后公布',
+        'Published after the LOOP token launches',
       );
       expect(find.text('1,000,000'), findsNothing);
-      expect(find.text('预估产量'), findsNothing);
+      expect(find.text('Estimated output'), findsNothing);
     });
 
     testWidgets('the development baseline prints its weights and its budget', (
@@ -1050,7 +1077,7 @@ void main() {
       );
       await scrollToS7Section(tester, output);
       expect(find.text('1,000,000'), findsOneWidget);
-      expect(find.text('预估产量'), findsOneWidget);
+      expect(find.text('Estimated output'), findsOneWidget);
 
       final notice = find.byKey(
         const ValueKey<String>('mining-rules-baseline-notice'),
@@ -1110,7 +1137,12 @@ void main() {
         find.byKey(const ValueKey<String>('mining-rules-notice')),
         findsNothing,
       );
-      expect(find.textContaining('只有规则条目，没有数值'), findsNothing);
+      expect(
+        find.textContaining(
+          'Weight ranges list rule items only, with no values',
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('the hero follows whether a version has been approved', (
@@ -1126,7 +1158,12 @@ void main() {
         ),
       );
       expect(find.textContaining('还没批准的草案'), findsNothing);
-      expect(find.text('这一版已批准，当前生效。下面另有等待批准的草案。'), findsOneWidget);
+      expect(
+        find.text(
+          'This version is approved and in effect. A draft pending approval is below.',
+        ),
+        findsOneWidget,
+      );
 
       // Nothing approved yet: the draft is what the hero is showing, and it
       // says so.
@@ -1135,7 +1172,12 @@ void main() {
         const MiningRulesScreen(),
         mining: FakeMiningGateway(),
       );
-      expect(find.text('还没有已批准的公式。下面这条是等待批准的草案。'), findsOneWidget);
+      expect(
+        find.text(
+          'No approved formula yet. The one below is a draft pending approval.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('with nothing in force the sentence still stands', (
@@ -1150,7 +1192,12 @@ void main() {
       final notice = find.byKey(const ValueKey<String>('mining-rules-notice'));
       await scrollToS7Section(tester, notice);
       expect(notice, findsOneWidget);
-      expect(find.textContaining('只有规则条目，没有数值'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Weight ranges list rule items only, with no values',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the referral ladder comes from the server, verbatim', (
@@ -1188,7 +1235,7 @@ void main() {
     test('the line dates the numbers and names what stopped the next run', () {
       expect(
         staleLine,
-        '显示的是 2026-09-15 14:58 UTC 的算力快照 · 最近一次快照未完成（USDT 暂时没有可用报价）',
+        "Showing the power snapshot from 2026-09-15 14:58 UTC · The latest snapshot didn't finish (USDT has no available quote right now)",
       );
       // Without the composition page's symbols the asset is still named by
       // the id it stands for, never by a guess.
@@ -1197,7 +1244,7 @@ void main() {
           computedAtLabel: '2026-09-15 14:58 UTC',
           attempt: s7MiningUnreadAttempt(),
         ),
-        contains('0x55d3…7955 暂时没有可用报价'),
+        contains('0x55d3…7955 has no available quote right now'),
       );
       // A run an operator withdrew is not a run that did not finish.
       expect(
@@ -1209,7 +1256,7 @@ void main() {
             unreadInputs: const <MiningUnreadInput>[],
           ),
         ),
-        '显示的是 2026-09-15 14:58 UTC 的算力快照 · 最近一次快照已作废（那次快照的数据不完整）',
+        "Showing the power snapshot from 2026-09-15 14:58 UTC · The latest snapshot was invalidated (That snapshot's data was incomplete)",
       );
       // No internal word reaches the reader.
       for (final line in <String>[
@@ -1259,7 +1306,7 @@ void main() {
               find.byKey(const ValueKey<String>('mining-summary-hero-caption')),
             )
             .data,
-        endsWith('· 未更新'),
+        endsWith('· Not updated'),
       );
       // Reading nothing was never published as a zero: the figure the last
       // complete snapshot settled is still on the page.
@@ -1267,7 +1314,10 @@ void main() {
       expect(find.textContaining('4482.309'), findsNothing);
       // S325 · decision 0255: opened from the page's one (i).
       await openPageInfo(tester);
-      expect(find.textContaining('最近一次快照未完成'), findsWidgets);
+      expect(
+        find.textContaining('The latest snapshot didn\'t finish'),
+        findsWidgets,
+      );
     });
 
     testWidgets('a snapshot nothing overtook prints no line', (tester) async {
@@ -1289,7 +1339,10 @@ void main() {
         find.byKey(const ValueKey<String>('mining-stale-summary')),
         findsNothing,
       );
-      expect(find.textContaining('最近一次快照未完成'), findsNothing);
+      expect(
+        find.textContaining('The latest snapshot didn\'t finish'),
+        findsNothing,
+      );
     });
 
     testWidgets('no complete snapshot is a different sentence from none at '
@@ -1321,9 +1374,9 @@ void main() {
       expect(find.text(launchMissingFigure), findsWidgets);
       await _openMiningInfo(tester);
       final text = _infoSnapshotText(tester);
-      expect(text, contains('还没有完整的算力快照'));
-      expect(text, isNot(contains('还没有算力快照')));
-      expect(text, contains('没有可以回退的完整快照'));
+      expect(text, contains('No complete power snapshot yet'));
+      expect(text, isNot(contains('No power snapshot has been taken yet')));
+      expect(text, contains("there's no complete snapshot to fall back on"));
     });
 
     testWidgets('a wallet no snapshot includes yet is told what happens next', (

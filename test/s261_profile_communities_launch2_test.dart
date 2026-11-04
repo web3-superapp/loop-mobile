@@ -576,7 +576,7 @@ void main() {
         ],
       );
       final opened = await _pump(tester, profiles);
-      await _section(tester, '社区');
+      await _section(tester, 'Communities');
       expect(find.text('社区列表暂未开放查看。'), findsNothing);
       expect(find.text('星夜社区'), findsOneWidget);
       expect(find.text('Night Owls'), findsOneWidget);
@@ -618,7 +618,7 @@ void main() {
         ],
       );
       await _pump(tester, profiles);
-      await _section(tester, '社区');
+      await _section(tester, 'Communities');
       await tester.pumpAndSettle();
       expect(profiles.calls, contains('communities:cur.2'));
       expect(find.text('第二页社区'), findsOneWidget);
@@ -631,7 +631,7 @@ void main() {
         ],
       );
       await _pump(tester, profiles);
-      await _section(tester, '社区');
+      await _section(tester, 'Communities');
       expect(find.text('Community list not public'), findsOneWidget);
     });
 
@@ -644,7 +644,7 @@ void main() {
         ],
       );
       await _pump(tester, profiles);
-      await _section(tester, '社区');
+      await _section(tester, 'Communities');
       expect(
         find.byKey(const ValueKey<String>('user-profile-communities-empty')),
         findsOneWidget,
@@ -657,7 +657,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byKey(const ValueKey<String>('user-profile-sections')),
-          matching: find.text('社区'),
+          matching: find.text('Communities'),
         ),
       );
       await tester.pump();
@@ -680,7 +680,7 @@ void main() {
       testWidgets('${kind.name} state', (tester) async {
         final profiles = _Profiles(communitiesFailure: kind);
         await _pump(tester, profiles);
-        await _section(tester, '社区');
+        await _section(tester, 'Communities');
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
       });
     }
@@ -751,7 +751,7 @@ void main() {
       final entry = (page.rows.first as ProfileLaunch2TradeRow).entry;
       final profiles = _Profiles(tradesAnswer: page);
       final opened = await _pump(tester, profiles);
-      await _section(tester, '交易');
+      await _section(tester, 'Trades');
       expect(find.text('Buy STAR'), findsOneWidget);
       expect(find.text('Buy BNB'), findsOneWidget);
       expect(
@@ -771,7 +771,7 @@ void main() {
         ),
       );
       await _pump(tester, profiles);
-      await _section(tester, '交易');
+      await _section(tester, 'Trades');
       expect(find.text('MEME records unavailable'), findsOneWidget);
       expect(find.text('Buy BNB'), findsOneWidget);
     });

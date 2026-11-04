@@ -103,7 +103,7 @@ void main() {
     expect(find.textContaining('LOOP-'), findsNothing);
 
     gateway.failure = null;
-    await tester.tap(find.text('重试'));
+    await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
     expect(find.text(loopId), findsOneWidget);
   });

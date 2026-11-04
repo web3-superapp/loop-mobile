@@ -2705,7 +2705,7 @@ class UnknownRouteScreen extends StatelessWidget {
     return LoopFocusPage(
       key: const ValueKey<String>('unknown-route-screen'),
       archetype: LoopPageArchetype.state,
-      title: '页面不存在',
+      title: context.l10n.app_appUnknownRouteScreenTitle,
       subtitle: location,
       onBack: navigator.canPop() ? () => unawaited(navigator.maybePop()) : null,
       body: const <Widget>[],
@@ -2713,11 +2713,11 @@ class UnknownRouteScreen extends StatelessWidget {
         child: LoopEmptyState(
           key: const ValueKey<String>('unknown-route-state'),
           illustration: LoopIllustration.chat,
-          title: '这个地址不在 LOOP 的页面里',
-          message: '这次访问已记录。',
+          title: context.l10n.app_appUnknownRouteStateTitle,
+          message: context.l10n.app_appUnknownRouteStateMessage,
           action: LoopButton(
             key: const ValueKey<String>('unknown-route-home'),
-            label: '回到聊天',
+            label: context.l10n.app_appUnknownRouteHomeLabel,
             icon: 'chat',
             primary: true,
             onPressed: () => context.go(LoopRouteManifest.defaultPath),

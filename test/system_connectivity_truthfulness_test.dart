@@ -126,11 +126,7 @@ void main() {
         expect(find.text('Can\'t connect to the server'), findsWidgets);
         expect(find.text('Offline'), findsOneWidget);
       }
-      // Decision 0281 transition: the fully-offline retry is the shared
-      // lib/widgets inline control, not migrated yet.
-      final retry = scope == LoopConnectivityScope.fullyOffline
-          ? '重试'
-          : 'Retry';
+      const retry = 'Retry';
       await tester.ensureVisible(find.text(retry));
       await tester.tap(find.text(retry));
       expect(retries, 1, reason: scope.name);

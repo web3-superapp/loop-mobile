@@ -100,7 +100,9 @@ void main() {
     expect(dot('proxy').color, LoopColors.text3);
     // S278 · decision 0236: the one source line is a (i) row.
     expect(
-      findProvenanceContaining('${facts.length} contract facts · 来源 GoPlus'),
+      findProvenanceContaining(
+        '${facts.length} contract facts · Source GoPlus',
+      ),
       findsOneWidget,
     );
   });

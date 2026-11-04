@@ -87,17 +87,17 @@ void main() {
           (
             const LoopLoadingPresentation.list(placeholderCount: 2),
             'loop-skeleton-list',
-            '列表加载中',
+            'Loading list',
           ),
           (
             const LoopLoadingPresentation.detail(),
             'loop-skeleton-detail',
-            '详情加载中',
+            'Loading details',
           ),
           (
             const LoopLoadingPresentation.chart(),
             'loop-skeleton-chart',
-            '图表加载中',
+            'Loading chart',
           ),
         ]) {
       await pumpSystemSurface(
@@ -150,7 +150,7 @@ void main() {
       );
 
       final skeleton = tester.getSemantics(find.byType(LoopSkeletonView));
-      expect(skeleton.label, '列表加载中');
+      expect(skeleton.label, 'Loading list');
       expect(skeleton.flagsCollection.isLiveRegion, isTrue);
       // A placeholder count is layout, never a result count or identity.
       expect(find.textContaining('8'), findsNothing);

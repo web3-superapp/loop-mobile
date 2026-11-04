@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/platform/loop_android_sdk.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 
 /// `.toast-ok / .toast-warn / .toast-err`.
@@ -291,9 +292,21 @@ class LoopToastView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, bar, label) = switch (entry.kind) {
-      LoopToastKind.ok => ('check', LoopColors.lime, '成功'),
-      LoopToastKind.warn => ('warn', LoopColors.ink, '警告'),
-      LoopToastKind.err => ('close', LoopColors.ink, '错误'),
+      LoopToastKind.ok => (
+        'check',
+        LoopColors.lime,
+        context.l10n.common_success,
+      ),
+      LoopToastKind.warn => (
+        'warn',
+        LoopColors.ink,
+        context.l10n.widgets_toastSwitch,
+      ),
+      LoopToastKind.err => (
+        'close',
+        LoopColors.ink,
+        context.l10n.widgets_toastSwitch2,
+      ),
     };
     final action = entry.action;
     final message = Row(
@@ -344,7 +357,8 @@ class LoopToastView extends StatelessWidget {
                             child: Semantics(
                               container: true,
                               liveRegion: true,
-                              label: '$label：${entry.message}',
+                              label:
+                                  '$label${LoopL10n.current.widgets_labelColon}${entry.message}',
                               child: ExcludeSemantics(child: message),
                             ),
                           ),
@@ -364,7 +378,8 @@ class LoopToastView extends StatelessWidget {
         ? Semantics(
             container: true,
             liveRegion: true,
-            label: '$label：${entry.message}',
+            label:
+                '$label${LoopL10n.current.widgets_labelColon}${entry.message}',
             child: ExcludeSemantics(child: surface),
           )
         : surface;

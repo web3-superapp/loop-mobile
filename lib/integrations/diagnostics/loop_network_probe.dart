@@ -8,6 +8,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/network/loop_dio_factory.dart';
 import 'package:loop_mobile/features/profile/about/network_diagnostics_models.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Network diagnostics transport (decision 0102).
 ///
@@ -184,7 +185,7 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
   final loop = loopDiagnosticsOrigin(backendBaseUrl);
   final privy = privyAppId.trim();
   final loopHost = loop == null
-      ? '未配置'
+      ? LoopL10n.current.common_notConfigured
       : (loop.hasPort && loop.port != 443 && loop.port != 80
             ? '${loop.host}:${loop.port}'
             : loop.host);
@@ -192,8 +193,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
   return <NetworkProbeTarget>[
     NetworkProbeTarget(
       id: 'loop-ready',
-      name: 'LOOP 服务 · 就绪',
-      purpose: '应用的主要数据',
+      name: LoopL10n.current.integrations_networkProbeName,
+      purpose: LoopL10n.current.integrations_networkProbePurpose,
       host: loopHost,
       judge: NetworkProbeJudge.success2xx,
       steps: loop == null
@@ -204,8 +205,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
     ),
     NetworkProbeTarget(
       id: 'loop-capabilities',
-      name: 'LOOP 服务 · 能力清单',
-      purpose: '连续请求两次，记第二次（复用连接）',
+      name: LoopL10n.current.integrations_networkProbeName2,
+      purpose: LoopL10n.current.integrations_networkProbePurpose2,
       host: loopHost,
       judge: NetworkProbeJudge.success2xx,
       steps: capabilities == null
@@ -217,8 +218,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
     ),
     NetworkProbeTarget(
       id: 'privy',
-      name: '登录服务 Privy',
-      purpose: '登录与内置钱包',
+      name: LoopL10n.current.integrations_networkProbeName3,
+      purpose: LoopL10n.current.integrations_networkProbePurpose3,
       host: 'auth.privy.io',
       judge: NetworkProbeJudge.anyResponse,
       steps: privy.isEmpty
@@ -235,8 +236,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
     ),
     NetworkProbeTarget(
       id: 'stream-chat',
-      name: '聊天服务 Stream',
-      purpose: '会话与消息',
+      name: LoopL10n.current.integrations_networkProbeName4,
+      purpose: LoopL10n.current.integrations_networkProbePurpose4,
       host: 'chat.stream-io-api.com',
       judge: NetworkProbeJudge.anyResponse,
       steps: <NetworkProbeRequest>[
@@ -245,8 +246,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
     ),
     NetworkProbeTarget(
       id: 'stream-video',
-      name: '语音服务 Stream',
-      purpose: '语音房',
+      name: LoopL10n.current.integrations_networkProbeName5,
+      purpose: LoopL10n.current.common_voiceRooms,
       host: 'video.stream-io-api.com',
       judge: NetworkProbeJudge.anyResponse,
       steps: <NetworkProbeRequest>[
@@ -255,8 +256,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
     ),
     NetworkProbeTarget(
       id: 'token-icons',
-      name: '代币图标',
-      purpose: '图标图片源',
+      name: LoopL10n.current.integrations_networkProbeName6,
+      purpose: LoopL10n.current.integrations_networkProbePurpose5,
       host: 'raw.githubusercontent.com',
       judge: NetworkProbeJudge.image,
       steps: <NetworkProbeRequest>[
@@ -270,8 +271,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
     ),
     NetworkProbeTarget(
       id: 'firebase',
-      name: '推送服务 Firebase',
-      purpose: '系统推送通知',
+      name: LoopL10n.current.integrations_networkProbeName7,
+      purpose: LoopL10n.current.integrations_networkProbePurpose6,
       host: 'firebaseinstallations.googleapis.com',
       judge: NetworkProbeJudge.anyResponse,
       steps: <NetworkProbeRequest>[
@@ -282,8 +283,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
     ),
     NetworkProbeTarget(
       id: 'bsc-rpc',
-      name: 'BSC 主网节点',
-      purpose: '仅供参考，应用不直接连接节点',
+      name: LoopL10n.current.integrations_networkProbeName8,
+      purpose: LoopL10n.current.integrations_networkProbePurpose7,
       host: 'bsc-dataseed.bnbchain.org',
       judge: NetworkProbeJudge.jsonRpcBlock,
       steps: <NetworkProbeRequest>[
@@ -297,8 +298,8 @@ List<NetworkProbeTarget> loopNetworkDiagnosticTargets({
     ),
     NetworkProbeTarget(
       id: 'baseline',
-      name: '网络基线 Apple',
-      purpose: '域名解析与安全连接的对照',
+      name: LoopL10n.current.integrations_networkProbeName9,
+      purpose: LoopL10n.current.integrations_networkProbePurpose8,
       host: 'www.apple.com',
       judge: NetworkProbeJudge.anyResponse,
       steps: <NetworkProbeRequest>[
@@ -339,7 +340,7 @@ final networkDiagnosticsPlatformProvider = Provider<String>((ref) {
     };
     return '$name · ${Platform.operatingSystemVersion}';
   } catch (_) {
-    return '未知';
+    return LoopL10n.current.common_unknown;
   }
 });
 
@@ -351,7 +352,10 @@ final networkDiagnosticsShareProvider = Provider<NetworkDiagnosticsShare>(
   (ref) => (text) async {
     try {
       final result = await SharePlus.instance.share(
-        ShareParams(text: text, subject: 'LOOP 网络诊断'),
+        ShareParams(
+          text: text,
+          subject: LoopL10n.current.integrations_networkProbeSubject,
+        ),
       );
       return result.status != ShareResultStatus.unavailable;
     } catch (_) {

@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining_rewards/mining_rewards_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -33,29 +34,36 @@ class MiningFormulaBlock extends StatelessWidget {
       MiningFormulaPending(:final reasonCode, :final pendingVersion) => (
         LoopRecordRow(
           key: const ValueKey<String>('mining-formula-row'),
-          title: '挖矿公式',
+          title: context.l10n.mining_widgetsMiningFormulaRowTitle,
           // A pending draft already carries the block's own sentence in
           // 算力与产出 above; repeating it here would be the same screen
           // saying one thing twice.
           subtitle: pendingVersion == null
               ? launchReasonCodeText(reasonCode)
-              : '批准后，上面的数字才会有来源。',
-          trailing: pendingVersion == null ? launchMissingFigure : '待批准',
-          semanticLabel: pendingVersion == null ? '挖矿公式尚未确定' : '挖矿公式待批准',
+              : context.l10n.mining_widgetsMiningFormulaRowSubtitle,
+          trailing: pendingVersion == null
+              ? launchMissingFigure
+              : context.l10n.mining_modelsPendingApproval,
+          semanticLabel: pendingVersion == null
+              ? context.l10n.mining_widgetsMiningFormulaRowSemanticLabel
+              : context.l10n.mining_widgetsMiningFormulaRowSemanticLabel2,
         ),
-        pendingVersion == null ? null : '待批准的公式版本',
+        pendingVersion == null ? null : context.l10n.mining_screenSwitch4,
       ),
       MiningFormulaEffective(:final scope, :final effectiveAt) => (
         LoopRecordRow(
           key: const ValueKey<String>('mining-formula-row'),
-          title: '挖矿公式',
+          title: context.l10n.mining_widgetsMiningFormulaRowTitle,
           subtitle: scope.isBaseline
               ? miningBaselineLabel
-              : '已生效 · ${launchTimestampLabel(effectiveAt)}',
-          trailing: '已生效',
-          semanticLabel: '挖矿公式已生效',
+              : context.l10n.mining_widgetsMiningFormulaRowSubtitle2(
+                  launchTimestampLabel(effectiveAt),
+                ),
+          trailing: context.l10n.mining_widgetsMiningFormulaRowTrailing,
+          semanticLabel:
+              context.l10n.mining_widgetsMiningFormulaRowSemanticLabel3,
         ),
-        '已生效的公式版本',
+        context.l10n.mining_screenSwitch6,
       ),
     };
     final identifier = switch (formula) {
@@ -72,7 +80,7 @@ class MiningFormulaBlock extends StatelessWidget {
         if (detail != null && identifier != null)
           LoopDisclosure(
             key: const ValueKey<String>('mining-formula-details'),
-            summary: '详情',
+            summary: context.l10n.common_details,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: Text(
@@ -130,7 +138,9 @@ class MiningMetricRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Semantics(
         container: true,
-        label: caption.isEmpty ? '$label，$value' : '$label，$value。$caption',
+        label: caption.isEmpty
+            ? '$label${LoopL10n.current.common_listSeparator}$value'
+            : '$label${LoopL10n.current.common_listSeparator}$value${LoopL10n.current.widgets_sentenceJoin}$caption',
         child: ExcludeSemantics(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +241,8 @@ String? miningProvenanceDetail(
 }
 
 /// The sentence [miningProvenanceDetail] answers for a demonstration snapshot.
-const String miningDemoHoldingsDetail = '这次算力里含演示持仓：它们不在链上，没有人真的持有，数字只用来体验。';
+String get miningDemoHoldingsDetail =>
+    LoopL10n.current.mining_widgetsMiningDemoHoldingsDetail;
 
 /// The 11px source line under a mining page's figures: the snapshot they
 /// came from and when it was computed, with [miningProvenanceDetail] in its
@@ -276,7 +287,9 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
         child: LoopProvenanceLine(
           key: ValueKey<String>('mining-provenance-$slug'),
           prefix: miningBaselineLabel,
-          sources: const <String>['LOOP 挖矿规则'],
+          sources: <String>[
+            context.l10n.mining_secondaryScreensLoopProvenanceLine,
+          ],
           detail: detail.isEmpty ? null : detail,
         ),
       );
@@ -285,10 +298,10 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: LoopProvenanceLine(
         key: ValueKey<String>('mining-provenance-$slug'),
-        sources: const <String>['LOOP 算力快照'],
+        sources: <String>[context.l10n.intel_rankBoardS],
         observedAt: source.computedAt,
         detail: detail.isEmpty ? null : detail,
-        marker: stale ? '未更新' : null,
+        marker: stale ? context.l10n.mining_widgetsMarker : null,
       ),
     );
   }
@@ -452,7 +465,7 @@ class MiningSummaryHero extends StatelessWidget {
                       children: <Widget>[
                         Expanded(
                           child: Text(
-                            '我的总算力',
+                            context.l10n.mining_widgetsText,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: LoopTypography.withWeight(
@@ -533,11 +546,19 @@ class MiningSummaryHero extends StatelessWidget {
                             // Decision 0184: before the token is live the
                             // page it opens counts power, so the button says
                             // so.
-                            label: powerOnly ? '挖矿奖励' : '领取奖励',
+                            label: powerOnly
+                                ? context
+                                      .l10n
+                                      .mining_widgetsMiningSummaryHeroClaimLabel
+                                : context
+                                      .l10n
+                                      .mining_widgetsMiningSummaryHeroClaimLabel2,
                             primary: true,
                             onPressed: onClaim,
                             semanticLabel: powerOnly
-                                ? '挖矿奖励，打开挖矿奖励页'
+                                ? context
+                                      .l10n
+                                      .mining_widgetsMiningSummaryHeroClaimSemanticLabel
                                 : claimSemanticLabel,
                           ),
                         ),
@@ -552,7 +573,9 @@ class MiningSummaryHero extends StatelessWidget {
                               key: const ValueKey<String>(
                                 'mining-summary-hero-assets',
                               ),
-                              label: '算力明细',
+                              label: context
+                                  .l10n
+                                  .mining_widgetsMiningSummaryHeroAssetsLabel,
                               onPressed: onOpenAssets,
                             ),
                           ),
@@ -589,7 +612,9 @@ class MiningRankEntry extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: onTap != null,
-      label: place == null ? '算力榜' : '算力榜，我的名次$place',
+      label: place == null
+          ? context.l10n.intel_rankBoardIntelRankBoardTitle
+          : context.l10n.mining_widgetsMiningNetworkRankActionLabel2(place),
       excludeSemantics: true,
       child: LoopPressable(
         key: const ValueKey<String>('mining-network-rank-action'),
@@ -686,7 +711,9 @@ class MiningNetworkPowerCard extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  lastHour ? '全网总算力 · 上一小时' : '全网总算力',
+                  lastHour
+                      ? context.l10n.mining_widgetsMiningNetworkKicker
+                      : context.l10n.mining_widgetsMiningNetworkKicker2,
                   key: const ValueKey<String>('mining-network-kicker'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -696,14 +723,14 @@ class MiningNetworkPowerCard extends StatelessWidget {
               LoopIconButton(
                 key: const ValueKey<String>('mining-network-rank-action'),
                 icon: 'crown',
-                label: '算力榜',
+                label: context.l10n.intel_rankBoardIntelRankBoardTitle,
                 onPressed: onOpenRank,
               ),
             ],
           ),
           Semantics(
             container: true,
-            label: '全网总算力，$spoken',
+            label: context.l10n.mining_widgetsMiningNetworkTotalLabel(spoken),
             child: ExcludeSemantics(
               child: Text.rich(
                 TextSpan(
@@ -742,7 +769,7 @@ class MiningNetworkPowerCard extends StatelessWidget {
                   ),
                   MiningHeroMetric(
                     slug: 'network-token',
-                    label: '代币',
+                    label: context.l10n.common_token,
                     value: token!,
                     spoken: token!,
                   ),
@@ -778,7 +805,9 @@ class MiningNetworkPowerCard extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  lastHour ? '全网总算力 · 上一小时' : '全网总算力',
+                  lastHour
+                      ? LoopL10n.current.mining_widgetsMiningNetworkKicker
+                      : LoopL10n.current.mining_widgetsMiningNetworkKicker2,
                   key: const ValueKey<String>('mining-network-kicker'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -788,7 +817,9 @@ class MiningNetworkPowerCard extends StatelessWidget {
               const SizedBox(width: 12),
               Semantics(
                 container: true,
-                label: '全网总算力，$spoken',
+                label: LoopL10n.current.mining_widgetsMiningNetworkTotalLabel(
+                  spoken,
+                ),
                 child: ExcludeSemantics(
                   child: Text.rich(
                     TextSpan(
@@ -821,27 +852,39 @@ class MiningNetworkPowerCard extends StatelessWidget {
               children: <Widget>[
                 for (final (slug, name, value) in <(String, String, String)>[
                   ('network-nft', 'NFT', nft!),
-                  ('network-token', '代币', token!),
+                  ('network-token', LoopL10n.current.common_token, token!),
                 ]) ...<Widget>[
                   if (slug != 'network-nft') const SizedBox(width: 16),
-                  Semantics(
-                    container: true,
-                    label: '$name，$value',
-                    child: ExcludeSemantics(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: <Widget>[
-                          Text(name, style: label),
-                          const SizedBox(width: 6),
-                          Text(
-                            value,
-                            key: ValueKey<String>('mining-summary-hero-$slug'),
-                            maxLines: 1,
-                            style: small,
-                          ),
-                        ],
+                  Flexible(
+                    child: Semantics(
+                      container: true,
+                      label:
+                          '$name${LoopL10n.current.common_listSeparator}$value',
+                      child: ExcludeSemantics(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: <Widget>[
+                            Flexible(
+                              child: Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: label,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              value,
+                              key: ValueKey<String>(
+                                'mining-summary-hero-$slug',
+                              ),
+                              maxLines: 1,
+                              style: small,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -884,7 +927,8 @@ class _MiningHeroStrip extends StatelessWidget {
                 padding: EdgeInsets.fromLTRB(index == 0 ? 0 : 8, 12, 0, 0),
                 child: Semantics(
                   container: true,
-                  label: '${metrics[index].label}，${metrics[index].spoken}',
+                  label:
+                      '${metrics[index].label}${LoopL10n.current.common_listSeparator}${metrics[index].spoken}',
                   child: ExcludeSemantics(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -951,7 +995,7 @@ class MiningCompositionGroupHeading extends StatelessWidget {
     ),
     child: Semantics(
       header: true,
-      label: '$title，$spoken',
+      label: '$title${LoopL10n.current.common_listSeparator}$spoken',
       child: ExcludeSemantics(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -1058,9 +1102,10 @@ class MiningDetailRow extends StatelessWidget {
     return Semantics(
       container: true,
       label: <String>[
-        '$label，${spoken ?? value}',
-        if (trailingLabel != null) '$trailingLabel，${trailingValue ?? ''}',
-      ].join('。'),
+        '$label${LoopL10n.current.common_listSeparator}${spoken ?? value}',
+        if (trailingLabel != null)
+          '$trailingLabel${LoopL10n.current.common_listSeparator}${trailingValue ?? ''}',
+      ].join(LoopL10n.current.widgets_sentenceJoin),
       child: ExcludeSemantics(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -1131,13 +1176,15 @@ LoopRecordRow miningCompositionRow(
     subtitle: <String>[miningCompositionExpression(row), ?identity].join('\n'),
     subtitleMaxLines: 2,
     trailing: loopPowerFigure(shown),
-    trailingCaption: '算力',
+    trailingCaption: LoopL10n.current.common_power,
     semanticLabel: <String>[
       label,
-      '持有 ${loopAmountFigure(row.holding)}',
-      '权重 ${row.weight}',
-      '算力 ${loopPowerFigure(shown)}',
-    ].join('，'),
+      LoopL10n.current.mining_widgetsLoopRecordRow(
+        loopAmountFigure(row.holding),
+      ),
+      LoopL10n.current.intel_rankBoardText5(row.weight),
+      LoopL10n.current.intel_rankBoardIf6(loopPowerFigure(shown)),
+    ].join(LoopL10n.current.common_listSeparator),
     position: position,
   );
 }
@@ -1162,11 +1209,11 @@ LoopRecordRow miningNftCompositionRow(
     title: label,
     subtitle: identity,
     trailing: loopPowerFigure(nftPower),
-    trailingCaption: 'NFT 算力',
+    trailingCaption: LoopL10n.current.mining_screenCell2,
     semanticLabel: <String>[
       label,
-      'NFT 算力 ${loopPowerFigure(nftPower)}',
-    ].join('，'),
+      LoopL10n.current.mining_widgetsLoopRecordRow4(loopPowerFigure(nftPower)),
+    ].join(LoopL10n.current.common_listSeparator),
     position: position,
   );
 }
@@ -1176,4 +1223,7 @@ LoopRecordRow miningNftCompositionRow(
 String miningCompositionExpression(MiningAssetRow row) =>
     // Decision 0149: 「0 × 0.9×」 read as a dangling second ×; the weight
     // is named instead, in the same order as the heading 持有量 × 权重.
-    '${loopAmountFigure(row.holding)} × 权重 ${row.weight}';
+    LoopL10n.current.mining_widgetsMiningCompositionExpression(
+      loopAmountFigure(row.holding),
+      row.weight,
+    );

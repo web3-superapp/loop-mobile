@@ -6,6 +6,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:privy_flutter/privy_flutter.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Reads and changes the account's second factor at Privy.
 ///
@@ -231,7 +232,8 @@ abstract final class PrivyMfaFailureClassifier {
 final class LoopReleasingMfaListener implements MfaListener {
   const LoopReleasingMfaListener(this._privy);
 
-  static const releasedMessage = 'LOOP 还没有为被二次验证拦住的操作提供输入验证码的入口，这次操作已经取消。';
+  static String get releasedMessage =>
+      LoopL10n.current.integrations_privyMfaGatewayReleasedMessage;
 
   final Privy _privy;
 

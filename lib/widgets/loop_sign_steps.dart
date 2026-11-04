@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Where one step of a signing trip is.
 enum LoopSignStepStatus { waiting, active, refreshing, done, failed, unknown }
@@ -12,7 +13,7 @@ final class LoopSignStep {
     required this.label,
     required this.status,
     required this.caption,
-    this.waitingCaption = '待签名',
+    this._waitingCaption,
   });
 
   /// Keys the step as `<keyPrefix>-step-<id>-<status>`.
@@ -24,7 +25,9 @@ final class LoopSignStep {
   final String caption;
 
   /// What a step that is next, and not yet started, says after 「下一步，」.
-  final String waitingCaption;
+  final String? _waitingCaption;
+  String get waitingCaption =>
+      _waitingCaption ?? LoopL10n.current.common_awaitingSignature;
 }
 
 /// 「1 授权 → 2 买入」 above a signing sheet: which prompt is open, which is
@@ -66,7 +69,11 @@ class LoopSignStepStrip extends StatelessWidget {
       child: KeyedSubtree(
         key: ValueKey<String>('$keyPrefix-step-${step.id}-${status.name}'),
         child: Semantics(
-          label: '第 $number 步 ${step.label}，${step.caption}',
+          label: LoopL10n.current.widgets_signStepsLabel(
+            step.caption,
+            step.label,
+            number,
+          ),
           excludeSemantics: true,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
@@ -122,7 +129,9 @@ class LoopSignStepStrip extends StatelessWidget {
                       Text(
                         // Decision 0149: the caption agrees with the ring.
                         next && status == LoopSignStepStatus.waiting
-                            ? '下一步，${step.waitingCaption}'
+                            ? LoopL10n.current.widgets_signStepsStep(
+                                step.waitingCaption,
+                              )
                             : step.caption,
                         style: LoopType.caption.copyWith(
                           color: warn

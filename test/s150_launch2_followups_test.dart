@@ -760,17 +760,17 @@ void main() {
   test('Meme 轨 exclusion reasons name no price and never the code', () {
     expect(
       miningExcludedReasonText('MINING_ASSET_GRADUATED_BALANCE_PENDING'),
-      '已毕业，外盘持有数量还在同步',
+      'Graduated; DEX pool holdings are still syncing',
     );
     expect(
       miningExcludedReasonText('MINING_ASSET_GRADUATED_UNREADABLE'),
-      '已毕业，外盘持有数量暂读不到',
+      'Graduated; DEX pool holdings can\'t be read right now',
     );
     expect(
       miningExcludedReasonText('MINING_ASSET_WEIGHT_NOT_CONFIGURED'),
-      '还没有配置挖矿权重',
+      'Mining weight not configured yet',
     );
-    expect(miningExcludedReasonText('MINING_SOMETHING_NEW'), '暂不计入');
+    expect(miningExcludedReasonText('MINING_SOMETHING_NEW'), 'Not counted yet');
     for (final code in <String>[
       'MINING_ASSET_GRADUATED_BALANCE_PENDING',
       'MINING_ASSET_GRADUATED_UNREADABLE',

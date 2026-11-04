@@ -28,6 +28,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/theme/loop_motion.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:stream_chat_flutter/scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -271,7 +272,9 @@ class LoopUnreadJumpPill extends StatelessWidget {
               ),
               Semantics(
                 button: true,
-                label: '标为已读',
+                label: context
+                    .l10n
+                    .integrations_streamUnreadPillBandLoopUnreadPillDismissLabel,
                 child: LoopPressable(
                   key: const ValueKey<String>('loop-unread-pill-dismiss'),
                   haptic: LoopHaptic.light,

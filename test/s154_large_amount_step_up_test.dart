@@ -921,9 +921,9 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sign-step-verify-waiting')),
         findsOneWidget,
       );
-      expect(find.text('下一步，Pending verification'), findsOneWidget);
+      expect(find.text('Next, Pending verification'), findsOneWidget);
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
 
       expect(device.reasons, hasLength(1));
@@ -946,7 +946,7 @@ void main() {
         answers: [LoopDeviceAuthOutcome.canceled],
       );
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
 
       expect(device.reasons, hasLength(1));
@@ -959,11 +959,11 @@ void main() {
       expect(find.text('Cancelled'), findsOneWidget);
       // Nothing was opened: the confirmation is live again.
       final confirm = tester.widget<LoopButton>(
-        find.widgetWithText(LoopButton, '确认签名'),
+        find.widgetWithText(LoopButton, 'Confirm signature'),
       );
       expect(confirm.onPressed, isNotNull);
 
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(device.reasons, hasLength(2));
       expect(wallet.handed, hasLength(1));
@@ -984,7 +984,7 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
       }
-      expect(find.text('下一步，Pending verification'), findsOneWidget);
+      expect(find.text('Next, Pending verification'), findsOneWidget);
       expect(find.text('下一步，待签名'), findsNothing);
     });
 
@@ -1001,7 +1001,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sign-steps')),
         findsNothing,
       );
-      await tester.tap(find.text('确认签名'));
+      await tester.tap(find.text('Confirm signature'));
       await tester.pumpAndSettle();
       expect(device.reasons, isEmpty);
       expect(wallet.handed, hasLength(1));

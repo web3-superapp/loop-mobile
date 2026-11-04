@@ -46,7 +46,7 @@ void main() {
         find.byType(ModalBarrier).last,
       );
       expect(barrier.color, LoopColors.veil);
-      expect(barrier.semanticsLabel, '关闭弹层');
+      expect(barrier.semanticsLabel, 'Close sheet');
       final sheet = tester.widget<Container>(
         find.byKey(const ValueKey<String>('loop-sheet')),
       );
@@ -135,8 +135,8 @@ void main() {
     expect(screen.height - rect.bottom, LoopToast.bottomOffset);
     expect(rect.left, LoopSpacing.page);
     expect(
-      tester.getSemantics(find.bySemanticsLabel('成功：地址已复制')),
-      matchesSemantics(label: '成功：地址已复制', isLiveRegion: true),
+      tester.getSemantics(find.bySemanticsLabel('Success: 地址已复制')),
+      matchesSemantics(label: 'Success: 地址已复制', isLiveRegion: true),
     );
     expect(
       (tester.widget<Container>(toast).decoration! as BoxDecoration).color,
@@ -167,7 +167,7 @@ void main() {
       find.byKey(const ValueKey<String>('loop-toast-err')),
       findsOneWidget,
     );
-    expect(find.bySemanticsLabel('错误：交易失败：gas 不足'), findsOneWidget);
+    expect(find.bySemanticsLabel('Error: 交易失败：gas 不足'), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
     semantics.dispose();
   });

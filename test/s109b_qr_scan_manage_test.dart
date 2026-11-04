@@ -562,7 +562,7 @@ void main() {
       final opened = await _pumpScan(tester);
       opened.scanner.session.set(LoopQrCameraStatus.failed);
       await tester.pump();
-      await _tap(tester, find.text('重试'));
+      await _tap(tester, find.text('Retry'));
       expect(opened.scanner.session.retries, 1);
       expect(opened.scanner.session.starts, 1);
     });

@@ -687,21 +687,23 @@ void main() {
         mining: mining,
       );
       // No me: 还没有名次 on the ledger card (decision 0182).
-      expect(find.textContaining('还没有名次'), findsOneWidget);
+      expect(find.textContaining('Not ranked yet'), findsOneWidget);
       // Decision 0224: the grey crown line where the figure would be.
       expect(
         find.byKey(const ValueKey<String>('intel-rank-me-empty-crown')),
         findsOneWidget,
       );
-      await tester.tap(find.text('邀请'));
+      await tester.ensureVisible(find.text('Invitation'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Invitation'));
       await tester.pumpAndSettle();
       expect(mining.reads.last, (MiningRankScope.referrals, null));
-      expect(find.text('我的实时排名'), findsOneWidget);
-      expect(find.text('第 3 名'), findsOneWidget);
-      expect(find.text('直接邀请 5 人'), findsOneWidget);
+      expect(find.text('My live rank'), findsOneWidget);
+      expect(find.text('Rank #3'), findsOneWidget);
+      expect(find.text('Direct invites 5'), findsOneWidget);
       expect(find.text('inviter'), findsOneWidget);
       // B7: an anonymous inviter stays anonymous.
-      expect(find.text('匿名成员'), findsOneWidget);
+      expect(find.text('Anonymous member'), findsOneWidget);
       // The two explanation cards are now the one source line.
       expect(_key('mining-rank-anonymity'), findsNothing);
       expect(_key('mining-rank-notice'), findsNothing);
@@ -733,7 +735,9 @@ void main() {
         IntelRankBoard(onNavigate: (_) {}),
         mining: mining,
       );
-      await tester.tap(find.text('用户'));
+      await tester.ensureVisible(find.text('User'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('User'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         _key('intel-rank-end'),
@@ -747,11 +751,11 @@ void main() {
       // Decision 0229: the 80-high rows put the card above the built range;
       // back at the top it still says the reader's place.
       await tester.scrollUntilVisible(
-        find.text('我的名次\n第 7 名'),
+        find.text('My rank\nRank #7'),
         -400,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('我的名次\n第 7 名'), findsOneWidget);
+      expect(find.text('My rank\nRank #7'), findsOneWidget);
     });
   });
 

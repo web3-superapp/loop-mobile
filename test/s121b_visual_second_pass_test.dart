@@ -356,8 +356,8 @@ void main() {
         expect(find.text('0$place'), findsOneWidget);
       }
       expect(find.byType(LoopRecordCard), findsNothing);
-      expect(find.text('权重 1.1'), findsOneWidget);
-      expect(find.textContaining('人有算力'), findsNothing);
+      expect(find.text('Weight 1.1'), findsOneWidget);
+      expect(find.textContaining('people have power'), findsNothing);
     });
 
     testWidgets('from the fourth place on, a plain row', (tester) async {
@@ -374,7 +374,7 @@ void main() {
       );
       expect(find.text('4'), findsOneWidget);
       // Decision 0229: the weight joins the second line.
-      expect(find.text('权重 0.5，9 人有算力'), findsOneWidget);
+      expect(find.text('Weight 0.5, 9 人有算力'), findsOneWidget);
       expect(find.text('算力'), findsNothing);
       // S325 · decision 0255 (UX-018): the figure stands alone, no bar.
       expect(find.text('384'), findsOneWidget);

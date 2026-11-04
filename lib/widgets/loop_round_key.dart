@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
@@ -109,8 +110,10 @@ class _LoopRoundKeyState extends State<LoopRoundKey> {
       enabled: enabled,
       label:
           widget.semanticLabel ??
-          (count == null ? widget.label : '${widget.label}，$count') +
-              (enabled ? '' : '，暂不可用'),
+          (count == null
+                  ? widget.label
+                  : '${widget.label}${LoopL10n.current.common_listSeparator}$count') +
+              (enabled ? '' : context.l10n.widgets_roundKeyLabel),
       // The gesture below is excluded with the subtree; the tap is offered
       // here so a screen reader can press the key (decision 0126).
       onTap: onTap,

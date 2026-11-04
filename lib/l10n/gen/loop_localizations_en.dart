@@ -797,6 +797,62 @@ class LoopLocalizationsEn extends LoopLocalizations {
       'You can\'t add another one yet';
 
   @override
+  String get app_appUnknownRouteHomeLabel => 'Back to Chat';
+
+  @override
+  String get app_appUnknownRouteScreenTitle => 'Page not found';
+
+  @override
+  String get app_appUnknownRouteStateMessage => 'This visit has been logged.';
+
+  @override
+  String get app_appUnknownRouteStateTitle => 'This address isn\'t a LOOP page';
+
+  @override
+  String get app_onboardingSequenceLoopId => 'Create LOOP ID';
+
+  @override
+  String get app_onboardingSequenceSecurity => 'Security settings';
+
+  @override
+  String get app_onboardingSequenceWalletBackup => 'Set up recovery';
+
+  @override
+  String get app_onboardingSequenceWalletCreate => 'Create wallet';
+
+  @override
+  String get app_sessionControllerErrorMessage =>
+      'You\'re signed out on this device, but LOOP hasn\'t confirmed the server session was revoked.';
+
+  @override
+  String get app_sessionControllerErrorMessage2 =>
+      'You\'re signed out on this device, but Privy hasn\'t confirmed the remote sign-out.';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException =>
+      'Signing out. Try again when it finishes.';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException2 =>
+      'The account changed and no wallet is linked. Try again.';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException3 =>
+      'Development previews and restricted sessions don\'t create real wallets.';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException4 =>
+      'The account changed. Check the wallet status again.';
+
+  @override
+  String get app_sessionControllerPrivyGatewayException5 =>
+      'The wallet status changed. Check it again before continuing.';
+
+  @override
+  String get app_walletProvisioningControllerFail =>
+      'Wallet creation didn\'t finish. Your account and sign-in are unchanged. Try again later.';
+
+  @override
   String get betaFeedback_cameraFailed => 'Couldn\'t open the camera';
 
   @override
@@ -7342,6 +7398,694 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get dapp_signingTransaction => 'Confirm transaction';
+
+  @override
+  String get integrations_chatCameraLoopChatCameraPermissionMessage =>
+      'No camera access. Allow LOOP to use the camera in system settings, then try again.';
+
+  @override
+  String get integrations_chatCameraLoopChatCameraUnavailableMessage =>
+      'The camera didn\'t take a photo, so nothing was added.';
+
+  @override
+  String get integrations_chatImageAttachmentsFailureMessage =>
+      'Image didn\'t load';
+
+  @override
+  String integrations_chatImageAttachmentsLoopChatImageViewerCounter(
+    Object? page,
+    Object? total,
+  ) {
+    return '$page / $total';
+  }
+
+  @override
+  String get integrations_chatImageAttachmentsRetryMessage => 'Tap to retry';
+
+  @override
+  String get integrations_chatImageComposerIf =>
+      'This device is offline. The image wasn\'t uploaded and the message wasn\'t sent.';
+
+  @override
+  String get integrations_chatImageComposerIf2 =>
+      'The server rejected this image upload. The message wasn\'t sent.';
+
+  @override
+  String get integrations_chatImageComposerIf3 =>
+      'The image didn\'t upload. The message wasn\'t sent.';
+
+  @override
+  String get integrations_chatImagePolicyNotAnImage =>
+      'Only images can be sent here. What you picked isn\'t an image, so it wasn\'t added.';
+
+  @override
+  String get integrations_chatImagePolicyTooLarge =>
+      'Each image must be 10 MB or less. The larger one wasn\'t added.';
+
+  @override
+  String get integrations_chatImagePolicyTooMany =>
+      'A message can have up to 9 images. The extra ones weren\'t added.';
+
+  @override
+  String get integrations_chatImagePolicyUnsupportedFormat =>
+      'Only JPG, PNG, WebP and GIF images are supported. Other formats weren\'t added.';
+
+  @override
+  String
+  get integrations_externalWalletCredentialGatewayExternalWalletConnectorException =>
+      'The wallet returned a duplicate sign-in request. Reconnect.';
+
+  @override
+  String
+  get integrations_externalWalletCredentialGatewayExternalWalletConnectorException2 =>
+      'The address, message or signature from the wallet doesn\'t match this sign-in request.';
+
+  @override
+  String
+  get integrations_externalWalletCredentialGatewayPrivyGatewayException =>
+      'No current Privy account. The wallet wasn\'t linked.';
+
+  @override
+  String get integrations_memoryChatGatewaysCommunityName =>
+      'Preview community';
+
+  @override
+  String get integrations_memoryCommunityGatewaysDescription =>
+      'A sample community in development preview. Member counts and roles are local in-memory values.';
+
+  @override
+  String get integrations_memoryCommunityGatewaysLabel => 'Power community';
+
+  @override
+  String get integrations_memoryCommunityGatewaysName =>
+      'Demo community · Frogs';
+
+  @override
+  String get integrations_memoryCommunityGatewaysName2 =>
+      'Demo community · Builders';
+
+  @override
+  String get integrations_memoryCommunityGatewaysName3 =>
+      'Demo community · In review';
+
+  @override
+  String get integrations_memoryCommunityGatewaysRejectedReason =>
+      'Demo data: this name duplicates a live community. Pick another and resubmit.';
+
+  @override
+  String get integrations_memoryCommunityGatewaysTitle =>
+      'Demo notice · This week\'s roadmap';
+
+  @override
+  String get integrations_memoryCommunityGatewaysTitle2 =>
+      'Demo notice · Thursday voice room';
+
+  @override
+  String get integrations_memoryLiveVoiceRoomsCommunityName =>
+      'Preview community (not joined)';
+
+  @override
+  String get integrations_memoryLiveVoiceRoomsDisplayName => 'Preview host';
+
+  @override
+  String get integrations_memoryLiveVoiceRoomsDisplayName2 => 'Preview speaker';
+
+  @override
+  String get integrations_memoryLiveVoiceRoomsTitle =>
+      'Development preview · Friday AMA';
+
+  @override
+  String get integrations_memoryPublicProfilesAlias => 'Preview user';
+
+  @override
+  String get integrations_memoryPublicProfilesBio =>
+      'Development preview account. Profile and holdings are demo data.';
+
+  @override
+  String get integrations_memoryPublicProfilesLabel => 'Featured community';
+
+  @override
+  String get integrations_memoryPublicProfilesName => 'Preview community';
+
+  @override
+  String get integrations_memoryPublicProfilesName2 => 'Demo data group';
+
+  @override
+  String get integrations_memoryWatchlistGatewayName => 'Default';
+
+  @override
+  String get integrations_memoryWatchlistGatewayName2 => 'Watching';
+
+  @override
+  String get integrations_networkProbeName => 'LOOP service · Ready';
+
+  @override
+  String get integrations_networkProbeName2 => 'LOOP service · Capabilities';
+
+  @override
+  String get integrations_networkProbeName3 => 'Sign-in service Privy';
+
+  @override
+  String get integrations_networkProbeName4 => 'Chat service Stream';
+
+  @override
+  String get integrations_networkProbeName5 => 'Voice service Stream';
+
+  @override
+  String get integrations_networkProbeName6 => 'Token icons';
+
+  @override
+  String get integrations_networkProbeName7 => 'Push service Firebase';
+
+  @override
+  String get integrations_networkProbeName8 => 'BSC mainnet node';
+
+  @override
+  String get integrations_networkProbeName9 => 'Network baseline Apple';
+
+  @override
+  String get integrations_networkProbePurpose => 'The app\'s main data';
+
+  @override
+  String get integrations_networkProbePurpose2 =>
+      'Two requests in a row, the second is recorded (reused connection)';
+
+  @override
+  String get integrations_networkProbePurpose3 => 'Sign-in and built-in wallet';
+
+  @override
+  String get integrations_networkProbePurpose4 => 'Conversations and messages';
+
+  @override
+  String get integrations_networkProbePurpose5 => 'Icon image source';
+
+  @override
+  String get integrations_networkProbePurpose6 => 'System push notifications';
+
+  @override
+  String get integrations_networkProbePurpose7 =>
+      'Reference only; the app doesn\'t connect to nodes directly';
+
+  @override
+  String get integrations_networkProbePurpose8 =>
+      'Baseline for DNS and secure connections';
+
+  @override
+  String get integrations_networkProbeSubject => 'LOOP network diagnosis';
+
+  @override
+  String get integrations_privyAuthGatewayAuthentication =>
+      'Your sign-in has expired. Sign in again.';
+
+  @override
+  String
+  get integrations_privyAuthGatewayExternalWalletLinkedElsewhereMessage =>
+      'This wallet is linked to another LOOP account. Sign in to that account and unlink it first, then come back to link it.';
+
+  @override
+  String get integrations_privyAuthGatewayLoopUndecidedSessionMessage =>
+      'Can\'t confirm your sign-in right now. Try again later.';
+
+  @override
+  String get integrations_privyAuthGatewayMessage =>
+      'The Privy App Client ID isn\'t configured, so real sign-in isn\'t available.';
+
+  @override
+  String get integrations_privyAuthGatewayNetwork =>
+      'Can\'t confirm your sign-in right now. Check your network and retry.';
+
+  @override
+  String integrations_privyAuthGatewayOauthFailureMessage(Object? label) {
+    return '$label sign-in cancelled.';
+  }
+
+  @override
+  String integrations_privyAuthGatewayOauthFailureMessage2(Object? label) {
+    return '$label sign-in can\'t reach the network. Try again later.';
+  }
+
+  @override
+  String integrations_privyAuthGatewayOauthFailureMessage3(Object? label) {
+    return '$label sign-in couldn\'t return to the app. Check the app configuration and retry.';
+  }
+
+  @override
+  String integrations_privyAuthGatewayOauthFailureMessage4(Object? label) {
+    return '$label sign-in didn\'t finish. Retry.';
+  }
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException =>
+      'Couldn\'t send the code. Try again later.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException10 =>
+      'Invalid wallet address. Nothing was unlinked.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException11 =>
+      'The account changed. Refresh to check whether the wallet was unlinked.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException12 =>
+      'Unlinking didn\'t finish. Check your network and retry.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException14 =>
+      'The previous account\'s wallet action is still finishing. Try again later.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException15 =>
+      'Wallet creation isn\'t confirmed. Refresh and try again later.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException16 =>
+      'Finish Privy sign-in first.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException17 =>
+      'Can\'t reach the sign-in service right now. Check your network and retry.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException18 =>
+      'Your sign-in credential has expired. Try again.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException19 =>
+      'Couldn\'t sign out. Try again later.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException2 =>
+      'The code is invalid or has expired. Check it again.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException3 =>
+      'Sign-in didn\'t finish. Check your network and return configuration, then retry.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException4 =>
+      'Privy didn\'t return a sign-in message to sign. Retry.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException5 =>
+      'Couldn\'t create the wallet sign-in message. Check your network and retry.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException6 =>
+      'Wallet sign-in didn\'t finish. Check your network and retry.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException8 =>
+      'Wallet linking didn\'t finish. Check your network and retry.';
+
+  @override
+  String get integrations_privyAuthGatewayPrivyGatewayException9 =>
+      'The account changed and the wallet wasn\'t unlinked. Try again.';
+
+  @override
+  String get integrations_privyAuthGatewaySiweFailureMessage =>
+      'This wallet already belongs to another Privy account. LOOP won\'t move or delete accounts automatically.';
+
+  @override
+  String get integrations_privyAuthGatewaySiweFailureMessage2 =>
+      'Couldn\'t submit the wallet credential. Check your network and retry.';
+
+  @override
+  String get integrations_privyAuthGatewaySiweFailureMessage3 =>
+      'Privy didn\'t accept this wallet credential; it may be linked to another account. LOOP won\'t move or delete accounts automatically.';
+
+  @override
+  String get integrations_privyAuthGatewaySiweLinkFailureMessage =>
+      'Wallet linking didn\'t finish. Retry.';
+
+  @override
+  String get integrations_privyAuthGatewaySiweUnlinkFailureMessage =>
+      'This is the account\'s only sign-in method and can\'t be unlinked. Link an email or another sign-in method first.';
+
+  @override
+  String get integrations_privyAuthGatewaySiweUnlinkFailureMessage2 =>
+      'Unlinking didn\'t finish. Try again later.';
+
+  @override
+  String get integrations_privyMfaGatewayReleasedMessage =>
+      'LOOP doesn\'t yet offer a way to enter a code for actions held by two-step verification. This action was cancelled.';
+
+  @override
+  String get integrations_reactionsLoopReactionFallbackLabel => 'Reaction';
+
+  @override
+  String get integrations_reactionsS => 'Like';
+
+  @override
+  String get integrations_reactionsS2 => 'Haha';
+
+  @override
+  String get integrations_reactionsS3 => 'Love';
+
+  @override
+  String get integrations_reactionsS4 => 'Wow';
+
+  @override
+  String get integrations_reactionsS5 => 'Sad';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException =>
+      'The wallet connection or signature request was rejected.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException10 =>
+      'The Reown Project ID isn\'t configured, so external wallets aren\'t available.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException11 =>
+      'A sign-in or wallet connection is already in progress.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException12 =>
+      'This page was closed. Start the wallet connection again.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException13 =>
+      'The sign-in message is empty. Reconnect the wallet.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException14 =>
+      'The wallet connection or return didn\'t finish. Go back to LOOP and retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException15 =>
+      'Wallet connection cancelled.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException16 =>
+      'The wallet picker didn\'t open. Retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException17 =>
+      'The wallet connection timed out. Go back to LOOP and retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException18 =>
+      'This wallet session didn\'t authorize personal_sign. Reconnect.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException19 =>
+      'The wallet didn\'t return a usable EVM address.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException2 =>
+      'Wallet app not found. Install it and retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException20 =>
+      'Invalid wallet session. Reconnect.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException21 =>
+      'The wallet signature timed out. Go back to LOOP and retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException22 =>
+      'The wallet didn\'t return a valid signature.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException3 =>
+      'Couldn\'t open the wallet app or return to LOOP. Retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException4 =>
+      'The wallet connection can\'t reach the network. Try again later.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException5 =>
+      'The wallet connection or return didn\'t finish. Retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException6 =>
+      'Reown setup didn\'t finish. Restart LOOP and retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException7 =>
+      'Reown setup failed. Restart LOOP and retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException8 =>
+      'The Reown service timed out. Check your network and retry.';
+
+  @override
+  String
+  get integrations_reownExternalWalletConnectorExternalWalletConnectorException9 =>
+      'The Reown service isn\'t ready. Restart LOOP and retry.';
+
+  @override
+  String
+  get integrations_streamChatAppearanceLoopMessageAvatarOpenProfileLabel =>
+      'View profile';
+
+  @override
+  String get integrations_streamReactionIconResolverHint => 'Remove reaction';
+
+  @override
+  String integrations_streamReactionIconResolverHint2(Object? reactionLabel) {
+    return 'React with $reactionLabel';
+  }
+
+  @override
+  String get integrations_streamUnreadPillBandLoopUnreadPillDismissLabel =>
+      'Mark as read';
+
+  @override
+  String get intel_rankBoardAlias => 'Anonymous';
+
+  @override
+  String get intel_rankBoardBuild => 'Not ranked yet';
+
+  @override
+  String get intel_rankBoardBuild2 => 'Leaderboard updates live';
+
+  @override
+  String intel_rankBoardCaption(num participants) {
+    String _temp0 = intl.Intl.pluralLogic(
+      participants,
+      locale: localeName,
+      other: '$participants people have power',
+      one: '1 person has power',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get intel_rankBoardCaption2 => 'Direct invites';
+
+  @override
+  String get intel_rankBoardCaption3 => 'Others see an anonymous member';
+
+  @override
+  String get intel_rankBoardEmptyMessage => 'Couldn\'t load Power Ranking';
+
+  @override
+  String get intel_rankBoardEmptyReason =>
+      'Ranking data can\'t be loaded right now.';
+
+  @override
+  String get intel_rankBoardFigure => 'Only visible to you';
+
+  @override
+  String intel_rankBoardIf(Object? vString) {
+    return 'Members with power: $vString.';
+  }
+
+  @override
+  String intel_rankBoardIf2(Object? intelRankLedgerKickerBase) {
+    return '$intelRankLedgerKickerBase, live';
+  }
+
+  @override
+  String intel_rankBoardIf3(Object? name, Object? weight) {
+    return 'Community $name, weight $weight';
+  }
+
+  @override
+  String get intel_rankBoardIf4 => 'Invite your first friend to get ranked';
+
+  @override
+  String intel_rankBoardIf5(Object? me) {
+    return 'Direct invites $me';
+  }
+
+  @override
+  String intel_rankBoardIf6(Object? powerFigure) {
+    return 'Power $powerFigure';
+  }
+
+  @override
+  String get intel_rankBoardIf7 => 'My communities';
+
+  @override
+  String get intel_rankBoardIntelRankBoardTitle => 'Power Ranking';
+
+  @override
+  String get intel_rankBoardIntelRankCapabilityBlockTitle =>
+      'Power Ranking isn\'t available right now';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyInviteLabel => 'Invite';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyMessage =>
+      'Once you invite your first friend, this ranks by direct invites';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyMessage2 =>
+      'Check back after the next power snapshot';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyTitle =>
+      'No one has invited a friend yet';
+
+  @override
+  String get intel_rankBoardIntelRankEmptyTitle2 =>
+      'No entries ranked this time';
+
+  @override
+  String intel_rankBoardIntelRankGapToNext(Object? above, Object? figure) {
+    return '$figure more to reach Rank #$above';
+  }
+
+  @override
+  String get intel_rankBoardIntelRankLedgerHeading => 'My rank\nNot ranked yet';
+
+  @override
+  String get intel_rankBoardIntelRankMeLoadingHeading => 'Loading my rank';
+
+  @override
+  String get intel_rankBoardIntelRankPodiumLabel => 'Podium';
+
+  @override
+  String get intel_rankBoardIntelRankProvenancePrefix => 'By direct invites';
+
+  @override
+  String intel_rankBoardIntelRankUnavailableMessage(
+    Object? launchReasonCodeText,
+  ) {
+    return 'Leaderboard can\'t be loaded right now · $launchReasonCodeText';
+  }
+
+  @override
+  String get intel_rankBoardIntelReferralLedgerTitle => 'My live rank';
+
+  @override
+  String intel_rankBoardLabel(Object? place) {
+    return 'Rank #$place, open';
+  }
+
+  @override
+  String get intel_rankBoardLoopProvenanceLine => 'LOOP invite relations';
+
+  @override
+  String get intel_rankBoardLoopProvenanceLine2 =>
+      'The invite board ranks by current active direct invites; ties share a rank. Invite relations are read live, without waiting for a power snapshot.';
+
+  @override
+  String get intel_rankBoardLoopProvenanceLine3 =>
+      'Ranks come from the latest power snapshot; power changes on other accounts or communities change ranks. Nothing is calculated on this device.';
+
+  @override
+  String intel_rankBoardLoopProvenanceLine4(
+    Object? miningRuleKeyText,
+    Object? miningRuleKeyText2,
+  ) {
+    return '$miningRuleKeyText Anonymous entries show \"$miningRuleKeyText2\".';
+  }
+
+  @override
+  String get intel_rankBoardMiningFormulaEffective =>
+      'By the current power formula';
+
+  @override
+  String get intel_rankBoardMiningFormulaPending =>
+      'Power formula not yet in effect';
+
+  @override
+  String intel_rankBoardMiningSnapshotComputed(
+    Object? intelRankLedgerKickerBase,
+    Object? intelRankMonthDayClock,
+  ) {
+    return '$intelRankLedgerKickerBase, snapshot $intelRankMonthDayClock';
+  }
+
+  @override
+  String intel_rankBoardNull(Object? name) {
+    return 'Community $name';
+  }
+
+  @override
+  String intel_rankBoardParticipantEntry(Object? count, Object? name) {
+    return '$name ($count)';
+  }
+
+  @override
+  String get intel_rankBoardReferrals => 'Invitation';
+
+  @override
+  String get intel_rankBoardS => 'LOOP power snapshot';
+
+  @override
+  String intel_rankBoardS2(Object? rank) {
+    return 'My rank\nRank #$rank';
+  }
+
+  @override
+  String intel_rankBoardS3(Object? above, Object? figure) {
+    return '$figure to reach Rank #$above';
+  }
+
+  @override
+  String get intel_rankBoardS4 =>
+      'Once you have power, you\'ll be ranked at the next snapshot';
+
+  @override
+  String get intel_rankBoardSpoken => 'Invites';
+
+  @override
+  String get intel_rankBoardText3 => 'Not ranked';
+
+  @override
+  String intel_rankBoardText4(Object? position) {
+    return 'Rank #$position';
+  }
+
+  @override
+  String intel_rankBoardText5(Object? weight) {
+    return 'Weight $weight';
+  }
+
+  @override
+  String get intel_rankBoardText6 => 'Open';
+
+  @override
+  String get intel_screenIntelScreenTitle => 'Intelligence';
 
   @override
   String launch2Creator_figureWithNote(Object? figure, Object? note) {
@@ -16248,6 +16992,1636 @@ class LoopLocalizationsEn extends LoopLocalizations {
   }
 
   @override
+  String get miningRewards_inviteHeadActive => 'Active';
+
+  @override
+  String get miningRewards_inviteHeadAsset => 'Assets';
+
+  @override
+  String get miningRewards_inviteHeadNft => 'NFT';
+
+  @override
+  String get miningRewards_modelsMiningPowerOnlyNotice =>
+      'Mining starts once the LOOP token launches; until then only power is tracked';
+
+  @override
+  String miningRewards_screenBuild(Object? from, Object? need, Object? to) {
+    return 'Not enough BNB for the network fee. Swap $from for $to first.$need Come back to claim after the swap; your claimable balance won\'t change.';
+  }
+
+  @override
+  String get miningRewards_screenBuild2 =>
+      'Shown after an hour with power is settled';
+
+  @override
+  String get miningRewards_screenBuild3 =>
+      'No meme coins counted toward mining last hour';
+
+  @override
+  String get miningRewards_screenBuild4 => 'Level';
+
+  @override
+  String get miningRewards_screenBuild5 => 'Rate';
+
+  @override
+  String get miningRewards_screenCaption =>
+      'Updates after the next hour is settled';
+
+  @override
+  String miningRewards_screenCaption2(
+    Object? clockLabel,
+    Object? completedMinutes,
+  ) {
+    return '$completedMinutes/60 · next $clockLabel';
+  }
+
+  @override
+  String get miningRewards_screenConfirming => 'Confirming on-chain';
+
+  @override
+  String get miningRewards_screenConfirming2 =>
+      'On-chain and waiting for confirmation. Don\'t claim again.';
+
+  @override
+  String get miningRewards_screenDisabledReason =>
+      'Loading the latest claimable amount';
+
+  @override
+  String get miningRewards_screenExpired => 'Voucher expired';
+
+  @override
+  String get miningRewards_screenExpired2 =>
+      'The claim voucher expired and nothing was paid out. Your claimable balance is unchanged. You can claim again.';
+
+  @override
+  String get miningRewards_screenFact => 'Own weighted power';
+
+  @override
+  String get miningRewards_screenFact2 => 'Invite power';
+
+  @override
+  String miningRewards_screenFact4(Object? miningExcludedReasonText) {
+    return 'Excluded ($miningExcludedReasonText)';
+  }
+
+  @override
+  String get miningRewards_screenFact5 => 'Own power';
+
+  @override
+  String miningRewards_screenFailed(Object? reasonSuffix) {
+    return 'The on-chain claim failed. Your claimable balance didn\'t go down.$reasonSuffix';
+  }
+
+  @override
+  String miningRewards_screenFailedCode(Object? code) {
+    return ' ($code)';
+  }
+
+  @override
+  String get miningRewards_screenGasInsufficient =>
+      'Not enough BNB for the network fee. Swap USDT first.';
+
+  @override
+  String get miningRewards_screenHeading =>
+      'Settlement results can\'t be loaded right now';
+
+  @override
+  String get miningRewards_screenIf => 'No LOOP to claim right now';
+
+  @override
+  String get miningRewards_screenIf2 => 'Loading wallet';
+
+  @override
+  String miningRewards_screenLabel(Object? figure) {
+    return 'Showing $figure LOOP';
+  }
+
+  @override
+  String get miningRewards_screenLabel2 => 'Total settled LOOP';
+
+  @override
+  String get miningRewards_screenLabel3 => 'Total claimed LOOP';
+
+  @override
+  String get miningRewards_screenLabel4 => 'Claimable LOOP';
+
+  @override
+  String get miningRewards_screenLabel6 => 'Meme coin power';
+
+  @override
+  String get miningRewards_screenLoopLabel => 'Power summary';
+
+  @override
+  String get miningRewards_screenLoopLabel2 => 'Rewards summary';
+
+  @override
+  String get miningRewards_screenLoopLabel3 => 'NFT track';
+
+  @override
+  String get miningRewards_screenLoopLabel4 => 'Meme coin track';
+
+  @override
+  String get miningRewards_screenLoopLabel5 => 'Five-level invites';
+
+  @override
+  String get miningRewards_screenLoopLabel6 => 'Claim history';
+
+  @override
+  String get miningRewards_screenLoopProvenanceLine => 'LOOP hourly settlement';
+
+  @override
+  String get miningRewards_screenLoopSheetHeading =>
+      'Not enough for network fee';
+
+  @override
+  String get miningRewards_screenMessage => 'BscScan link copied';
+
+  @override
+  String get miningRewards_screenMessage2 => 'Couldn\'t load earlier records';
+
+  @override
+  String get miningRewards_screenMiningAssetBasisNote =>
+      'Weighted by amount held: power = average amount held that hour × mining weight';
+
+  @override
+  String get miningRewards_screenMiningClaimAmountLabel => 'Claimable now';
+
+  @override
+  String get miningRewards_screenMiningClaimButtonLabel => 'Claim in progress';
+
+  @override
+  String get miningRewards_screenMiningClaimButtonSemanticLabel =>
+      'Claim, unavailable';
+
+  @override
+  String get miningRewards_screenMiningClaimGasGoLabel => 'Swap';
+
+  @override
+  String get miningRewards_screenMiningClaimGasGoLabel2 => 'Top up';
+
+  @override
+  String get miningRewards_screenMiningClaimMinimumLabel => 'Minimum claim';
+
+  @override
+  String get miningRewards_screenMiningClaimResumeLabel => 'Keep checking';
+
+  @override
+  String get miningRewards_screenMiningClaimRetryReportLabel => 'Report again';
+
+  @override
+  String get miningRewards_screenMiningClaimTxSubtitle => 'Copy BscScan link';
+
+  @override
+  String miningRewards_screenMiningClaimTxTitle(Object? miningShortHash) {
+    return 'Successful transaction $miningShortHash';
+  }
+
+  @override
+  String get miningRewards_screenMiningClaimsEmptyTitle => 'No claims yet';
+
+  @override
+  String get miningRewards_screenMiningHourCountedNote =>
+      'Active last hour and counted toward power';
+
+  @override
+  String get miningRewards_screenMiningInviteNote =>
+      'Only invitees\' own power counts; invitees with zero own power don\'t count. Equivalent NFT power is used only for reward calculation.';
+
+  @override
+  String miningRewards_screenMiningMinuteBarSemanticLabel(
+    Object? completedMinutes,
+  ) {
+    return 'Minute $completedMinutes of 60';
+  }
+
+  @override
+  String miningRewards_screenMiningMinuteEpochBody(
+    Object? clockLabel,
+    Object? clockLabel2,
+  ) {
+    return 'Settlement period $clockLabel–$clockLabel2 · this hour\'s rewards are fully claimable after settlement';
+  }
+
+  @override
+  String get miningRewards_screenMiningMinuteKicker => 'Last hour rewards';
+
+  @override
+  String miningRewards_screenMiningMinuteTotalBody(Object? miningLoopFigure) {
+    return 'Last hour $miningLoopFigure LOOP';
+  }
+
+  @override
+  String get miningRewards_screenMiningNftBasisNote =>
+      'NFT power = amount held × community factor';
+
+  @override
+  String get miningRewards_screenMiningNftRealCount =>
+      'NFTs held (actual count)';
+
+  @override
+  String miningRewards_screenMiningPowerEpochBody(
+    Object? clockLabel,
+    Object? clockLabel2,
+  ) {
+    return 'Period $clockLabel–$clockLabel2 · counted every hour on the hour';
+  }
+
+  @override
+  String miningRewards_screenMiningPowerFolioHeading(Object? figure) {
+    return '$figure power';
+  }
+
+  @override
+  String miningRewards_screenMiningPowerTracksBody(
+    Object? assetPower,
+    Object? nftPower,
+  ) {
+    return 'NFT power $nftPower · Meme coin power $assetPower';
+  }
+
+  @override
+  String get miningRewards_screenMiningRewardsInfoActionTitle =>
+      'About mining rewards';
+
+  @override
+  String get miningRewards_screenMiningRewardsProvenanceDetail =>
+      'Every hour on the hour (UTC), the previous hour\'s NFT and meme coin tracks are settled; that hour\'s rewards are claimable once settled. The per-minute growth only displays last hour\'s rewards and doesn\'t change the claimable amount.';
+
+  @override
+  String get miningRewards_screenMiningRewardsProvenanceDetail2 =>
+      'Every hour on the hour (UTC), power on the previous hour\'s NFT and meme coin tracks is counted.';
+
+  @override
+  String get miningRewards_screenMiningRewardsProvenancePrefix => 'Last read';
+
+  @override
+  String get miningRewards_screenMiningRewardsStateEmptyMessage =>
+      'No reward records yet';
+
+  @override
+  String get miningRewards_screenNoGasSource =>
+      'There\'s no BNB in your wallet for the network fee. Top up BNB first.';
+
+  @override
+  String get miningRewards_screenNull => 'No power last hour';
+
+  @override
+  String get miningRewards_screenPollTimedOut =>
+      'Broadcast, but no confirmation read yet. It may still be confirming; check again later and don\'t claim again.';
+
+  @override
+  String get miningRewards_screenPowerFolio =>
+      'The previous hour settles every hour on the hour; the next hour displays by the minute.';
+
+  @override
+  String get miningRewards_screenPreparing =>
+      'Creating the claim voucher. The wallet hasn\'t opened yet.';
+
+  @override
+  String miningRewards_screenRow(Object? level) {
+    return 'Level $level';
+  }
+
+  @override
+  String get miningRewards_screenRow2 => 'Total';
+
+  @override
+  String get miningRewards_screenS =>
+      'Power appears after the first hour is settled';
+
+  @override
+  String get miningRewards_screenS2 =>
+      'Power for the previous hour is counted every hour on the hour.';
+
+  @override
+  String get miningRewards_screenS3 => 'Nothing to claim';
+
+  @override
+  String get miningRewards_screenS4 =>
+      'Claimable amount is below the minimum claim';
+
+  @override
+  String get miningRewards_screenS5 => 'No wallet available';
+
+  @override
+  String miningRewards_screenS6(Object? requiredNative) {
+    return ' This claim needs about $requiredNative BNB.';
+  }
+
+  @override
+  String get miningRewards_screenS7 => 'BNB needed for network fee';
+
+  @override
+  String miningRewards_screenS8(Object? need) {
+    return 'Your wallet has no BNB and no USDT to swap.$need Top up a little BNB first, then come back to claim.';
+  }
+
+  @override
+  String get miningRewards_screenStamp => 'Settling';
+
+  @override
+  String get miningRewards_screenSucceeded => 'Claimed. LOOP has arrived.';
+
+  @override
+  String get miningRewards_screenSwitch =>
+      'Mining rules aren\'t in effect yet, so nothing is settled.';
+
+  @override
+  String get miningRewards_screenSwitch10 =>
+      'This claim is locked. Don\'t claim again.';
+
+  @override
+  String get miningRewards_screenSwitch11 =>
+      'The settlement service isn\'t available right now, so you can\'t claim';
+
+  @override
+  String get miningRewards_screenSwitch12 =>
+      'Mining rules aren\'t in effect yet, so you can\'t claim';
+
+  @override
+  String get miningRewards_screenSwitch13 =>
+      'Claimable after an hour with power is settled';
+
+  @override
+  String miningRewards_screenSwitch14(Object? miningLoopFigure) {
+    return 'Claimable at $miningLoopFigure LOOP';
+  }
+
+  @override
+  String get miningRewards_screenSwitch15 =>
+      'The previous claim is still processing. Claim after it finishes';
+
+  @override
+  String get miningRewards_screenSwitch16 =>
+      'The claim chain isn\'t configured yet, so you can\'t claim';
+
+  @override
+  String get miningRewards_screenSwitch17 =>
+      'Claim voucher issuing isn\'t configured yet, so you can\'t claim';
+
+  @override
+  String get miningRewards_screenSwitch18 =>
+      'On-chain writes are off right now, so you can\'t claim';
+
+  @override
+  String get miningRewards_screenSwitch19 => 'Mainnet claims aren\'t open yet';
+
+  @override
+  String get miningRewards_screenSwitch2 =>
+      'Mining rules are in effect. Power for the previous hour is counted every hour on the hour and shown here.';
+
+  @override
+  String get miningRewards_screenSwitch20 =>
+      'The claim contract is paused, so you can\'t claim';
+
+  @override
+  String get miningRewards_screenSwitch21 =>
+      'The claim contract can\'t be read right now, so you can\'t claim';
+
+  @override
+  String get miningRewards_screenSwitch22 =>
+      'The claim contract\'s balance is too low, so you can\'t claim';
+
+  @override
+  String get miningRewards_screenSwitch23 =>
+      'Claims aren\'t available right now';
+
+  @override
+  String get miningRewards_screenSwitch24 => 'No LOOP to claim right now.';
+
+  @override
+  String get miningRewards_screenSwitch25 =>
+      'Claimable amount is below the minimum claim.';
+
+  @override
+  String get miningRewards_screenSwitch26 =>
+      'The previous claim is still processing. Claim after it finishes.';
+
+  @override
+  String get miningRewards_screenSwitch27 =>
+      'The simulation didn\'t pass; this claim would be rejected on-chain. No transaction was submitted.';
+
+  @override
+  String get miningRewards_screenSwitch28 =>
+      'The claim contract is paused. Your balance is unchanged.';
+
+  @override
+  String get miningRewards_screenSwitch29 =>
+      'The claim contract can\'t be read right now. No voucher was created and your balance is unchanged.';
+
+  @override
+  String get miningRewards_screenSwitch3 =>
+      'The settlement service isn\'t available right now. The numbers below may not be current.';
+
+  @override
+  String get miningRewards_screenSwitch30 =>
+      'The claim contract\'s balance is too low to claim right now. Your balance is unchanged.';
+
+  @override
+  String get miningRewards_screenSwitch31 =>
+      'The claim voucher expired. No transaction was submitted. Claim again.';
+
+  @override
+  String get miningRewards_screenSwitch32 =>
+      'Claims go only to your LOOP built-in wallet.';
+
+  @override
+  String get miningRewards_screenSwitch33 =>
+      'No voucher was created and no transaction was submitted.';
+
+  @override
+  String get miningRewards_screenSwitch34 => 'Claim status';
+
+  @override
+  String get miningRewards_screenSwitch35 =>
+      'Graduated; DEX pool holdings are still syncing';
+
+  @override
+  String get miningRewards_screenSwitch36 =>
+      'Graduated; DEX pool holdings can\'t be read right now';
+
+  @override
+  String get miningRewards_screenSwitch37 => 'Mining weight not configured yet';
+
+  @override
+  String get miningRewards_screenSwitch38 => 'Not counted yet';
+
+  @override
+  String get miningRewards_screenSwitch4 =>
+      'Mining rules are in effect. The previous hour settles every hour on the hour; it\'s then shown here by the minute and can be claimed.';
+
+  @override
+  String get miningRewards_screenSwitch5 =>
+      'Settlement data can\'t be loaded right now. The numbers below may not be current.';
+
+  @override
+  String get miningRewards_screenSwitch6 =>
+      'Hours you had power in aren\'t settled yet';
+
+  @override
+  String get miningRewards_screenSwitch7 =>
+      'Rewards appear after the first hour is settled';
+
+  @override
+  String get miningRewards_screenSwitch8 => 'Claimable';
+
+  @override
+  String miningRewards_screenSwitch9(Object? attempts) {
+    return 'Submitted and waiting to land on-chain (checked $attempts times). Don\'t claim again.';
+  }
+
+  @override
+  String get miningRewards_screenTimedOut =>
+      'Network unavailable. No claim voucher was created.';
+
+  @override
+  String miningRewards_screenTitle(Object? miningLoopFigure) {
+    return 'Claim $miningLoopFigure LOOP';
+  }
+
+  @override
+  String get miningRewards_screenUnavailable =>
+      'Claims aren\'t available right now. Your balance is unchanged.';
+
+  @override
+  String get miningRewards_signingIf =>
+      'The wallet result is unknown, so this claim is locked. Don\'t claim again; refresh later to check.';
+
+  @override
+  String miningRewards_signingIf2(Object? short) {
+    return 'Broadcast ($short) and recorded by the server; waiting for on-chain confirmation.';
+  }
+
+  @override
+  String miningRewards_signingIf3(
+    Object? miningClaimReportReasonText,
+    Object? short,
+  ) {
+    return 'Broadcast ($short). $miningClaimReportReasonText';
+  }
+
+  @override
+  String get miningRewards_signingLabel => 'Claim amount';
+
+  @override
+  String get miningRewards_signingLabel2 => 'Receiving wallet';
+
+  @override
+  String get miningRewards_signingLabel3 => 'Network fee';
+
+  @override
+  String get miningRewards_signingLabel4 => 'Voucher valid until';
+
+  @override
+  String get miningRewards_signingSwitch => 'Cancelled. Nothing changed.';
+
+  @override
+  String get miningRewards_signingSwitch10 =>
+      'The wallet didn\'t finish signing. No transaction was submitted and your claimable balance is unchanged.';
+
+  @override
+  String get miningRewards_signingSwitch11 =>
+      'A different hash was already reported for this claim, so this broadcast wasn\'t recorded. Don\'t claim again; refresh later to check.';
+
+  @override
+  String get miningRewards_signingSwitch12 =>
+      'This on-chain transaction doesn\'t match the claim voucher, so the server didn\'t record it. Don\'t claim again, and contact support.';
+
+  @override
+  String get miningRewards_signingSwitch13 =>
+      'The wallet broadcast it, but the report didn\'t arrive. The transaction may be on-chain; you can report the same hash again. Don\'t claim again.';
+
+  @override
+  String get miningRewards_signingSwitch2 =>
+      'Verification didn\'t pass. Nothing changed.';
+
+  @override
+  String get miningRewards_signingSwitch3 =>
+      'The claim voucher expired. No transaction was submitted and your claimable balance is unchanged. Claim again.';
+
+  @override
+  String get miningRewards_signingSwitch4 =>
+      'The transaction doesn\'t match what you confirmed, so signing was refused. No transaction was submitted.';
+
+  @override
+  String get miningRewards_signingSwitch5 =>
+      'Couldn\'t find the wallet for this claim. No transaction was submitted.';
+
+  @override
+  String get miningRewards_signingSwitch6 =>
+      'The voucher\'s wallet doesn\'t match the current wallet, so signing was refused. No transaction was submitted.';
+
+  @override
+  String get miningRewards_signingSwitch7 =>
+      'Signing isn\'t allowed on this chain. No transaction was submitted.';
+
+  @override
+  String get miningRewards_signingSwitch8 =>
+      'The wallet can\'t sign on this chain right now. No transaction was submitted.';
+
+  @override
+  String get miningRewards_signingSwitch9 =>
+      'The signed-in wallet isn\'t the one for this claim. No transaction was submitted.';
+
+  @override
+  String get miningRewards_signingTitle => 'Confirm claim';
+
+  @override
+  String get miningRewards_signingValue => 'Claim mining rewards';
+
+  @override
+  String get miningRewards_signingValue2 => 'Paid with BNB in wallet';
+
+  @override
+  String get mining_controllersActivationRequired =>
+      'Activate your LOOP ID before binding an invite code. You can bind any time after activation.';
+
+  @override
+  String get mining_controllersIdempotencyConflict =>
+      'This binding was already submitted with a different invite code. Refresh to see the latest status.';
+
+  @override
+  String get mining_controllersNotFound =>
+      'This invite code doesn\'t exist. Check with the person who invited you and try again; codes can\'t be guessed, so more attempts won\'t help.';
+
+  @override
+  String get mining_controllersPolicyBlocked =>
+      'You can\'t bind an invite code right now. Each account can bind only once. Refresh to see the latest status.';
+
+  @override
+  String get mining_controllersStale =>
+      'This account already has an inviter. It can\'t be changed after binding.';
+
+  @override
+  String get mining_controllersValidationFailed =>
+      'This invite code can\'t be bound: you can\'t invite yourself or bind a code from someone you invited.';
+
+  @override
+  String mining_copyHead(Object? computedAtLabel) {
+    return 'Showing the power snapshot from $computedAtLabel';
+  }
+
+  @override
+  String get mining_copyIf =>
+      'Block and time appear here after the next power snapshot.';
+
+  @override
+  String get mining_copyIf2 =>
+      'The latest calculation didn\'t finish and there\'s no complete snapshot to fall back on.';
+
+  @override
+  String mining_copyIf3(Object? named, Object? rest) {
+    return '$named, and $rest more assets';
+  }
+
+  @override
+  String get mining_copyIncomplete =>
+      'Reference prices for some assets couldn\'t be read this time';
+
+  @override
+  String get mining_copyMiningConditionEmbedded =>
+      'Calculated from holdings in wallets linked to your LOOP account.';
+
+  @override
+  String get mining_copyMiningConditionMember =>
+      'You must join the community; only the time you\'re a member counts. Tokens without a bound community don\'t require this.';
+
+  @override
+  String get mining_copyMiningConditionVerified =>
+      'Community tokens count only when their bound community is approved; communities in review don\'t count.';
+
+  @override
+  String get mining_copyMiningConditionsShort =>
+      'Calculated from linked wallet holdings. Community tokens require joining their approved community.';
+
+  @override
+  String get mining_copyMiningPowerFormulaHeading => 'Holdings × weight';
+
+  @override
+  String get mining_copyMiningSnapshotRowTitle => 'Latest power snapshot';
+
+  @override
+  String get mining_copyMiningSnapshotSectionLabel => 'Power snapshot';
+
+  @override
+  String get mining_copyMiningStaleLine =>
+      'The latest snapshot was invalidated';
+
+  @override
+  String mining_copyS(Object? cause) {
+    return 'The latest calculation didn\'t finish ($cause) and there\'s no complete snapshot to fall back on.';
+  }
+
+  @override
+  String get mining_copyS2 => 'The latest snapshot didn\'t finish';
+
+  @override
+  String mining_copyStaleWithCause(Object? cause, Object? head, Object? tail) {
+    return '$head · $tail ($cause)';
+  }
+
+  @override
+  String get mining_copySwitch => 'No power snapshot has been taken yet';
+
+  @override
+  String get mining_copySwitch2 => 'No complete power snapshot yet';
+
+  @override
+  String get mining_copySwitch3 => 'Shown after the next power snapshot';
+
+  @override
+  String get mining_copySwitch4 => 'Power snapshot can\'t be loaded right now';
+
+  @override
+  String mining_copySwitch5(Object? label) {
+    return '$label has no available quote right now';
+  }
+
+  @override
+  String mining_copySwitch6(Object? label) {
+    return '$label\'s reference price isn\'t recent enough';
+  }
+
+  @override
+  String mining_copySwitch7(Object? label) {
+    return '$label\'s reference price comes from an unregistered token';
+  }
+
+  @override
+  String mining_copySwitch8(Object? label) {
+    return '$label\'s reference price couldn\'t be read this time';
+  }
+
+  @override
+  String get mining_copySwitch9 => 'That snapshot\'s data was incomplete';
+
+  @override
+  String get mining_modelsApproved => 'Approved';
+
+  @override
+  String get mining_modelsCommunities => 'Communities';
+
+  @override
+  String mining_modelsMiningAssetLabel(Object? chainName) {
+    return '$chainName native token';
+  }
+
+  @override
+  String get mining_modelsMiningBaselineDetail =>
+      'Token power = amount held × asset weight, not multiplied by price; NFT power = amount held × community factor. Community tokens count only when their bound community is approved and you\'ve joined it. Calculated from holdings in wallets linked to your LOOP account. Current version: every asset\'s weight is 1, the daily output is an estimate, and the reward token isn\'t decided yet. These numbers aren\'t earnings or a promise.';
+
+  @override
+  String get mining_modelsMiningBaselineLabel => 'Current power formula';
+
+  @override
+  String get mining_modelsMiningReferralRankLabel => 'Invites';
+
+  @override
+  String get mining_modelsPendingApproval => 'Pending approval';
+
+  @override
+  String get mining_modelsRetired => 'Retired';
+
+  @override
+  String get mining_modelsS => 'Native token';
+
+  @override
+  String get mining_modelsSwitch => 'Power = holdings × weight';
+
+  @override
+  String get mining_modelsSwitch10 => 'Market stability';
+
+  @override
+  String get mining_modelsSwitch11 => 'User quality';
+
+  @override
+  String get mining_modelsSwitch12 => 'Depth of partnership with LOOP';
+
+  @override
+  String get mining_modelsSwitch13 =>
+      'TWAP (time-weighted average price): keeps a single trade from skewing the reference price.';
+
+  @override
+  String get mining_modelsSwitch14 =>
+      'Multi-period, multi-source comparison to cross-check unusual moves.';
+
+  @override
+  String get mining_modelsSwitch15 =>
+      'Liquidity cap: limits the value counted for low-liquidity assets.';
+
+  @override
+  String get mining_modelsSwitch16 => 'Anonymous member';
+
+  @override
+  String get mining_modelsSwitch17 =>
+      'Whether others see an alias or \"Anonymous member\" depends only on that account\'s anonymous mode; \"Discoverable\" isn\'t involved, and you always see your own alias.';
+
+  @override
+  String get mining_modelsSwitch18 =>
+      'Power values follow that account\'s own \"Mining power\" visibility; when set to only me, others can\'t see the value, but rank and entry counts stay public.';
+
+  @override
+  String get mining_modelsSwitch19 => 'A rule item defined by LOOP.';
+
+  @override
+  String get mining_modelsSwitch2 =>
+      'Power = holdings × reference price × weight';
+
+  @override
+  String get mining_modelsSwitch3 =>
+      'Daily output = my power ÷ network power × daily output';
+
+  @override
+  String get mining_modelsSwitch4 =>
+      'LOOP uses a fixed top weight tier (value pending approval).';
+
+  @override
+  String get mining_modelsSwitch5 =>
+      'Community token weights are granted by review; the range is pending approval.';
+
+  @override
+  String get mining_modelsSwitch6 => 'Community quality';
+
+  @override
+  String get mining_modelsSwitch7 => 'Community size';
+
+  @override
+  String get mining_modelsSwitch8 => 'Token liquidity';
+
+  @override
+  String get mining_modelsSwitch9 => 'Project quality';
+
+  @override
+  String get mining_modelsUsers => 'Users';
+
+  @override
+  String get mining_referralAppliesMiningPower => 'mining power';
+
+  @override
+  String get mining_referralBarrierLabel => 'Close invite code binding';
+
+  @override
+  String get mining_referralBarrierLabel2 => 'Close invite poster';
+
+  @override
+  String get mining_referralBuild => 'Invite code';
+
+  @override
+  String get mining_referralBuild2 => 'Invite link';
+
+  @override
+  String get mining_referralBuild3 =>
+      'Enter the invite code any time after signing up and mine together.';
+
+  @override
+  String get mining_referralBuild4 =>
+      'Enter the invite code after signing up on LOOP';
+
+  @override
+  String get mining_referralBuild5 =>
+      'Inviter bound. The relation is locked and can\'t be changed';
+
+  @override
+  String get mining_referralBuild6 =>
+      'Each account can bind only once, and the relation can\'t be changed once locked. You can\'t bind your own code or a code from someone you invited.';
+
+  @override
+  String mining_referralDepthMax(Object? maximumDepth) {
+    return ', up to L$maximumDepth';
+  }
+
+  @override
+  String get mining_referralEmptyMessage => 'Couldn\'t load invite relations';
+
+  @override
+  String get mining_referralEmptyMessage2 => 'No invitations yet';
+
+  @override
+  String get mining_referralEmptyReason =>
+      'Invite code and invite count can\'t be loaded right now.';
+
+  @override
+  String get mining_referralErrorText =>
+      'Invalid invite code format. Check it and try again.';
+
+  @override
+  String mining_referralIf(Object? code) {
+    return 'Mine with me on LOOP. Sign up and enter my invite code $code';
+  }
+
+  @override
+  String get mining_referralInvitees => 'Invite list';
+
+  @override
+  String mining_referralLabel(Object? code) {
+    return 'My invite code $code';
+  }
+
+  @override
+  String get mining_referralLabelText => 'Invite code (like LOOP-XXXXX)';
+
+  @override
+  String get mining_referralLoopLabel => 'My inviter';
+
+  @override
+  String mining_referralLoopRecordRow(num shown) {
+    String _temp0 = intl.Intl.pluralLogic(
+      shown,
+      locale: localeName,
+      other: '$shown active members',
+      one: '1 active member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mining_referralLoopSheetHeading => 'Invite poster';
+
+  @override
+  String mining_referralMessage(Object? code) {
+    return 'This account already has an inviter, so $code from the invite link won\'t be bound';
+  }
+
+  @override
+  String mining_referralMessage2(Object? code) {
+    return 'This account can\'t bind an invite code right now, so $code from the invite link wasn\'t submitted';
+  }
+
+  @override
+  String get mining_referralMessage3 => 'Invite code bound';
+
+  @override
+  String get mining_referralMessage4 =>
+      'The share sheet didn\'t open. Copy the link instead';
+
+  @override
+  String get mining_referralModelsInvalid => 'Invalid';
+
+  @override
+  String get mining_referralModelsInvalidated => 'Invalidated';
+
+  @override
+  String get mining_referralModelsPending => 'Pending';
+
+  @override
+  String get mining_referralModelsPendingActivation => 'Pending activation';
+
+  @override
+  String get mining_referralModelsPendingMining => 'Pending mining';
+
+  @override
+  String get mining_referralModelsPendingWallet => 'Pending wallet link';
+
+  @override
+  String get mining_referralModelsSwitch =>
+      'People I invited directly and verified';
+
+  @override
+  String get mining_referralModelsSwitch2 => 'People my L1 invited';
+
+  @override
+  String get mining_referralModelsSwitch3 => 'People my L2 invited';
+
+  @override
+  String get mining_referralModelsSwitch4 => 'People my L3 invited';
+
+  @override
+  String get mining_referralModelsSwitch5 => 'People my L4 invited';
+
+  @override
+  String get mining_referralModelsSwitch6 => 'Invite relation level';
+
+  @override
+  String get mining_referralModelsValid => 'Active';
+
+  @override
+  String mining_referralOverviewCounts(Object? pending, Object? valid) {
+    return '\n$valid active · $pending pending verification.';
+  }
+
+  @override
+  String get mining_referralReferralBoostTotalTitle => 'Total boost';
+
+  @override
+  String mining_referralReferralBoundRowSubtitle(
+    Object? depth,
+    Object? launchTimestampLabel,
+    Object? referralValidationStatusLabel,
+  ) {
+    return 'Depth L$depth · $referralValidationStatusLabel · locked $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_referralReferralBoundRowTitle => 'Inviter bound';
+
+  @override
+  String get mining_referralReferralCapabilityInlineMessage =>
+      'Invite relations aren\'t available right now';
+
+  @override
+  String get mining_referralReferralClaimFailureTitle =>
+      'This binding didn\'t finish';
+
+  @override
+  String get mining_referralReferralClaimShapeInvalidBody =>
+      'An invite code is LOOP- followed by 5 characters. Clearly invalid codes aren\'t submitted, so your one binding isn\'t wasted.';
+
+  @override
+  String get mining_referralReferralClaimShapeInvalidTitle =>
+      'Invalid invite code format';
+
+  @override
+  String get mining_referralReferralClaimSubmitLabel => 'Bind';
+
+  @override
+  String get mining_referralReferralClaimSuccessBody =>
+      'This relation is confirmed. It can\'t be changed after binding.';
+
+  @override
+  String get mining_referralReferralClaimSuccessTitle => 'Relation locked';
+
+  @override
+  String get mining_referralReferralClaimWindowTimed =>
+      'You can\'t bind an invite code right now. Refresh and try again later';
+
+  @override
+  String mining_referralReferralClaimWindowUnavailable(
+    Object? launchReasonCodeText,
+  ) {
+    return 'Can\'t bind yet: $launchReasonCodeText';
+  }
+
+  @override
+  String get mining_referralReferralCopyCodeLabel => 'Copy invite code';
+
+  @override
+  String get mining_referralReferralCopyCodeMessage => 'Invite code copied';
+
+  @override
+  String get mining_referralReferralCopyLinkLabel => 'Copy invite link';
+
+  @override
+  String get mining_referralReferralCopyLinkMessage => 'Invite link copied';
+
+  @override
+  String get mining_referralReferralInfoBindingBody =>
+      'Invitees can bind any time after activating their LOOP ID; each account can bind only once, and the relation can\'t be changed once locked. You can\'t bind your own code or a code from someone you invited.';
+
+  @override
+  String get mining_referralReferralInfoBindingTitle => 'Bind invite code';
+
+  @override
+  String mining_referralReferralInfoDepthBody(Object? rules) {
+    return 'People you invite directly and who are verified are L1, people L1 invites are L2, and so on$rules. Each level\'s boost rate follows what the server publishes and counts only that level\'s active relations.';
+  }
+
+  @override
+  String get mining_referralReferralInfoDepthTitle => 'How depth is counted';
+
+  @override
+  String get mining_referralReferralInfoMiningOnlyBody =>
+      'Invite boost counts only toward mining power. It isn\'t income, commission or a rebate.';
+
+  @override
+  String get mining_referralReferralInfoMiningOnlyTitle =>
+      'Counts only toward mining power';
+
+  @override
+  String mining_referralReferralInfoRelationshipBody(Object? overview) {
+    return 'Each account has one invite code. Sharing doesn\'t create a relation until it\'s verified; \"Active\" counts only verified relations, and the rest show as pending verification and add no boost.$overview';
+  }
+
+  @override
+  String get mining_referralReferralInfoRelationshipTitle =>
+      'How a relation is formed';
+
+  @override
+  String mining_referralReferralInfoRulesBody(
+    Object? launchTimestampLabel,
+    Object? maximumDepth,
+    Object? rules,
+  ) {
+    return 'Effective $launchTimestampLabel · max depth L$maximumDepth · applies to $rules';
+  }
+
+  @override
+  String get mining_referralReferralInfoRulesTitle => 'Rule version';
+
+  @override
+  String mining_referralReferralInfoValidMemberBody(Object? stats) {
+    return 'An invitee is an active member only if they had power in the latest settled hour.$stats';
+  }
+
+  @override
+  String get mining_referralReferralInfoValidMemberTitle => 'Active members';
+
+  @override
+  String mining_referralReferralInviteLinkLabel(Object? link) {
+    return 'Invite link $link';
+  }
+
+  @override
+  String get mining_referralReferralPosterLabel => 'Create poster';
+
+  @override
+  String mining_referralReferralPosterLabel2(Object? code) {
+    return 'LOOP invite poster, invite code $code';
+  }
+
+  @override
+  String get mining_referralReferralPosterNoLink =>
+      'Invite links aren\'t open yet, so the poster shows only the invite code.';
+
+  @override
+  String get mining_referralReferralPosterQrSemanticLabel =>
+      'Invite link QR code';
+
+  @override
+  String get mining_referralReferralPosterShareLabel => 'Creating…';
+
+  @override
+  String get mining_referralReferralPosterShareLabel2 => 'Save or share poster';
+
+  @override
+  String get mining_referralReferralShareLinkLabel => 'Share link';
+
+  @override
+  String get mining_referralRow => 'Hidden member';
+
+  @override
+  String mining_referralS(Object? code, Object? link) {
+    return 'Mine with me on LOOP. Sign up and enter my invite code $code\n$link';
+  }
+
+  @override
+  String get mining_referralS2 => 'Scan to open the invite page';
+
+  @override
+  String mining_referralSemanticLabel(
+    Object? launchTimestampLabel,
+    Object? name,
+    Object? referralInviteeStatusLabel,
+  ) {
+    return '$name, joined $launchTimestampLabel, $referralInviteeStatusLabel';
+  }
+
+  @override
+  String get mining_referralSubject => 'Join me on LOOP';
+
+  @override
+  String mining_referralSubtitle(Object? powerFigure, Object? powerFigure2) {
+    return 'NFT $powerFigure · Assets $powerFigure2';
+  }
+
+  @override
+  String mining_referralSubtitle2(Object? launchTimestampLabel) {
+    return 'Joined $launchTimestampLabel';
+  }
+
+  @override
+  String mining_referralTitle(Object? boostPercent, Object? level) {
+    return 'L$level · Boost $boostPercent%';
+  }
+
+  @override
+  String mining_referralValidAsOf(Object? time) {
+    return '\nFigures as of $time.';
+  }
+
+  @override
+  String get mining_referralValidNoHour =>
+      '\nNo settled hour yet, so active members are 0 for now.';
+
+  @override
+  String get mining_screenCell => 'Token power';
+
+  @override
+  String get mining_screenCell2 => 'NFT power';
+
+  @override
+  String get mining_screenCell3 => 'Token power · Last hour';
+
+  @override
+  String get mining_screenCell4 => 'NFT power · Last hour';
+
+  @override
+  String get mining_screenClaimSemanticLabel =>
+      'Claim rewards, open rewards and claims';
+
+  @override
+  String get mining_screenEmptyLine => 'No power snapshot yet';
+
+  @override
+  String get mining_screenEmptyMessage => 'No power data yet';
+
+  @override
+  String get mining_screenEmptyMessage2 => 'No power breakdown yet';
+
+  @override
+  String get mining_screenEmptyTitle => 'No NFT power yet';
+
+  @override
+  String get mining_screenHeading => 'Loading';
+
+  @override
+  String get mining_screenKicker => 'Total power';
+
+  @override
+  String get mining_screenLabel => 'Total mined';
+
+  @override
+  String get mining_screenLabel2 => 'Claimable';
+
+  @override
+  String get mining_screenLabel3 => 'Last hour power';
+
+  @override
+  String get mining_screenLabel4 => 'Active invites';
+
+  @override
+  String get mining_screenLabel5 => 'Today\'s estimate';
+
+  @override
+  String get mining_screenLoopInfoNote => 'No power snapshot loaded yet.';
+
+  @override
+  String get mining_screenLoopInfoNote2 =>
+      'LOOP doesn\'t accumulate points or estimate earnings on this device. Not loaded doesn\'t mean \"zero power\".';
+
+  @override
+  String get mining_screenMiningCapabilityUnavailableLabel =>
+      'Mining isn\'t available right now';
+
+  @override
+  String get mining_screenMiningCompositionNftUnavailableMessage =>
+      'NFT power isn\'t provided separately yet';
+
+  @override
+  String get mining_screenMiningFormulaEffective =>
+      'LOOP doesn\'t accumulate points or estimate earnings on this device. Every number on this page comes from the latest power snapshot.';
+
+  @override
+  String mining_screenMiningInfoConditionsBody(
+    Object? miningConditionEmbedded,
+    Object? miningConditionMember,
+    Object? miningConditionVerified,
+  ) {
+    return 'Token power = amount held × asset weight, not multiplied by price; NFTs use their community factor.\n$miningConditionVerified\n$miningConditionMember\n$miningConditionEmbedded';
+  }
+
+  @override
+  String get mining_screenMiningInfoConditionsTitle =>
+      'Which holdings count toward power';
+
+  @override
+  String get mining_screenMiningInfoFormulaTitle => 'Formula version';
+
+  @override
+  String get mining_screenMiningInfoOpenRulesLabel => 'View mining rules';
+
+  @override
+  String get mining_screenMiningInfoTruthTitle => 'No local estimates';
+
+  @override
+  String get mining_screenMiningInviteInfoTitle => 'About invites';
+
+  @override
+  String get mining_screenMiningRulesActionTitle => 'About mining';
+
+  @override
+  String mining_screenMiningSnapshotComputed(
+    Object? groupedFigure,
+    Object? launchTimestampLabel,
+  ) {
+    return 'Block $groupedFigure · $launchTimestampLabel · when power was calculated';
+  }
+
+  @override
+  String mining_screenMiningSnapshotComputed2(
+    Object? launchTimestampLabel,
+    Object? stale,
+  ) {
+    return 'Snapshot · $launchTimestampLabel$stale';
+  }
+
+  @override
+  String mining_screenParenthetical(Object? text) {
+    return ' ($text)';
+  }
+
+  @override
+  String get mining_screenS => 'No token power yet';
+
+  @override
+  String get mining_screenSpoken => 'Not loaded yet';
+
+  @override
+  String get mining_screenSpoken2 => 'No settled hour yet';
+
+  @override
+  String get mining_screenSwitch =>
+      'Mining summary not loaded yet. The formula version appears here once loaded.';
+
+  @override
+  String mining_screenSwitch2(Object? launchReasonCodeText) {
+    return 'No approved mining formula version: $launchReasonCodeText';
+  }
+
+  @override
+  String get mining_screenSwitch3 =>
+      'Mining formula pending approval. Numbers on this page have a source only after approval.';
+
+  @override
+  String get mining_screenSwitch4 => 'Formula version pending approval';
+
+  @override
+  String mining_screenSwitch5(Object? launchTimestampLabel, Object? scope) {
+    return 'Mining formula in effect$scope · effective $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_screenSwitch6 => 'Formula version in effect';
+
+  @override
+  String mining_screenValue(num invites) {
+    String _temp0 = intl.Intl.pluralLogic(
+      invites,
+      locale: localeName,
+      other: '$invites people',
+      one: '1 person',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mining_secondaryScreensCell => 'My power';
+
+  @override
+  String get mining_secondaryScreensEmptyMessage =>
+      'Couldn\'t load this community';
+
+  @override
+  String get mining_secondaryScreensEmptyMessage2 => 'Couldn\'t load rules';
+
+  @override
+  String get mining_secondaryScreensEmptyReason =>
+      'The community may not exist or isn\'t visible to this account.';
+
+  @override
+  String get mining_secondaryScreensEmptyReason2 =>
+      'Formula version can\'t be loaded right now.';
+
+  @override
+  String get mining_secondaryScreensHeading => 'Weights and power rules';
+
+  @override
+  String get mining_secondaryScreensIf => 'Daily output';
+
+  @override
+  String get mining_secondaryScreensKicker => 'Power rules';
+
+  @override
+  String mining_secondaryScreensLabel(
+    Object? spokenContribution,
+    Object? spokenWeight,
+  ) {
+    return 'My power, $spokenContribution. Community weight, $spokenWeight';
+  }
+
+  @override
+  String get mining_secondaryScreensLabel2 => 'Approved formula version';
+
+  @override
+  String get mining_secondaryScreensLoopFolioPrimary =>
+      'No approved formula and no draft pending approval.';
+
+  @override
+  String get mining_secondaryScreensLoopFolioPrimary2 =>
+      'No approved formula yet. The one below is a draft pending approval.';
+
+  @override
+  String get mining_secondaryScreensLoopFolioPrimary3 =>
+      'This version is approved and in effect; no draft pending approval.';
+
+  @override
+  String get mining_secondaryScreensLoopFolioPrimary4 =>
+      'This version is approved and in effect. A draft pending approval is below.';
+
+  @override
+  String get mining_secondaryScreensLoopLabel => 'My contribution';
+
+  @override
+  String get mining_secondaryScreensLoopLabel2 => 'Community record';
+
+  @override
+  String get mining_secondaryScreensLoopLabel3 => 'Community weight';
+
+  @override
+  String get mining_secondaryScreensLoopLabel4 => 'Bound assets';
+
+  @override
+  String get mining_secondaryScreensLoopLabel5 => 'Approved version';
+
+  @override
+  String get mining_secondaryScreensLoopLabel6 => 'Version pending approval';
+
+  @override
+  String get mining_secondaryScreensLoopLabel7 => 'Invite relation rules';
+
+  @override
+  String get mining_secondaryScreensLoopLabel8 => 'Asset weights';
+
+  @override
+  String get mining_secondaryScreensLoopProvenanceLine => 'LOOP mining rules';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityAssetRowSubtitle =>
+      'This community has no bound assets yet';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityAssetRowTrailing => 'Bound';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityLogoKicker =>
+      'Community power';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityMetricParticipantsTitle =>
+      'Holders mining';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityMetricPowerTitle =>
+      'Community total power';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityNoticeBody =>
+      'Weights come from review; the review factors are public, the exact scores aren\'t. Communities that aren\'t approved have no weight and no power. Holders must join the community for their holdings to count.';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityNoticeTitle =>
+      'Weights are set by platform review';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityRankActionLabel =>
+      'View leaderboard';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityReadingLabel =>
+      'Community rank';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityReadingTrailingLabel =>
+      'Participants';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityScreenTitle =>
+      'Community mining';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityWeightNotApplicableMessage =>
+      'No weight to review';
+
+  @override
+  String get mining_secondaryScreensMiningCommunityWeightPendingMessage =>
+      'Weight in review';
+
+  @override
+  String mining_secondaryScreensMiningCommunityWeightRowSubtitle(
+    Object? launchTimestampLabel,
+  ) {
+    return 'Reviewed $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_secondaryScreensMiningCommunityWeightRowTitle =>
+      'Weight granted';
+
+  @override
+  String mining_secondaryScreensMiningCommunityWeightVersion(
+    Object? identifier,
+  ) {
+    return 'Formula version in effect $identifier';
+  }
+
+  @override
+  String get mining_secondaryScreensMiningFigureValue =>
+      'Sum of members\' power on bound assets';
+
+  @override
+  String get mining_secondaryScreensMiningParticipantsCount =>
+      'Members with power in the latest power snapshot';
+
+  @override
+  String get mining_secondaryScreensMiningRulesNoPendingMessage =>
+      'No draft version right now.';
+
+  @override
+  String get mining_secondaryScreensMiningRulesNoPendingTitle =>
+      'No version pending approval';
+
+  @override
+  String get mining_secondaryScreensMiningRulesNoticeBody =>
+      'Versions pending approval aren\'t used in any calculation. Weight ranges list rule items only, with no values; values are published after approval.';
+
+  @override
+  String get mining_secondaryScreensMiningRulesNoticeTitle =>
+      'Drafts aren\'t rules in effect';
+
+  @override
+  String get mining_secondaryScreensMiningRulesOpenReferralLabel =>
+      'View my invite relations';
+
+  @override
+  String mining_secondaryScreensMiningRulesReferralLSubtitle(
+    Object? launchTimestampLabel,
+  ) {
+    return 'Effective $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_secondaryScreensMiningRulesScreenTitle => 'Mining rules';
+
+  @override
+  String get mining_secondaryScreensSubtitle =>
+      'Invite boost counts only toward power';
+
+  @override
+  String get mining_secondaryScreensSwitch =>
+      'Sum of members\' power on bound assets, weights included.';
+
+  @override
+  String get mining_secondaryScreensSwitch2 =>
+      'Community total power appears here once loaded.';
+
+  @override
+  String get mining_secondaryScreensSwitch3 =>
+      'This page hasn\'t loaded this community\'s power yet.';
+
+  @override
+  String get mining_secondaryScreensSwitch4 =>
+      'Weights are granted by platform review and are already included in the power above.';
+
+  @override
+  String mining_secondaryScreensSwitch5(Object? launchTimestampLabel) {
+    return 'Approved $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_secondaryScreensText => 'Daily output ';
+
+  @override
+  String get mining_secondaryScreensText2 =>
+      'Exact scores aren\'t public; weights follow the platform\'s overall review.';
+
+  @override
+  String mining_secondaryScreensTitle(Object? subject) {
+    return '$subject isn\'t available right now';
+  }
+
+  @override
+  String get mining_secondaryScreensTitle2 => 'Power formula';
+
+  @override
+  String get mining_secondaryScreensTitle3 => 'Invite boost';
+
+  @override
+  String get mining_secondaryScreensTitle4 => 'Reviewed community tokens';
+
+  @override
+  String get mining_secondaryScreensTrailingCaption =>
+      'Published after the LOOP token launches';
+
+  @override
+  String get mining_secondaryScreensTrailingCaption2 => 'Estimated output';
+
+  @override
+  String get mining_secondaryScreensTrailingCaption3 => 'Daily output';
+
+  @override
+  String mining_widgetsLoopRecordRow(Object? amountFigure) {
+    return 'Holding $amountFigure';
+  }
+
+  @override
+  String mining_widgetsLoopRecordRow4(Object? powerFigure) {
+    return 'NFT power $powerFigure';
+  }
+
+  @override
+  String get mining_widgetsMarker => 'Not updated';
+
+  @override
+  String mining_widgetsMiningCompositionExpression(
+    Object? amountFigure,
+    Object? weight,
+  ) {
+    return '$amountFigure × weight $weight';
+  }
+
+  @override
+  String get mining_widgetsMiningDemoHoldingsDetail =>
+      'This power includes demo holdings: they aren\'t on-chain, nobody actually holds them, and the numbers are for trying things out.';
+
+  @override
+  String get mining_widgetsMiningFormulaRowSemanticLabel =>
+      'Mining formula not decided yet';
+
+  @override
+  String get mining_widgetsMiningFormulaRowSemanticLabel2 =>
+      'Mining formula pending approval';
+
+  @override
+  String get mining_widgetsMiningFormulaRowSemanticLabel3 =>
+      'Mining formula in effect';
+
+  @override
+  String get mining_widgetsMiningFormulaRowSubtitle =>
+      'The numbers above have a source only after approval.';
+
+  @override
+  String mining_widgetsMiningFormulaRowSubtitle2(Object? launchTimestampLabel) {
+    return 'In effect · $launchTimestampLabel';
+  }
+
+  @override
+  String get mining_widgetsMiningFormulaRowTitle => 'Mining formula';
+
+  @override
+  String get mining_widgetsMiningFormulaRowTrailing => 'In effect';
+
+  @override
+  String get mining_widgetsMiningNetworkKicker => 'Network power · Last hour';
+
+  @override
+  String get mining_widgetsMiningNetworkKicker2 => 'Network power';
+
+  @override
+  String mining_widgetsMiningNetworkRankActionLabel2(Object? place) {
+    return 'Power Ranking, my rank $place';
+  }
+
+  @override
+  String mining_widgetsMiningNetworkTotalLabel(Object? spoken) {
+    return 'Network power, $spoken';
+  }
+
+  @override
+  String get mining_widgetsMiningSummaryHeroAssetsLabel => 'Power details';
+
+  @override
+  String get mining_widgetsMiningSummaryHeroClaimLabel => 'Mining rewards';
+
+  @override
+  String get mining_widgetsMiningSummaryHeroClaimLabel2 => 'Claim rewards';
+
+  @override
+  String get mining_widgetsMiningSummaryHeroClaimSemanticLabel =>
+      'Mining rewards, open the mining rewards page';
+
+  @override
+  String get mining_widgetsText => 'My total power';
+
+  @override
   String get notifications_applicationNoReason =>
       'No reason was given. Edit the community profile and submit again.';
 
@@ -23395,4 +25769,354 @@ class LoopLocalizationsEn extends LoopLocalizations {
   @override
   String get wallet_txResultWalletMoneyActionsMoneyFactsFooterText =>
       'Confirmations can\'t be loaded';
+
+  @override
+  String widgets_assetsBuild(Object? slot) {
+    return '$slot avatar';
+  }
+
+  @override
+  String widgets_atmosphereLabel(Object? title) {
+    return '$title, view all';
+  }
+
+  @override
+  String widgets_avatarStackBuild(Object? remaining) {
+    return '$remaining more';
+  }
+
+  @override
+  String get widgets_blocksUnread => 'Not loaded';
+
+  @override
+  String get widgets_clauseJoin => '; ';
+
+  @override
+  String widgets_componentsBuild(Object? traceId) {
+    return 'Trace ID $traceId';
+  }
+
+  @override
+  String widgets_componentsBuild2(Object? source) {
+    return 'Source $source';
+  }
+
+  @override
+  String get widgets_componentsCacheStale =>
+      'Cached values may be out of date.';
+
+  @override
+  String get widgets_componentsCachedHeadline => 'Offline · Showing cache';
+
+  @override
+  String get widgets_componentsCachedTimeoutHeadline =>
+      'LOOP timed out · Showing cache';
+
+  @override
+  String get widgets_componentsCard => 'Loading card';
+
+  @override
+  String get widgets_componentsChart => 'Loading chart';
+
+  @override
+  String get widgets_componentsConnectionHeadline => 'Can\'t reach LOOP';
+
+  @override
+  String get widgets_componentsDetail => 'Loading details';
+
+  @override
+  String get widgets_componentsFigure => 'Loading figures';
+
+  @override
+  String get widgets_componentsHintText => 'Send a message';
+
+  @override
+  String widgets_componentsLabel(Object? title, Object? trailing) {
+    return '$title, $trailing, can\'t be changed';
+  }
+
+  @override
+  String get widgets_componentsLabel2 => 'What happened';
+
+  @override
+  String get widgets_componentsLabel3 => 'What\'s affected';
+
+  @override
+  String get widgets_componentsLabel4 => 'Updating';
+
+  @override
+  String get widgets_componentsLabel5 => 'Other options';
+
+  @override
+  String get widgets_componentsLabel6 => 'Reconnect';
+
+  @override
+  String widgets_componentsLoopOfflineCachedAt(Object? cachedAt) {
+    return 'Cached $cachedAt';
+  }
+
+  @override
+  String widgets_componentsLoopOfflineCachedAtSemanticsLabel(Object? cachedAt) {
+    return 'Cached at $cachedAt';
+  }
+
+  @override
+  String get widgets_componentsNoCacheBody =>
+      'This read didn\'t finish and there\'s no cache to show yet.';
+
+  @override
+  String get widgets_componentsPriceRow => 'Loading list';
+
+  @override
+  String get widgets_componentsRetryFailedMessage =>
+      'Still couldn\'t connect. Try again once the network is back.';
+
+  @override
+  String get widgets_componentsRetryingLabel => 'Retrying…';
+
+  @override
+  String widgets_componentsS(Object? pausedActions) {
+    return 'Paused: $pausedActions.';
+  }
+
+  @override
+  String get widgets_componentsSettingsLabel => 'Open system settings';
+
+  @override
+  String widgets_componentsSwitch(Object? happened) {
+    return 'What happened: $happened';
+  }
+
+  @override
+  String widgets_componentsSwitch2(Object? impact) {
+    return 'What\'s affected: $impact';
+  }
+
+  @override
+  String widgets_componentsSwitch3(Object? next) {
+    return 'Next: $next';
+  }
+
+  @override
+  String get widgets_componentsTimeoutHeadline => 'LOOP timed out';
+
+  @override
+  String get widgets_componentsTitle => 'Couldn\'t complete right now';
+
+  @override
+  String get widgets_componentsUnreachableMessage =>
+      'Nothing was loaded on this page and nothing was submitted. Check your network and retry.';
+
+  @override
+  String get widgets_componentsUnreachableTitle =>
+      'Can\'t reach LOOP right now';
+
+  @override
+  String get widgets_enumerationSeparator => ', ';
+
+  @override
+  String widgets_environmentTagLabel(Object? label) {
+    return 'Server $label';
+  }
+
+  @override
+  String widgets_flatLoopStepDotsLabel(
+    Object? label,
+    Object? step,
+    Object? total,
+  ) {
+    return 'Step $step of $total, $label';
+  }
+
+  @override
+  String get widgets_infoSheetBarrierLabel => 'Close details';
+
+  @override
+  String widgets_infoSheetLabel(Object? title) {
+    return 'About $title';
+  }
+
+  @override
+  String get widgets_inlineStatesLabel => 'Scope';
+
+  @override
+  String get widgets_inlineStatesLabel2 => 'Source';
+
+  @override
+  String get widgets_inlineStatesLabel3 => 'Observed at';
+
+  @override
+  String get widgets_inlineStatesLoopInlineUnavailableRetryLabel => 'Retrying';
+
+  @override
+  String widgets_inlineStatesLoopProvenanceLineSemanticsLabel(Object? text) {
+    return '$text, view data source details';
+  }
+
+  @override
+  String widgets_inlineStatesLoopProvenanceMarkerLabel(Object? text) {
+    return '$text, data source is in the details at the top right';
+  }
+
+  @override
+  String get widgets_inlineStatesLoopProvenanceSheetBarrierLabel =>
+      'Close data source details';
+
+  @override
+  String widgets_inlineStatesText2(Object? timeLabel) {
+    return 'Observed at $timeLabel';
+  }
+
+  @override
+  String get widgets_inlineStatesValue => 'Source not labeled';
+
+  @override
+  String get widgets_labelColon => ': ';
+
+  @override
+  String get widgets_loadingIf => 'Update failed. Showing the last data read';
+
+  @override
+  String widgets_loadingIf2(Object? age) {
+    return 'Data from $age, updating';
+  }
+
+  @override
+  String widgets_loadingLoopAgeLabel(Object? inSeconds) {
+    return '${inSeconds}s ago';
+  }
+
+  @override
+  String widgets_loadingLoopAgeLabel2(Object? inMinutes) {
+    return '${inMinutes}m ago';
+  }
+
+  @override
+  String widgets_loadingLoopAgeLabel3(Object? inHours) {
+    return '${inHours}h ago';
+  }
+
+  @override
+  String widgets_loadingLoopAgeLabel4(Object? inDays) {
+    return '${inDays}d ago';
+  }
+
+  @override
+  String widgets_loadingS(Object? ageLabel) {
+    return 'Update failed. Last read $ageLabel';
+  }
+
+  @override
+  String widgets_loadingS2(Object? age) {
+    return 'Data from $age';
+  }
+
+  @override
+  String get widgets_pagesLoopKeyboardDoneLabel => 'Done, hide keyboard';
+
+  @override
+  String get widgets_personRowLabel => 'View all';
+
+  @override
+  String get widgets_profileSectionCommunities => 'Communities';
+
+  @override
+  String get widgets_profileSectionTrades => 'Trades';
+
+  @override
+  String get widgets_provenanceScopeLabel => 'Data sources and details';
+
+  @override
+  String get widgets_quoteRowSwitch => 'Not reported';
+
+  @override
+  String get widgets_roundKeyLabel => ', unavailable';
+
+  @override
+  String get widgets_sentenceGap => ' ';
+
+  @override
+  String get widgets_sentenceJoin => '. ';
+
+  @override
+  String get widgets_sheetBarrierLabel => 'Close sheet';
+
+  @override
+  String get widgets_signSheetBuild => 'Don\'t close the app';
+
+  @override
+  String get widgets_signSheetConfirmLabel => 'Confirm signature';
+
+  @override
+  String get widgets_signSheetLabel => 'Adjust policy';
+
+  @override
+  String get widgets_signSheetPolicyRejected => 'Rejected by policy';
+
+  @override
+  String get widgets_signSheetSigning => 'Signing';
+
+  @override
+  String get widgets_signSheetSigningTitle => 'Signing and broadcasting';
+
+  @override
+  String get widgets_signSheetSimulationFailed => 'Simulation failed';
+
+  @override
+  String get widgets_signSheetTitle => 'Confirm transaction';
+
+  @override
+  String widgets_signStepsLabel(
+    Object? caption,
+    Object? label,
+    Object? number,
+  ) {
+    return 'Step $number $label, $caption';
+  }
+
+  @override
+  String widgets_signStepsStep(Object? waitingCaption) {
+    return 'Next, $waitingCaption';
+  }
+
+  @override
+  String get widgets_toastSwitch => 'Warning';
+
+  @override
+  String get widgets_toastSwitch2 => 'Error';
+
+  @override
+  String widgets_tokenCardBuild(
+    Object? fact,
+    Object? observedLabel,
+    Object? source,
+  ) {
+    return '$fact — source $source, observed at $observedLabel';
+  }
+
+  @override
+  String get widgets_tokenCardLoading => 'Identifying';
+
+  @override
+  String get widgets_tokenCardPartial => 'Data missing';
+
+  @override
+  String get widgets_tokenCardRisk => 'Risk facts';
+
+  @override
+  String get widgets_tokenCardSwitch => 'Identifying…';
+
+  @override
+  String get widgets_uiDiscover => 'Discover';
+
+  @override
+  String get widgets_uiDiscuss => 'Discuss';
+
+  @override
+  String get widgets_uiExecute => 'Execute';
+
+  @override
+  String widgets_uiLabel(Object? label) {
+    return 'Current stage: $label';
+  }
 }

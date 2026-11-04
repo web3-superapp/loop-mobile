@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Presentation models for the `mining` module (loop-api decision 0036).
 ///
@@ -228,15 +229,12 @@ enum MiningFormulaScope {
 /// Decision 0121 (coordinator ruling 2026-10-09): the reader is told which
 /// formula the figure comes from in their words; what "baseline" means is in
 /// the ⓘ of the page's source line ([miningBaselineDetail]).
-const String miningBaselineLabel = '当前算力公式';
+String get miningBaselineLabel =>
+    LoopL10n.current.mining_modelsMiningBaselineLabel;
 
 /// What a source line's ⓘ says about a baseline formula (decision 0121).
-const String miningBaselineDetail =
-    '持币算力 = 持有数量 × 资产权重，不乘价格；NFT 算力 = 持有数量 × 所属社区系数。'
-    '社区币只在绑定它的社区已通过审核、且你已加入该社区时计入。'
-    '按绑定到 LOOP 账号的钱包持仓计算。'
-    '当前版本：每个资产的权重都定为 1，当日产量为预估值，奖励代币还没有确定。'
-    '算出来的数字不是收益，也不构成承诺。';
+String get miningBaselineDetail =>
+    LoopL10n.current.mining_modelsMiningBaselineDetail;
 
 /// The estimated daily output. The available branch carries the budget it was
 /// divided out of, the budget's own status and the version that declared it,
@@ -574,8 +572,8 @@ String miningAssetLabel(String assetId) {
   if (tail != 'native') return loopTruncatedAddress(tail);
   final chainId = assetId.substring(0, separator);
   return loopKnownChainIds.contains(chainId)
-      ? '${loopChainName(chainId)} 原生代币'
-      : '原生代币';
+      ? LoopL10n.current.mining_modelsMiningAssetLabel(loopChainName(chainId))
+      : LoopL10n.current.mining_modelsS;
 }
 
 /// The pool one derived price was read from, in short form. The full address
@@ -611,13 +609,14 @@ enum MiningRankScope {
 }
 
 String miningRankScopeLabel(MiningRankScope scope) => switch (scope) {
-  MiningRankScope.users => '用户榜',
-  MiningRankScope.communities => '社区榜',
+  MiningRankScope.users => LoopL10n.current.mining_modelsUsers,
+  MiningRankScope.communities => LoopL10n.current.mining_modelsCommunities,
   MiningRankScope.referrals => miningReferralRankLabel,
 };
 
 /// The third board on 情报 (decision 0110). It has no server scope yet.
-const String miningReferralRankLabel = '推广榜';
+String get miningReferralRankLabel =>
+    LoopL10n.current.mining_modelsMiningReferralRankLabel;
 
 /// The two independent rules a ranking row is displayed under (decision 0049):
 /// [ruleKey] states that anonymous mode alone decides whether other readers see
@@ -1055,9 +1054,10 @@ enum MiningFormulaStatus {
 }
 
 String miningFormulaStatusLabel(MiningFormulaStatus status) => switch (status) {
-  MiningFormulaStatus.pendingApproval => '待批准',
-  MiningFormulaStatus.approved => '已批准',
-  MiningFormulaStatus.retired => '已退役',
+  MiningFormulaStatus.pendingApproval =>
+    LoopL10n.current.mining_modelsPendingApproval,
+  MiningFormulaStatus.approved => LoopL10n.current.mining_modelsApproved,
+  MiningFormulaStatus.retired => LoopL10n.current.mining_modelsRetired,
 };
 
 /// The inclusive bounds a reviewed weight must satisfy under one version.
@@ -1224,32 +1224,44 @@ final class MiningRules {
 /// sentence: the client never invents a formula, a ratio or a guard.
 String miningRuleKeyText(String key) => switch (key) {
   // Decision 0147 (loop-api 0125): the formula the server publishes now.
-  'mining.rules.formula.holdingTimesWeight' => '算力 = 持有量 × 权重',
+  'mining.rules.formula.holdingTimesWeight' =>
+    LoopL10n.current.mining_modelsSwitch,
   // The key a server before 0125 publishes; kept so that server's own
   // formula is still stated as it computes it.
   'mining.rules.formula.holdingTimesReferencePriceTimesWeight' =>
-    '算力 = 持有量 × 参考价 × 权重',
-  'mining.rules.dailyOutput.shareOfNetworkPower' => '每日产出 = 我的算力 ÷ 全网算力 × 当日产量',
-  'mining.rules.weight.loopFixedMaximum' => 'LOOP 采用固定的最高权重档位（数值待批准）。',
-  'mining.rules.weight.communityReviewed' => '社区币权重按审核结果授予，区间待批准。',
-  'mining.rules.reviewFactor.communityQuality' => '社区质量',
+    LoopL10n.current.mining_modelsSwitch2,
+  'mining.rules.dailyOutput.shareOfNetworkPower' =>
+    LoopL10n.current.mining_modelsSwitch3,
+  'mining.rules.weight.loopFixedMaximum' =>
+    LoopL10n.current.mining_modelsSwitch4,
+  'mining.rules.weight.communityReviewed' =>
+    LoopL10n.current.mining_modelsSwitch5,
+  'mining.rules.reviewFactor.communityQuality' =>
+    LoopL10n.current.mining_modelsSwitch6,
   'mining.rules.reviewFactor.communityScale' ||
-  'mining.rules.reviewFactor.communitySize' => '社区规模',
-  'mining.rules.reviewFactor.tokenLiquidity' => 'Token 流动性',
-  'mining.rules.reviewFactor.projectQuality' => '项目质量',
-  'mining.rules.reviewFactor.marketStability' => '市场稳定性',
-  'mining.rules.reviewFactor.userQuality' => '用户质量',
+  'mining.rules.reviewFactor.communitySize' =>
+    LoopL10n.current.mining_modelsSwitch7,
+  'mining.rules.reviewFactor.tokenLiquidity' =>
+    LoopL10n.current.mining_modelsSwitch8,
+  'mining.rules.reviewFactor.projectQuality' =>
+    LoopL10n.current.mining_modelsSwitch9,
+  'mining.rules.reviewFactor.marketStability' =>
+    LoopL10n.current.mining_modelsSwitch10,
+  'mining.rules.reviewFactor.userQuality' =>
+    LoopL10n.current.mining_modelsSwitch11,
   'mining.rules.reviewFactor.partnershipDepth' ||
-  'mining.rules.reviewFactor.loopPartnership' => '与 LOOP 的合作深度',
-  'mining.rules.priceGuard.twap' => 'TWAP 时间加权均价：避免单笔成交扭曲参考价。',
-  'mining.rules.priceGuard.multiPeriodMultiSource' => '多周期、多渠道比对，交叉验证异常波动。',
-  'mining.rules.priceGuard.liquidityCap' => 'Liquidity Cap：低流动性资产限制可计入价值。',
-  'mining.rank.anonymousMember' => '匿名成员',
+  'mining.rules.reviewFactor.loopPartnership' =>
+    LoopL10n.current.mining_modelsSwitch12,
+  'mining.rules.priceGuard.twap' => LoopL10n.current.mining_modelsSwitch13,
+  'mining.rules.priceGuard.multiPeriodMultiSource' =>
+    LoopL10n.current.mining_modelsSwitch14,
+  'mining.rules.priceGuard.liquidityCap' =>
+    LoopL10n.current.mining_modelsSwitch15,
+  'mining.rank.anonymousMember' => LoopL10n.current.mining_modelsSwitch16,
   'mining.rank.display.anonymousModeOnly' =>
-    '别人看到的是别名还是「匿名成员」，只由该账号的匿名模式决定；「可被发现」不参与，自己永远看得到自己的别名。',
-  'mining.rank.power.ownerVisibility' =>
-    '算力数值按该账号自己的「挖矿算力」可见范围显示；设为仅自己时别人看不到数值，名次与参与条目数仍然公开。',
-  _ => 'LOOP 定义的规则项。',
+    LoopL10n.current.mining_modelsSwitch17,
+  'mining.rank.power.ownerVisibility' => LoopL10n.current.mining_modelsSwitch18,
+  _ => LoopL10n.current.mining_modelsSwitch19,
 };
 
 /// Whether two CAIP-19 style asset keys name the same asset.

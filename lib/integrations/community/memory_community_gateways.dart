@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// Memory-only S3 adapters for the explicit Development Preview entry point.
 ///
@@ -55,10 +56,11 @@ const _recommendation = CommunityRecommendation(
 final _previewCommunities = <CommunitySummary>[
   _community(
     id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
-    name: '演示社区 · Frogs',
+    name: LoopL10n.current.integrations_memoryCommunityGatewaysName,
     slug: 'demo-frogs',
     memberCount: 128,
-    description: '开发预览中的示例社区，成员数与角色都是本地内存值。',
+    description:
+        LoopL10n.current.integrations_memoryCommunityGatewaysDescription,
     boundAssetKey: 'eip155:56:0x00000000000000000000000000000000000000aa',
     // A preset from the server's own community catalog, so the Preview
     // exercises the atlas path the production rows take. It is preview data
@@ -66,18 +68,18 @@ final _previewCommunities = <CommunitySummary>[
     logoRef: 'avatar:preset/community-01',
     // Decision 0239: the operator's free-text label; the other rows carry
     // none and so show no mark.
-    label: '算力社区',
+    label: LoopL10n.current.integrations_memoryCommunityGatewaysLabel,
   ),
   _community(
     id: '4bb85f64-5717-4562-b3fc-2c963f66afb7',
-    name: '演示社区 · Builders',
+    name: LoopL10n.current.integrations_memoryCommunityGatewaysName2,
     slug: 'demo-builders',
     memberCount: 42,
     logoRef: 'avatar:preset/community-02',
   ),
   _community(
     id: '5cc85f64-5717-4562-b3fc-2c963f66afc8',
-    name: '演示社区 · 审核中',
+    name: LoopL10n.current.integrations_memoryCommunityGatewaysName3,
     slug: 'demo-pending',
     memberCount: 3,
     verification: CommunityVerification.pending,
@@ -146,16 +148,16 @@ final class MemoryCommunityGateway implements CommunityGateway {
         CommunityAnnouncement(
           announcementId: 'demo-announcement-01',
           kind: 'pinned',
-          title: '演示公告 · 本周路线图',
-          byline: '演示数据',
+          title: LoopL10n.current.integrations_memoryCommunityGatewaysTitle,
+          byline: LoopL10n.current.common_demoData,
           publishedAt: DateTime.utc(2026, 9, 18, 9, 30),
           pinned: true,
         ),
         CommunityAnnouncement(
           announcementId: 'demo-announcement-02',
           kind: 'voiceRoom',
-          title: '演示公告 · 周四语音房',
-          byline: '演示数据',
+          title: LoopL10n.current.integrations_memoryCommunityGatewaysTitle2,
+          byline: LoopL10n.current.common_demoData,
           publishedAt: DateTime.utc(2026, 9, 17, 12),
           pinned: false,
         ),
@@ -219,7 +221,9 @@ final class MemoryCommunityGateway implements CommunityGateway {
           status: CommunityVerification.rejected,
           submittedAt: community.createdAt,
           reviewedAt: DateTime.utc(2026, 6, 4, 11),
-          rejectedReason: '演示数据：社区名称与已上线社区重复，请换一个再提交。',
+          rejectedReason: LoopL10n
+              .current
+              .integrations_memoryCommunityGatewaysRejectedReason,
         ),
       };
 
