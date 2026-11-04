@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart' show kPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/haptics/loop_haptics.dart';
 import 'package:loop_mobile/core/platform/loop_android_sdk.dart';
@@ -36,10 +37,14 @@ void main() {
     LoopAndroidSdk.debugLevel = null;
   });
 
-  Widget host(Widget child, {bool reduceMotion = false}) => MaterialApp(
+  Widget host(
+    Widget child, {
+    bool reduceMotion = false,
+    Locale locale = LoopL10n.fallbackLocale,
+  }) => MaterialApp(
     theme: LoopTheme.dark,
-    locale: loopAppLocale,
-    supportedLocales: const <Locale>[loopAppLocale],
+    locale: locale,
+    supportedLocales: LoopL10n.supportedLocales,
     localizationsDelegates: loopLocalizationsDelegates,
     builder: (context, page) => LoopToastHost(
       child: MediaQuery(
@@ -362,19 +367,23 @@ void main() {
     },
   );
 
-  testWidgets('system controls speak Chinese', (tester) async {
+  // Decision 0281 (retiring 0130's fixed zh-CN): the system controls speak
+  // the app's language — English by default, Chinese when picked.
+  testWidgets('system controls speak the app language', (tester) async {
     late BuildContext captured;
-    await tester.pumpWidget(
-      host(
-        Builder(
-          builder: (context) {
-            captured = context;
-            return const SizedBox.shrink();
-          },
-        ),
-      ),
+    Widget probe() => Builder(
+      builder: (context) {
+        captured = context;
+        return const SizedBox.shrink();
+      },
     );
-    expect(Localizations.localeOf(captured), loopAppLocale);
+    await tester.pumpWidget(host(probe()));
+    expect(Localizations.localeOf(captured), LoopL10n.english);
+    expect(MaterialLocalizations.of(captured).pasteButtonLabel, 'Paste');
+    expect(CupertinoLocalizationsCheck.paste(captured), 'Paste');
+
+    await tester.pumpWidget(host(probe(), locale: LoopL10n.simplifiedChinese));
+    expect(Localizations.localeOf(captured), LoopL10n.simplifiedChinese);
     final material = MaterialLocalizations.of(captured);
     expect(material.pasteButtonLabel, '粘贴');
     expect(material.selectAllButtonLabel, '全选');

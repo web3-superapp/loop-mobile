@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/features/meme/meme_screen.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
@@ -29,7 +30,6 @@ import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_screen.dart';
 import 'package:loop_mobile/features/social/loop_id_share.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
-import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_unread.dart';
 import 'package:loop_mobile/integrations/communication/stream_connection.dart';
@@ -171,9 +171,11 @@ final class _Room {
         theme: LoopTheme.dark.copyWith(
           extensions: [...LoopTheme.dark.extensions.values, loopStreamTheme()],
         ),
-        localizationsDelegates: const <LocalizationsDelegate<Object>>[
-          LoopStreamChatLocalizationsDelegate(),
-        ],
+        // Decision 0281: chat is not migrated yet (S355); this case reads
+        // LOOP's Chinese Stream copy.
+        locale: LoopL10n.simplifiedChinese,
+        supportedLocales: LoopL10n.supportedLocales,
+        localizationsDelegates: loopLocalizationsDelegates,
         // As in `lib/app.dart`: above the navigator, so the long-press sheet
         // (an overlay route) is under StreamChat too.
         builder: (context, child) => StreamChat(
@@ -653,8 +655,11 @@ void main() {
       await tester.tap(row('mining.weight'));
       await tester.pumpAndSettle();
 
-      expect(find.text('关闭『权重变化』通知？'), findsOneWidget);
-      expect(find.text('持有币的 Mining Weight 调整时'), findsWidgets);
+      expect(find.text('关闭『Weight changes』通知？'), findsOneWidget);
+      expect(
+        find.text('When a held token\'s Mining Weight changes'),
+        findsWidgets,
+      );
       expect(find.text('关闭'), findsOneWidget);
       await tester.tap(find.text('取消'));
       await tester.pumpAndSettle();
@@ -742,7 +747,7 @@ void main() {
       // below the screen, a reduced-motion one is already in place.
       await tester.pump();
       await tester.pump();
-      final title = find.text('关闭『权重变化』通知？');
+      final title = find.text('关闭『Weight changes』通知？');
       expect(title, findsOneWidget);
       final sheet = tester.getRect(
         find.byKey(const ValueKey<String>('loop-sheet')),
@@ -753,11 +758,11 @@ void main() {
     test('titles and bodies come from the category', () {
       expect(
         notificationDisableTitle(LoopNotificationCategory.communityAll),
-        '关闭『全部消息』通知？',
+        '关闭『All messages』通知？',
       );
       expect(
         notificationDisableBody(LoopNotificationCategory.communityAll),
-        '大群建议关闭',
+        'Best kept off for large groups',
       );
       expect(
         notificationDisableBody(LoopNotificationCategory.launchGraduation),

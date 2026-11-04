@@ -27,7 +27,7 @@ void main() {
       tester
           .widgetList<LoopTabItem>(find.byType(LoopTabItem))
           .map((destination) => destination.label),
-      <String>['聊天', '广场', 'MEME', '情报', '我的'],
+      <String>['Chat', 'Square', 'MEME', 'Intel', 'Me'],
     );
     expect(find.text('Home'), findsNothing);
     expect(find.text('Profile'), findsNothing);
@@ -36,11 +36,15 @@ void main() {
     expect(find.byType(MemeScreen), findsOneWidget);
     final router = GoRouter.of(tester.element(find.byType(MemeScreen)));
     final destinations = <(String, String, Finder)>[
-      ('广场', '/square', find.byKey(const ValueKey<String>('square-screen'))),
+      (
+        'Square',
+        '/square',
+        find.byKey(const ValueKey<String>('square-screen')),
+      ),
       ('MEME', '/meme', find.byKey(const ValueKey<String>('meme-screen'))),
-      ('情报', '/intel', find.byKey(const ValueKey<String>('intel-screen'))),
-      ('我的', '/wallet', find.byKey(const ValueKey<String>('wallet-screen'))),
-      ('聊天', '/chat', find.byKey(const ValueKey<String>('chat-tab-screen'))),
+      ('Intel', '/intel', find.byKey(const ValueKey<String>('intel-screen'))),
+      ('Me', '/wallet', find.byKey(const ValueKey<String>('wallet-screen'))),
+      ('Chat', '/chat', find.byKey(const ValueKey<String>('chat-tab-screen'))),
     ];
 
     for (final (label, path, content) in destinations) {
@@ -113,7 +117,7 @@ void main() {
   testWidgets('/profile lands on the 我的 tab; 聊天 has no avatar', (tester) async {
     await _pumpApp(tester);
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
-    await tester.tap(find.widgetWithText(LoopTabItem, '聊天'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey<String>('chat-open-profile')),

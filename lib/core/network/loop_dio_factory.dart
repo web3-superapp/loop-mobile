@@ -41,16 +41,24 @@ abstract final class LoopDioFactory {
   /// Bearer credentials remain request-local and are never installed as Dio
   /// defaults or by an interceptor. Cookie, Proxy-Authorization, and X-Api-Key
   /// remain rejected.
-  static Dio createLoopBackend({required Uri origin}) {
+  ///
+  /// [acceptLanguage] (decision 0281) is read on every request, so a language
+  /// switch reaches the next call; a request that sets its own header keeps it.
+  static Dio createLoopBackend({
+    required Uri origin,
+    String Function()? acceptLanguage,
+  }) {
     return _create(
       origin: _validatedOrigin(origin, allowLoopbackHttp: true),
       allowAuthorizationHeader: true,
+      acceptLanguage: acceptLanguage,
     );
   }
 
   static Dio _create({
     required Uri origin,
     required bool allowAuthorizationHeader,
+    String Function()? acceptLanguage,
   }) {
     final dio = Dio(
       BaseOptions(
@@ -69,6 +77,7 @@ abstract final class LoopDioFactory {
         origin: origin,
         allowAuthorizationHeader: allowAuthorizationHeader,
         defaultHeaders: () => dio.options.headers,
+        acceptLanguage: acceptLanguage,
       ),
     );
     return dio;
@@ -178,6 +187,7 @@ final class _LoopTrustBoundaryInterceptor extends Interceptor {
     required this._origin,
     required this._allowAuthorizationHeader,
     required this._defaultHeaders,
+    this._acceptLanguage,
   });
 
   static const _alwaysForbiddenHeaders = <String>{
@@ -189,6 +199,7 @@ final class _LoopTrustBoundaryInterceptor extends Interceptor {
   final Uri _origin;
   final bool _allowAuthorizationHeader;
   final Map<String, dynamic> Function() _defaultHeaders;
+  final String Function()? _acceptLanguage;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -220,6 +231,13 @@ final class _LoopTrustBoundaryInterceptor extends Interceptor {
         ),
       );
       return;
+    }
+    final acceptLanguage = _acceptLanguage;
+    if (acceptLanguage != null &&
+        !options.headers.keys.any(
+          (name) => name.toLowerCase() == 'accept-language',
+        )) {
+      options.headers['Accept-Language'] = acceptLanguage();
     }
     handler.next(options);
   }

@@ -1,0 +1,866 @@
+{
+  "common_about": {
+    "en": "Notes",
+    "placeholders": {},
+    "where": "common",
+    "zh": "说明"
+  },
+  "common_aboutSection": {
+    "en": "About",
+    "placeholders": {},
+    "where": "common",
+    "zh": "关于"
+  },
+  "common_actionIncomplete": {
+    "en": "The action didn't finish.",
+    "placeholders": {},
+    "where": "common",
+    "zh": "操作没有完成。"
+  },
+  "common_actions": {
+    "en": "Actions",
+    "placeholders": {},
+    "where": "common",
+    "zh": "操作"
+  },
+  "common_all": {
+    "en": "All",
+    "placeholders": {},
+    "where": "common",
+    "zh": "全部"
+  },
+  "common_amount": {
+    "en": "Amount",
+    "placeholders": {},
+    "where": "common",
+    "zh": "数量"
+  },
+  "common_assets": {
+    "en": "Assets",
+    "placeholders": {},
+    "where": "common",
+    "zh": "资产"
+  },
+  "common_awaitingSignature": {
+    "en": "Awaiting signature",
+    "placeholders": {},
+    "where": "common",
+    "zh": "待签名"
+  },
+  "common_back": {
+    "en": "Back",
+    "placeholders": {},
+    "where": "common",
+    "zh": "返回"
+  },
+  "common_blockList": {
+    "en": "Block list",
+    "placeholders": {},
+    "where": "common",
+    "zh": "屏蔽名单"
+  },
+  "common_bridge": {
+    "en": "Bridge",
+    "placeholders": {},
+    "where": "common",
+    "zh": "跨链"
+  },
+  "common_broadcast": {
+    "en": "Broadcast",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已广播"
+  },
+  "common_buy": {
+    "en": "Buy",
+    "placeholders": {},
+    "where": "common",
+    "zh": "买入"
+  },
+  "common_cancel": {
+    "en": "Cancel",
+    "placeholders": {},
+    "where": "common",
+    "zh": "取消"
+  },
+  "common_cancelled": {
+    "en": "Cancelled",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已取消"
+  },
+  "common_chart": {
+    "en": "Chart",
+    "placeholders": {},
+    "where": "common",
+    "zh": "图表"
+  },
+  "common_chat": {
+    "en": "Chat",
+    "placeholders": {},
+    "where": "common",
+    "zh": "聊天"
+  },
+  "common_claim": {
+    "en": "Claim",
+    "placeholders": {},
+    "where": "common",
+    "zh": "领取"
+  },
+  "common_close": {
+    "en": "Close",
+    "placeholders": {},
+    "where": "common",
+    "zh": "关闭"
+  },
+  "common_community": {
+    "en": "Community",
+    "placeholders": {},
+    "where": "common",
+    "zh": "社区"
+  },
+  "common_confirm": {
+    "en": "Confirm",
+    "placeholders": {},
+    "where": "common",
+    "zh": "确认"
+  },
+  "common_confirmed": {
+    "en": "Confirmed",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已确认"
+  },
+  "common_continueAction": {
+    "en": "Continue",
+    "placeholders": {},
+    "where": "common",
+    "zh": "继续"
+  },
+  "common_contract": {
+    "en": "Contract",
+    "placeholders": {},
+    "where": "common",
+    "zh": "合约"
+  },
+  "common_copied": {
+    "en": "Copied",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已复制"
+  },
+  "common_copy": {
+    "en": "Copy",
+    "placeholders": {},
+    "where": "common",
+    "zh": "复制"
+  },
+  "common_dataSource": {
+    "en": "Data source",
+    "placeholders": {},
+    "where": "common",
+    "zh": "数据来源"
+  },
+  "common_dataUnavailable": {
+    "en": "Data unavailable",
+    "placeholders": {},
+    "where": "common",
+    "zh": "数据不可得"
+  },
+  "common_delete": {
+    "en": "Delete",
+    "placeholders": {},
+    "where": "common",
+    "zh": "删除"
+  },
+  "common_demoData": {
+    "en": "Demo data",
+    "placeholders": {},
+    "where": "common",
+    "zh": "演示数据"
+  },
+  "common_details": {
+    "en": "Details",
+    "placeholders": {},
+    "where": "common",
+    "zh": "详情"
+  },
+  "common_devPreview": {
+    "en": "Development preview",
+    "placeholders": {},
+    "where": "common",
+    "zh": "开发预览"
+  },
+  "common_directMessage": {
+    "en": "Direct message",
+    "placeholders": {},
+    "where": "common",
+    "zh": "私聊"
+  },
+  "common_disconnected": {
+    "en": "Disconnected",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已断开"
+  },
+  "common_done": {
+    "en": "Done",
+    "placeholders": {},
+    "where": "common",
+    "zh": "完成"
+  },
+  "common_draft": {
+    "en": "Draft",
+    "placeholders": {},
+    "where": "common",
+    "zh": "草稿"
+  },
+  "common_edit": {
+    "en": "Edit",
+    "placeholders": {},
+    "where": "common",
+    "zh": "编辑"
+  },
+  "common_ended": {
+    "en": "Ended",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已结束"
+  },
+  "common_estimatedReceive": {
+    "en": "Estimated to receive",
+    "placeholders": {},
+    "where": "common",
+    "zh": "预计获得"
+  },
+  "common_exit": {
+    "en": "Exit",
+    "placeholders": {},
+    "where": "common",
+    "zh": "退出"
+  },
+  "common_expired": {
+    "en": "Expired",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已过期"
+  },
+  "common_failed": {
+    "en": "Failed",
+    "placeholders": {},
+    "where": "common",
+    "zh": "失败"
+  },
+  "common_feed": {
+    "en": "Feed",
+    "placeholders": {},
+    "where": "common",
+    "zh": "动态"
+  },
+  "common_follow": {
+    "en": "Follow",
+    "placeholders": {},
+    "where": "common",
+    "zh": "关注"
+  },
+  "common_followers": {
+    "en": "Followers",
+    "placeholders": {},
+    "where": "common",
+    "zh": "粉丝"
+  },
+  "common_following": {
+    "en": "Following",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已关注"
+  },
+  "common_gotIt": {
+    "en": "Got it",
+    "placeholders": {},
+    "where": "common",
+    "zh": "知道了"
+  },
+  "common_graduate": {
+    "en": "Graduate",
+    "placeholders": {},
+    "where": "common",
+    "zh": "毕业"
+  },
+  "common_graduated": {
+    "en": "Graduated",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已毕业"
+  },
+  "common_groupChat": {
+    "en": "Group chat",
+    "placeholders": {},
+    "where": "common",
+    "zh": "群聊"
+  },
+  "common_holders": {
+    "en": "Holders",
+    "placeholders": {},
+    "where": "common",
+    "zh": "持有人"
+  },
+  "common_holdings": {
+    "en": "Holdings",
+    "placeholders": {},
+    "where": "common",
+    "zh": "持仓"
+  },
+  "common_inProgress": {
+    "en": "In progress",
+    "placeholders": {},
+    "where": "common",
+    "zh": "进行中"
+  },
+  "common_inReview": {
+    "en": "In review",
+    "placeholders": {},
+    "where": "common",
+    "zh": "审核中"
+  },
+  "common_itemUnavailable": {
+    "en": "This item can't be loaded right now.",
+    "placeholders": {},
+    "where": "common",
+    "zh": "这一项暂时读不到。"
+  },
+  "common_joining": {
+    "en": "Joining…",
+    "placeholders": {},
+    "where": "common",
+    "zh": "正在加入…"
+  },
+  "common_justNow": {
+    "en": "Just now",
+    "placeholders": {},
+    "where": "common",
+    "zh": "刚刚"
+  },
+  "common_language": {
+    "en": "Language",
+    "placeholders": {},
+    "where": "common",
+    "zh": "语言"
+  },
+  "common_lastActionIncomplete": {
+    "en": "The last action didn't finish",
+    "placeholders": {},
+    "where": "common",
+    "zh": "上一次操作没有完成"
+  },
+  "common_launchpad": {
+    "en": "Launchpad",
+    "placeholders": {},
+    "where": "common",
+    "zh": "发射台"
+  },
+  "common_learnMore": {
+    "en": "Learn more",
+    "placeholders": {},
+    "where": "common",
+    "zh": "了解更多"
+  },
+  "common_link": {
+    "en": "Link",
+    "placeholders": {},
+    "where": "common",
+    "zh": "链接"
+  },
+  "common_linkCopied": {
+    "en": "Link copied",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已复制链接"
+  },
+  "common_liquidity": {
+    "en": "Liquidity",
+    "placeholders": {},
+    "where": "common",
+    "zh": "流动性"
+  },
+  "common_listSeparator": {
+    "en": ", ",
+    "placeholders": {},
+    "where": "common: joins the parts of one screen-reader label",
+    "zh": "，"
+  },
+  "common_loading": {
+    "en": "Loading",
+    "placeholders": {},
+    "where": "common",
+    "zh": "读取中"
+  },
+  "common_loadingEllipsis": {
+    "en": "Loading…",
+    "placeholders": {},
+    "where": "common",
+    "zh": "加载中…"
+  },
+  "common_market": {
+    "en": "Market",
+    "placeholders": {},
+    "where": "common",
+    "zh": "行情"
+  },
+  "common_marketCap": {
+    "en": "Market cap",
+    "placeholders": {},
+    "where": "common",
+    "zh": "市值"
+  },
+  "common_me": {
+    "en": "Me",
+    "placeholders": {},
+    "where": "common",
+    "zh": "我"
+  },
+  "common_members": {
+    "en": "Members",
+    "placeholders": {},
+    "where": "common",
+    "zh": "成员"
+  },
+  "common_messageRequests": {
+    "en": "Message requests",
+    "placeholders": {},
+    "where": "common",
+    "zh": "陌生人请求"
+  },
+  "common_minimumReceive": {
+    "en": "Minimum received",
+    "placeholders": {},
+    "where": "common",
+    "zh": "最少获得"
+  },
+  "common_mining": {
+    "en": "Mining",
+    "placeholders": {},
+    "where": "common",
+    "zh": "挖矿"
+  },
+  "common_more": {
+    "en": "More",
+    "placeholders": {},
+    "where": "common",
+    "zh": "更多"
+  },
+  "common_mute": {
+    "en": "Mute",
+    "placeholders": {},
+    "where": "common",
+    "zh": "静音"
+  },
+  "common_muted": {
+    "en": "Muted",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已静音"
+  },
+  "common_name": {
+    "en": "Name",
+    "placeholders": {},
+    "where": "common",
+    "zh": "名称"
+  },
+  "common_network": {
+    "en": "Network",
+    "placeholders": {},
+    "where": "common",
+    "zh": "网络"
+  },
+  "common_next": {
+    "en": "Next",
+    "placeholders": {},
+    "where": "common",
+    "zh": "下一步"
+  },
+  "common_nextPageFailed": {
+    "en": "Couldn't load the next page",
+    "placeholders": {},
+    "where": "common",
+    "zh": "下一页没有读到"
+  },
+  "common_noPermission": {
+    "en": "This account doesn't have permission",
+    "placeholders": {},
+    "where": "common",
+    "zh": "当前账号没有权限"
+  },
+  "common_noTradesYet": {
+    "en": "No trades yet",
+    "placeholders": {},
+    "where": "common",
+    "zh": "还没有成交"
+  },
+  "common_none": {
+    "en": "None",
+    "placeholders": {},
+    "where": "common",
+    "zh": "暂无"
+  },
+  "common_normal": {
+    "en": "Normal",
+    "placeholders": {},
+    "where": "common",
+    "zh": "正常"
+  },
+  "common_notConfigured": {
+    "en": "Not configured",
+    "placeholders": {},
+    "where": "common",
+    "zh": "未配置"
+  },
+  "common_notOpenYet": {
+    "en": "Not available yet",
+    "placeholders": {},
+    "where": "common",
+    "zh": "未开放"
+  },
+  "common_nothingHereYet": {
+    "en": "Nothing here yet",
+    "placeholders": {},
+    "where": "common",
+    "zh": "这里还没有内容"
+  },
+  "common_notificationSettings": {
+    "en": "Notification settings",
+    "placeholders": {},
+    "where": "common",
+    "zh": "通知设置"
+  },
+  "common_notifications": {
+    "en": "Notifications",
+    "placeholders": {},
+    "where": "common",
+    "zh": "通知"
+  },
+  "common_ok": {
+    "en": "OK",
+    "placeholders": {},
+    "where": "common",
+    "zh": "确定"
+  },
+  "common_on": {
+    "en": "On",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已开启"
+  },
+  "common_openSecurityCenter": {
+    "en": "Go to Security Center",
+    "placeholders": {},
+    "where": "common",
+    "zh": "前往安全中心"
+  },
+  "common_openSettings": {
+    "en": "Open Settings",
+    "placeholders": {},
+    "where": "common",
+    "zh": "去设置"
+  },
+  "common_paused": {
+    "en": "Paused",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已暂停"
+  },
+  "common_pay": {
+    "en": "Pay",
+    "placeholders": {},
+    "where": "common",
+    "zh": "支付"
+  },
+  "common_pendingConfirmation": {
+    "en": "Pending confirmation",
+    "placeholders": {},
+    "where": "common",
+    "zh": "待确认"
+  },
+  "common_power": {
+    "en": "Power",
+    "placeholders": {},
+    "where": "common",
+    "zh": "算力"
+  },
+  "common_priceAlerts": {
+    "en": "Price alerts",
+    "placeholders": {},
+    "where": "common",
+    "zh": "价格提醒"
+  },
+  "common_profile": {
+    "en": "Profile",
+    "placeholders": {},
+    "where": "common",
+    "zh": "资料"
+  },
+  "common_receive": {
+    "en": "Receive",
+    "placeholders": {},
+    "where": "common",
+    "zh": "接收"
+  },
+  "common_refresh": {
+    "en": "Refresh",
+    "placeholders": {},
+    "where": "common",
+    "zh": "刷新"
+  },
+  "common_rejected": {
+    "en": "Rejected",
+    "placeholders": {},
+    "where": "common",
+    "zh": "未通过"
+  },
+  "common_reload": {
+    "en": "Reload",
+    "placeholders": {},
+    "where": "common",
+    "zh": "重新加载"
+  },
+  "common_report": {
+    "en": "Report",
+    "placeholders": {},
+    "where": "common",
+    "zh": "举报"
+  },
+  "common_retry": {
+    "en": "Retry",
+    "placeholders": {},
+    "where": "common",
+    "zh": "重试"
+  },
+  "common_reverted": {
+    "en": "Reverted",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已回滚"
+  },
+  "common_save": {
+    "en": "Save",
+    "placeholders": {},
+    "where": "common",
+    "zh": "保存"
+  },
+  "common_scan": {
+    "en": "Scan",
+    "placeholders": {},
+    "where": "common",
+    "zh": "扫一扫"
+  },
+  "common_search": {
+    "en": "Search",
+    "placeholders": {},
+    "where": "common",
+    "zh": "搜索"
+  },
+  "common_security": {
+    "en": "Security",
+    "placeholders": {},
+    "where": "common",
+    "zh": "安全"
+  },
+  "common_securityCenter": {
+    "en": "Security Center",
+    "placeholders": {},
+    "where": "common",
+    "zh": "安全中心"
+  },
+  "common_sell": {
+    "en": "Sell",
+    "placeholders": {},
+    "where": "common",
+    "zh": "卖出"
+  },
+  "common_send": {
+    "en": "Send",
+    "placeholders": {},
+    "where": "common",
+    "zh": "发送"
+  },
+  "common_settings": {
+    "en": "Settings",
+    "placeholders": {},
+    "where": "common",
+    "zh": "设置"
+  },
+  "common_share": {
+    "en": "Share",
+    "placeholders": {},
+    "where": "common",
+    "zh": "分享"
+  },
+  "common_sign": {
+    "en": "Sign",
+    "placeholders": {},
+    "where": "common",
+    "zh": "签名"
+  },
+  "common_simulationPassed": {
+    "en": "Simulation passed",
+    "placeholders": {},
+    "where": "common",
+    "zh": "试算通过"
+  },
+  "common_simulationRejected": {
+    "en": "Simulation rejected",
+    "placeholders": {},
+    "where": "common",
+    "zh": "试算被拒绝"
+  },
+  "common_simulationResult": {
+    "en": "Simulation result",
+    "placeholders": {},
+    "where": "common",
+    "zh": "模拟结果"
+  },
+  "common_simulationUnavailable": {
+    "en": "Simulation unavailable",
+    "placeholders": {},
+    "where": "common",
+    "zh": "试算不可用"
+  },
+  "common_slippageLimit": {
+    "en": "Slippage limit",
+    "placeholders": {},
+    "where": "common",
+    "zh": "滑点上限"
+  },
+  "common_snapshotBlock": {
+    "en": "Snapshot block",
+    "placeholders": {},
+    "where": "common",
+    "zh": "快照区块"
+  },
+  "common_submit": {
+    "en": "Submit",
+    "placeholders": {},
+    "where": "common",
+    "zh": "提交"
+  },
+  "common_submitted": {
+    "en": "Submitted",
+    "placeholders": {},
+    "where": "common",
+    "zh": "已提交"
+  },
+  "common_submitting": {
+    "en": "Submitting",
+    "placeholders": {},
+    "where": "common",
+    "zh": "提交中"
+  },
+  "common_success": {
+    "en": "Success",
+    "placeholders": {},
+    "where": "common",
+    "zh": "成功"
+  },
+  "common_swap": {
+    "en": "Swap",
+    "placeholders": {},
+    "where": "common",
+    "zh": "兑换"
+  },
+  "common_today": {
+    "en": "Today",
+    "placeholders": {},
+    "where": "common",
+    "zh": "今天"
+  },
+  "common_token": {
+    "en": "Token",
+    "placeholders": {},
+    "where": "common",
+    "zh": "代币"
+  },
+  "common_tokenApprovals": {
+    "en": "Token approvals",
+    "placeholders": {},
+    "where": "common",
+    "zh": "授权盘点"
+  },
+  "common_totalSupply": {
+    "en": "Total supply",
+    "placeholders": {},
+    "where": "common",
+    "zh": "总量"
+  },
+  "common_trade": {
+    "en": "Trade",
+    "placeholders": {},
+    "where": "common",
+    "zh": "交易"
+  },
+  "common_unavailable": {
+    "en": "Unavailable",
+    "placeholders": {},
+    "where": "common",
+    "zh": "不可用"
+  },
+  "common_unknown": {
+    "en": "Unknown",
+    "placeholders": {},
+    "where": "common",
+    "zh": "未知"
+  },
+  "common_unmute": {
+    "en": "Unmute",
+    "placeholders": {},
+    "where": "common",
+    "zh": "取消静音"
+  },
+  "common_unread": {
+    "en": "Unread",
+    "placeholders": {},
+    "where": "common",
+    "zh": "未读"
+  },
+  "common_uploading": {
+    "en": "Uploading…",
+    "placeholders": {},
+    "where": "common",
+    "zh": "上传中…"
+  },
+  "common_user": {
+    "en": "User",
+    "placeholders": {},
+    "where": "common",
+    "zh": "用户"
+  },
+  "common_validUntil": {
+    "en": "Valid until",
+    "placeholders": {},
+    "where": "common",
+    "zh": "有效期至"
+  },
+  "common_verifying": {
+    "en": "Verifying…",
+    "placeholders": {},
+    "where": "common",
+    "zh": "验证中…"
+  },
+  "common_voiceRooms": {
+    "en": "Voice rooms",
+    "placeholders": {},
+    "where": "common",
+    "zh": "语音房"
+  },
+  "common_waitingForData": {
+    "en": "Waiting for data",
+    "placeholders": {},
+    "where": "common",
+    "zh": "等待数据"
+  },
+  "common_watchlist": {
+    "en": "Watchlist",
+    "placeholders": {},
+    "where": "common",
+    "zh": "自选"
+  }
+}

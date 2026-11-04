@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/beta_feedback/beta_feedback_copy.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_gateway.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_models.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
@@ -76,22 +77,37 @@ class _BetaFeedbackScreenState extends ConsumerState<BetaFeedbackScreen> {
           break;
         case BetaFeedbackAddResult.tooMany:
           _toast(
-            '最多 ${BetaFeedbackPolicy.maximumImages} 张图片',
+            LoopL10n.current.betaFeedback_imageLimit(
+              BetaFeedbackPolicy.maximumImages,
+            ),
             LoopToastKind.warn,
           );
         case BetaFeedbackAddResult.rejected:
-          _toast('有图片无法使用', LoopToastKind.warn);
+          _toast(
+            LoopL10n.current.betaFeedback_imageUnusable,
+            LoopToastKind.warn,
+          );
       }
     } on BetaFeedbackPickException catch (error) {
       if (!mounted) return;
       _toast(switch (error.failure) {
         BetaFeedbackPickFailure.permissionDenied =>
-          camera ? '没有相机权限' : '没有相册权限',
-        BetaFeedbackPickFailure.unavailable => camera ? '无法打开相机' : '无法打开相册',
+          camera
+              ? LoopL10n.current.scan_cameraNoAccess
+              : LoopL10n.current.betaFeedback_noPhotoAccess,
+        BetaFeedbackPickFailure.unavailable =>
+          camera
+              ? LoopL10n.current.betaFeedback_cameraFailed
+              : LoopL10n.current.betaFeedback_photosFailed,
       }, LoopToastKind.err);
     } catch (_) {
       if (mounted) {
-        _toast(camera ? '无法打开相机' : '无法打开相册', LoopToastKind.err);
+        _toast(
+          camera
+              ? LoopL10n.current.betaFeedback_cameraFailed
+              : LoopL10n.current.betaFeedback_photosFailed,
+          LoopToastKind.err,
+        );
       }
     } finally {
       if (mounted) setState(() => _picking = false);
@@ -109,10 +125,12 @@ class _BetaFeedbackScreenState extends ConsumerState<BetaFeedbackScreen> {
     if (!mounted) return;
     if (receipt == null) {
       final kind = ref.read(betaFeedbackFormControllerProvider).failureKind;
-      if (kind != null) _toast('没有提交', LoopToastKind.err);
+      if (kind != null) {
+        _toast(LoopL10n.current.betaFeedback_notSent, LoopToastKind.err);
+      }
       return;
     }
-    _toast('已提交', LoopToastKind.ok);
+    _toast(LoopL10n.current.common_submitted, LoopToastKind.ok);
     widget.onDone();
   }
 
@@ -125,31 +143,33 @@ class _BetaFeedbackScreenState extends ConsumerState<BetaFeedbackScreen> {
     final problem = betaFeedbackBodyProblem(_body.text);
     final submittable = !blocked && !form.busy && problem == null;
     final busyLabel = switch (form.step) {
-      BetaFeedbackSubmitStep.uploading =>
-        '上传图片 ${form.uploaded} / ${form.images.length}',
-      BetaFeedbackSubmitStep.sending => '提交中',
-      BetaFeedbackSubmitStep.idle => '提交',
+      BetaFeedbackSubmitStep.uploading => context.l10n.betaFeedback_uploading(
+        form.images.length,
+        form.uploaded,
+      ),
+      BetaFeedbackSubmitStep.sending => context.l10n.common_submitting,
+      BetaFeedbackSubmitStep.idle => context.l10n.common_submit,
     };
     return LoopFlat(
       child: LoopFocusPage(
         key: const ValueKey<String>('beta-feedback-screen'),
         archetype: LoopPageArchetype.action,
-        title: '意见反馈',
+        title: context.l10n.betaFeedback_feedback,
         onBack: widget.onBack,
         keyboardAccessory: true,
         actions: <Widget>[
           LoopIconButton(
             key: const ValueKey<String>('beta-feedback-open-mine'),
             icon: 'clock',
-            label: '我的反馈',
+            label: context.l10n.betaFeedback_mineTitle,
             onPressed: widget.onOpenMine,
           ),
         ],
         block: blocked
-            ? const LoopPageBlock(
+            ? LoopPageBlock(
                 key: ValueKey<String>('beta-feedback-unavailable'),
-                title: '意见反馈暂不可用',
-                message: '现在无法提交反馈。',
+                title: context.l10n.betaFeedback_mineUnavailableTitle,
+                message: context.l10n.betaFeedback_unavailableMessage,
               )
             : null,
         body: <Widget>[
@@ -169,7 +189,7 @@ class _BetaFeedbackScreenState extends ConsumerState<BetaFeedbackScreen> {
           const SizedBox(height: 8),
           LoopFlatField(
             key: const ValueKey<String>('beta-feedback-body'),
-            label: '描述',
+            label: context.l10n.betaFeedback_description,
             footnote: '$length / ${BetaFeedbackPolicy.maximumBodyLength}',
             error: problem == BetaFeedbackBodyProblem.tooLong,
             child: TextField(
@@ -185,7 +205,7 @@ class _BetaFeedbackScreenState extends ConsumerState<BetaFeedbackScreen> {
               decoration: loopFormFieldDecoration(hint: ''),
             ),
           ),
-          const LoopLabel('图片'),
+          LoopLabel(context.l10n.betaFeedback_images),
           _ImageGrid(
             images: form.images,
             canAdd: form.canAddImage && !_picking,
@@ -196,14 +216,14 @@ class _BetaFeedbackScreenState extends ConsumerState<BetaFeedbackScreen> {
                 .read(betaFeedbackFormControllerProvider.notifier)
                 .removeImage(localId),
           ),
-          const LoopLabel('环境'),
+          LoopLabel(context.l10n.betaFeedback_environment),
           _EnvironmentBlock(origin: widget.origin),
           if (form.failureKind case final LoopChainFailureKind kind)
             Padding(
               padding: const EdgeInsets.only(top: 14),
               child: LoopErrorState(
                 key: const ValueKey<String>('beta-feedback-error'),
-                title: '没有提交',
+                title: context.l10n.betaFeedback_notSent,
                 reason: betaFeedbackFailureReason(kind, write: true),
               ),
             ),
@@ -255,13 +275,13 @@ class _ImageGrid extends StatelessWidget {
         _AddTile(
           key: const ValueKey<String>('beta-feedback-add-library'),
           icon: 'plus',
-          label: '相册',
+          label: context.l10n.scan_pickImageLabel,
           onTap: canAdd ? onAddFromLibrary : null,
         ),
         _AddTile(
           key: const ValueKey<String>('beta-feedback-add-camera'),
           icon: 'camera',
-          label: '拍照',
+          label: context.l10n.betaFeedback_takePhoto,
           onTap: canAdd ? onTakePhoto : null,
         ),
       ],
@@ -312,7 +332,7 @@ class _ImageTile extends StatelessWidget {
           right: 0,
           child: Semantics(
             button: true,
-            label: '删除图片',
+            label: context.l10n.betaFeedback_removeImage,
             excludeSemantics: true,
             onTap: onRemove,
             child: LoopPressable(
@@ -401,19 +421,26 @@ class _EnvironmentBlock extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final environment = ref.watch(betaFeedbackEnvironmentProvider);
-    String show(String value) => value.isEmpty ? '未知' : value;
+    String show(String value) =>
+        value.isEmpty ? context.l10n.common_unknown : value;
     final rows = switch (environment) {
-      AsyncData(:final value) => <(String, String)>[
+      AsyncData(:final value) => <(String, String, String)>[
+        // The first field keys the row: a key never changes with the language.
         (
-          '版本',
+          'version',
+          context.l10n.betaFeedback_envVersion,
           value.build.isEmpty
               ? show(value.appVersion)
               : '${show(value.appVersion)} (${value.build})',
         ),
-        ('设备', show(value.deviceModel)),
-        ('系统', show(value.osVersion)),
-        ('页面', show(origin.route)),
-        ('语言', show(origin.locale)),
+        (
+          'device',
+          context.l10n.betaFeedback_envDevice,
+          show(value.deviceModel),
+        ),
+        ('system', context.l10n.betaFeedback_envSystem, show(value.osVersion)),
+        ('page', context.l10n.betaFeedback_envPage, show(origin.route)),
+        ('language', context.l10n.common_language, show(origin.locale)),
       ],
       _ => null,
     };
@@ -435,14 +462,14 @@ class _EnvironmentBlock extends ConsumerWidget {
               )
             : Column(
                 children: <Widget>[
-                  for (final (label, value) in rows)
+                  for (final (id, label, value) in rows)
                     LoopKeyValue(
                       label: label,
                       value: value,
                       labelFlex: 2,
                       valueFlex: 5,
                       valueKey: ValueKey<String>(
-                        'beta-feedback-environment-$label',
+                        'beta-feedback-environment-$id',
                       ),
                     ),
                 ],

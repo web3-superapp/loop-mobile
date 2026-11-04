@@ -12,7 +12,7 @@ final Finder _indicator = _key('loop-tab-indicator');
 
 Finder _cell(String label) => find.widgetWithText(LoopTabItem, label);
 
-const List<String> _labels = <String>['聊天', '广场', 'MEME', '情报', '我的'];
+const List<String> _labels = <String>['Chat', 'Square', 'MEME', 'Intel', 'Me'];
 
 Future<void> _pumpBar(
   WidgetTester tester, {
@@ -72,7 +72,7 @@ void main() {
     final shape = box.decoration as ShapeDecoration;
     expect(shape.color, const Color(0x1AFFFFFF));
     expect((shape.shape as StadiumBorder).side.color, const Color(0x14FFFFFF));
-    _expectRestingOn(tester, '情报');
+    _expectRestingOn(tester, 'Intel');
     final row = tester.getRect(_key('loop-tab-bar-float'));
     final pill = tester.getRect(_indicator);
     // Inside the bar, never spilling under it.
@@ -84,8 +84,8 @@ void main() {
     tester,
   ) async {
     await _pumpBar(tester, initial: 1);
-    _expectRestingOn(tester, '广场');
-    final from = _cellRect(tester, '广场');
+    _expectRestingOn(tester, 'Square');
+    final from = _cellRect(tester, 'Square');
     await tester.tap(_cell('MEME'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
@@ -101,18 +101,18 @@ void main() {
     tester,
   ) async {
     await _pumpBar(tester, initial: 4);
-    final from = _cellRect(tester, '我的');
-    await tester.tap(_cell('广场'));
+    final from = _cellRect(tester, 'Me');
+    await tester.tap(_cell('Square'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
     final mid = tester.getRect(_indicator);
-    final to = _cellRect(tester, '广场');
+    final to = _cellRect(tester, 'Square');
     // The leading edge runs out over 0.62 of the slide, so across three
     // cells it has passed the cells in between — the pill is one long bar
     // from the old cell's centre more than two cells towards the new one —
     // while the trailing edge has not left yet.
     expect(mid.contains(from.center), isTrue);
-    expect(mid.contains(_cellRect(tester, '情报').center), isTrue);
+    expect(mid.contains(_cellRect(tester, 'Intel').center), isTrue);
     expect(mid.contains(_cellRect(tester, 'MEME').center), isTrue);
     expect(mid.width, greaterThan(2.5 * from.width));
     expect(mid.left, lessThan(to.right));
@@ -125,34 +125,34 @@ void main() {
     }
     expect(narrowest, greaterThan(to.width - 8 - to.width * 0.07));
     await tester.pumpAndSettle();
-    _expectRestingOn(tester, '广场');
+    _expectRestingOn(tester, 'Square');
   });
 
   testWidgets('a second tap mid-flight carries on from where the pill is', (
     tester,
   ) async {
     await _pumpBar(tester);
-    await tester.tap(_cell('情报'));
+    await tester.tap(_cell('Intel'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     final before = tester.getRect(_indicator);
-    await tester.tap(_cell('我的'));
+    await tester.tap(_cell('Me'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 16));
     final after = tester.getRect(_indicator);
     // No jump back to the first cell.
     expect(after.left, greaterThanOrEqualTo(before.left - 1));
     await tester.pumpAndSettle();
-    _expectRestingOn(tester, '我的');
+    _expectRestingOn(tester, 'Me');
   });
 
   testWidgets('reduced motion lands in one frame and does not swell', (
     tester,
   ) async {
     await _pumpBar(tester, reduceMotion: true);
-    _expectRestingOn(tester, '聊天');
+    _expectRestingOn(tester, 'Chat');
     final rest = tester.getRect(_key('loop-tab-bar-float'));
-    final gesture = await tester.startGesture(tester.getCenter(_cell('我的')));
+    final gesture = await tester.startGesture(tester.getCenter(_cell('Me')));
     await tester.pump(const Duration(milliseconds: 200));
     expect(
       tester.getRect(_key('loop-tab-bar-float')).width,
@@ -160,7 +160,7 @@ void main() {
     );
     await gesture.up();
     await tester.pump();
-    _expectRestingOn(tester, '我的');
+    _expectRestingOn(tester, 'Me');
   });
 
   testWidgets('a press swells the whole bar to 1.02 and lifting restores it', (
@@ -206,7 +206,7 @@ void main() {
     for (final slug in <String>['chat', 'square', 'meme', 'intel', 'wallet']) {
       expect(glyph(tester, slug), Matrix4.identity());
     }
-    await tester.tap(_cell('广场'));
+    await tester.tap(_cell('Square'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     expect(glyph(tester, 'square'), isNot(Matrix4.identity()));
@@ -234,7 +234,7 @@ void main() {
     tester,
   ) async {
     await _pumpBar(tester, initial: 1);
-    await tester.tap(_cell('广场'));
+    await tester.tap(_cell('Square'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     expect(glyph(tester, 'square'), Matrix4.identity());
@@ -243,11 +243,11 @@ void main() {
 
   testWidgets('reduced motion keeps every glyph still', (tester) async {
     await _pumpBar(tester, reduceMotion: true);
-    await tester.tap(_cell('广场'));
+    await tester.tap(_cell('Square'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     expect(glyph(tester, 'square'), Matrix4.identity());
-    await tester.tap(_cell('我的'));
+    await tester.tap(_cell('Me'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     expect(glyph(tester, 'wallet'), Matrix4.identity());

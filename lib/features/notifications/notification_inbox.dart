@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 /// `notifications` · the notification centre's list (decision 0241).
 ///
@@ -247,12 +248,16 @@ final notificationUnreadCountProvider =
 
 /// The two sections of the notification centre.
 enum LoopNotificationDay {
-  today('今天'),
-  earlier('更早');
+  today(),
+  earlier();
 
-  const LoopNotificationDay(this.label);
+  const LoopNotificationDay();
 
-  final String label;
+  String get label => switch (this) {
+    LoopNotificationDay.today => LoopL10n.current.common_today,
+
+    LoopNotificationDay.earlier => LoopL10n.current.notifications_earlier,
+  };
 }
 
 /// Which section [createdAt] falls in, by the device's own calendar day.

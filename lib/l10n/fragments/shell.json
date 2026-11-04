@@ -1,0 +1,83 @@
+{
+  "shell_payUnavailableHeadline": {
+    "en": "Pay isn't available",
+    "placeholders": {},
+    "where": "lib/features/shell/loop_pending_surface.dart:27",
+    "zh": "Pay 暂不可用"
+  },
+  "shell_payUnavailableMessage": {
+    "en": "Pay isn't open yet. This page doesn't scan codes, ask for camera access, collect payment details or submit any transaction.",
+    "placeholders": {},
+    "where": "lib/features/shell/loop_pending_surface.dart:32",
+    "zh": "Pay 尚未开放。此页面不会扫码、不会请求相机权限、不会收集支付信息，也不会提交任何交易。"
+  },
+  "shell_pendingBackToCommunity": {
+    "en": "Back to community",
+    "placeholders": {},
+    "where": "lib/features/shell/loop_pending_surface.dart:59",
+    "zh": "返回社区"
+  },
+  "shell_pendingHeadline": {
+    "en": "This page isn't open yet",
+    "placeholders": {},
+    "where": "lib/features/shell/loop_pending_surface.dart:26",
+    "zh": "该页面还没有开放"
+  },
+  "shell_pendingMessage": {
+    "en": "\"{title}\" isn't open yet. Nothing is shown here and no action can be taken.",
+    "placeholders": {
+      "title": {
+        "example": "entry.title",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/shell/loop_pending_surface.dart:112",
+    "zh": "「{title}」还没有开放，这里暂时不显示任何内容，也不能执行任何操作。"
+  },
+  "shell_pendingSourceLine": {
+    "en": "Module: {label}",
+    "placeholders": {
+      "label": {
+        "example": "entry.module.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/shell/loop_pending_surface.dart:34",
+    "zh": "所属模块：{label}"
+  },
+  "shell_tabChat": {
+    "en": "Chat",
+    "placeholders": {},
+    "where": "lib/features/shell/loop_shell.dart:55",
+    "zh": "聊天"
+  },
+  "shell_tabIntel": {
+    "en": "Intel",
+    "placeholders": {},
+    "where": "lib/features/shell/loop_shell.dart:58",
+    "zh": "情报"
+  },
+  "shell_tabMe": {
+    "en": "Me",
+    "placeholders": {},
+    "where": "lib/features/shell/loop_shell.dart:59",
+    "zh": "我的"
+  },
+  "shell_tabNewMessages": {
+    "en": "{label}, new messages",
+    "placeholders": {
+      "label": {
+        "example": "label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/shell/loop_shell.dart:736",
+    "zh": "{label}，有新消息"
+  },
+  "shell_tabSquare": {
+    "en": "Square",
+    "placeholders": {},
+    "where": "lib/features/shell/loop_shell.dart:56",
+    "zh": "广场"
+  }
+}

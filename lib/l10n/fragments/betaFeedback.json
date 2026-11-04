@@ -1,0 +1,280 @@
+{
+  "betaFeedback_cameraFailed": {
+    "en": "Couldn't open the camera",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94",
+    "zh": "无法打开相机"
+  },
+  "betaFeedback_categoryOther": {
+    "en": "Other",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_models.dart:13",
+    "zh": "其他"
+  },
+  "betaFeedback_categorySuggestion": {
+    "en": "Suggestion",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_models.dart:12",
+    "zh": "建议"
+  },
+  "betaFeedback_copyBootstrapRequired": {
+    "en": "Your account isn't set up yet. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:20",
+    "zh": "账号尚未完成初始化，请稍后再试。"
+  },
+  "betaFeedback_copyLoadFailed": {
+    "en": "Couldn't load feedback. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:22",
+    "zh": "没有读到反馈，请稍后再试。"
+  },
+  "betaFeedback_copyLoadMalformed": {
+    "en": "The response was incomplete.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:21",
+    "zh": "返回的数据不完整。"
+  },
+  "betaFeedback_copyLoadOffline": {
+    "en": "No network; couldn't load feedback.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:11",
+    "zh": "网络不可用，没有读到反馈。"
+  },
+  "betaFeedback_copyRateLimited": {
+    "en": "Too many submissions. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:18",
+    "zh": "提交太频繁，请稍后再试。"
+  },
+  "betaFeedback_copyRegionBlocked": {
+    "en": "This account can't send feedback.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:17",
+    "zh": "当前账号不能使用意见反馈。"
+  },
+  "betaFeedback_copySubmissionUnknown": {
+    "en": "The result isn't confirmed. Submitting again won't create a duplicate.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:14",
+    "zh": "结果未确认，再次提交不会重复。"
+  },
+  "betaFeedback_copySubmitFailed": {
+    "en": "Feedback wasn't sent. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:22",
+    "zh": "反馈没有提交，请稍后再试。"
+  },
+  "betaFeedback_copySubmitMalformed": {
+    "en": "The response was incomplete; the result isn't confirmed.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:21",
+    "zh": "返回的数据不完整，结果未确认。"
+  },
+  "betaFeedback_copySubmitOffline": {
+    "en": "No network; feedback wasn't sent.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:11",
+    "zh": "网络不可用，反馈没有提交。"
+  },
+  "betaFeedback_copyUnavailable": {
+    "en": "Feedback isn't available right now.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:15",
+    "zh": "反馈服务暂不可用。"
+  },
+  "betaFeedback_copyValidationFailed": {
+    "en": "The text or images don't meet the requirements. Edit them and try again.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_copy.dart:19",
+    "zh": "内容或图片不符合要求，请修改后再试。"
+  },
+  "betaFeedback_description": {
+    "en": "Description",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:172",
+    "zh": "描述"
+  },
+  "betaFeedback_envDevice": {
+    "en": "Device",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:413",
+    "zh": "设备"
+  },
+  "betaFeedback_envPage": {
+    "en": "Page",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:415",
+    "zh": "页面"
+  },
+  "betaFeedback_envSystem": {
+    "en": "OS",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:414",
+    "zh": "系统"
+  },
+  "betaFeedback_envVersion": {
+    "en": "Version",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:408",
+    "zh": "版本"
+  },
+  "betaFeedback_environment": {
+    "en": "Environment",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:199",
+    "zh": "环境"
+  },
+  "betaFeedback_feedback": {
+    "en": "Feedback",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_entry.dart:83, lib/features/beta_feedback/beta_feedback_screen.dart:137",
+    "zh": "意见反馈"
+  },
+  "betaFeedback_imageLimit": {
+    "en": "Up to {maximumImages} images",
+    "placeholders": {
+      "maximumImages": {
+        "example": "BetaFeedbackPolicy.maximumImages",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:79",
+    "zh": "最多 {maximumImages} 张图片"
+  },
+  "betaFeedback_imageUnusable": {
+    "en": "Some images can't be used",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:83",
+    "zh": "有图片无法使用"
+  },
+  "betaFeedback_images": {
+    "en": "Images",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:188",
+    "zh": "图片"
+  },
+  "betaFeedback_mineEmpty": {
+    "en": "No feedback yet",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:86",
+    "zh": "还没有提交过反馈"
+  },
+  "betaFeedback_mineErrorTitle": {
+    "en": "Couldn't load feedback",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:128",
+    "zh": "没有读到反馈"
+  },
+  "betaFeedback_minePermissionTitle": {
+    "en": "No permission",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:122",
+    "zh": "没有权限"
+  },
+  "betaFeedback_mineTitle": {
+    "en": "My feedback",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:61, lib/features/beta_feedback/beta_feedback_screen.dart:144",
+    "zh": "我的反馈"
+  },
+  "betaFeedback_mineUnavailableMessage": {
+    "en": "Feedback history can't be loaded right now.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:71",
+    "zh": "现在读不到反馈记录。"
+  },
+  "betaFeedback_mineUnavailableTitle": {
+    "en": "Feedback isn't available",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:70, lib/features/beta_feedback/beta_feedback_screen.dart:151",
+    "zh": "意见反馈暂不可用"
+  },
+  "betaFeedback_noCameraAccess": {
+    "en": "No camera access",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:89",
+    "zh": "没有相机权限"
+  },
+  "betaFeedback_noPhotoAccess": {
+    "en": "No photo access",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:89",
+    "zh": "没有相册权限"
+  },
+  "betaFeedback_notSent": {
+    "en": "Not sent",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:112, lib/features/beta_feedback/beta_feedback_screen.dart:206",
+    "zh": "没有提交"
+  },
+  "betaFeedback_photos": {
+    "en": "Photos",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:258",
+    "zh": "相册"
+  },
+  "betaFeedback_photosFailed": {
+    "en": "Couldn't open Photos",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94",
+    "zh": "无法打开相册"
+  },
+  "betaFeedback_removeImage": {
+    "en": "Remove image",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:315",
+    "zh": "删除图片"
+  },
+  "betaFeedback_send": {
+    "en": "Send feedback",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:116",
+    "zh": "提交反馈"
+  },
+  "betaFeedback_statusOpen": {
+    "en": "Open",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_models.dart:29",
+    "zh": "待处理"
+  },
+  "betaFeedback_statusResolved": {
+    "en": "Resolved",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_models.dart:31",
+    "zh": "已解决"
+  },
+  "betaFeedback_statusWontFix": {
+    "en": "Won't fix",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_models.dart:32",
+    "zh": "暂不处理"
+  },
+  "betaFeedback_takePhoto": {
+    "en": "Take photo",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:264",
+    "zh": "拍照"
+  },
+  "betaFeedback_unavailableMessage": {
+    "en": "Feedback can't be sent right now.",
+    "placeholders": {},
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:152",
+    "zh": "现在无法提交反馈。"
+  },
+  "betaFeedback_uploading": {
+    "en": "Uploading images {uploaded} / {images}",
+    "placeholders": {
+      "images": {
+        "example": "form.images.length",
+        "type": "Object"
+      },
+      "uploaded": {
+        "example": "form.uploaded",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/beta_feedback/beta_feedback_screen.dart:129",
+    "zh": "上传图片 {uploaded} / {images}"
+  }
+}

@@ -219,14 +219,14 @@ void main() {
       final approved = view('launch.review_approved', <String, String?>{
         'projectName': 'FROG',
       });
-      expect(approved.title, 'FROG 审核已通过');
-      expect(approved.body, '请完成签名，发射才会部署');
+      expect(approved.title, 'FROG Approved');
+      expect(approved.body, 'Sign to deploy the launch');
 
       final rejected = view('launch.review_rejected', <String, String?>{
         'projectName': 'FROG',
         'reasonText': '图片含水印',
       });
-      expect(rejected.title, 'FROG 审核未通过');
+      expect(rejected.title, 'FROG Not approved');
       expect(rejected.body, '图片含水印');
 
       final saleStartAt = DateTime.utc(2026, 10, 25, 12);
@@ -236,10 +236,10 @@ void main() {
         'projectName': 'FROG',
         'saleStartAt': saleStartAt.toIso8601String(),
       });
-      expect(activated.title, 'FROG 已上链');
+      expect(activated.title, 'FROG On-chain');
       expect(
         activated.body,
-        '开售时间 ${local.year}-${two(local.month)}-${two(local.day)} '
+        'Sale starts ${local.year}-${two(local.month)}-${two(local.day)} '
         '${two(local.hour)}:${two(local.minute)}',
       );
 
@@ -247,20 +247,20 @@ void main() {
         'projectName': 'FROG',
         'reasonText': '链上回滚',
       });
-      expect(failed.title, 'FROG 部署失败');
+      expect(failed.title, 'FROG Deployment failed');
       expect(failed.body, '链上回滚');
 
       // A row that names no project says so plainly and invents no reason
       // or sale time.
-      expect(view('launch.review_approved').title, '发射审核已通过');
-      expect(view('launch.review_rejected').title, '发射审核未通过');
+      expect(view('launch.review_approved').title, 'Launch approved');
+      expect(view('launch.review_rejected').title, 'Launch not approved');
       expect(view('launch.review_rejected').body, isNull);
-      expect(view('launch.activated').title, '你的发射已上链');
+      expect(view('launch.activated').title, 'Your launch is on-chain');
       expect(
         view('launch.activated', <String, String?>{'saleStartAt': 'soon'}).body,
         isNull,
       );
-      expect(view('launch.deploy_failed').title, '发射部署失败');
+      expect(view('launch.deploy_failed').title, 'Launch deployment failed');
       expect(view('launch.deploy_failed').body, isNull);
     });
 
@@ -280,7 +280,7 @@ void main() {
       expect(find.text('FROG 已上链'), findsOneWidget);
       expect(find.text('FROG 部署失败'), findsOneWidget);
       expect(find.text('以后的新事件'), findsOneWidget);
-      expect(find.text('未读 5 条'), findsOneWidget);
+      expect(find.text('5 unread'), findsOneWidget);
     });
   });
 
@@ -644,7 +644,9 @@ void main() {
       expect(
         find.descendant(
           of: row,
-          matching: find.text('含共识勋章、发射审核结果与上链进度 · 暂不生效'),
+          matching: find.text(
+            'Includes consensus badges, launch review results and on-chain progress · 暂不生效',
+          ),
         ),
         findsOneWidget,
       );

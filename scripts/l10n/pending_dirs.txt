@@ -1,0 +1,30 @@
+# Directories whose copy is still hard-coded Chinese (decision 0281).
+# `check_no_hardcoded_cjk` (scripts/check_harness.py) ignores these; every
+# other file under lib/ must read its copy from ARB. One path prefix per line;
+# `!prefix` carves a migrated sub-directory out of a pending one. Each S355
+# batch deletes its line(s) when its directory lands.
+lib/app
+lib/app.dart
+lib/core
+lib/features/account
+lib/features/chain
+lib/features/chat
+lib/features/community
+lib/features/dapp
+lib/features/intel
+lib/features/launch
+lib/features/launch2
+lib/features/market
+lib/features/meme
+lib/features/mining
+lib/features/mining_rewards
+lib/features/profile
+lib/features/security
+lib/features/social
+lib/features/square
+lib/features/system
+lib/features/wallet
+lib/integrations
+lib/widgets
+# S354 pilot: migrated (decision 0281).
+!lib/features/profile/settings

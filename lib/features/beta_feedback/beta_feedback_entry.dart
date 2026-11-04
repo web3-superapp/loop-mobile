@@ -9,6 +9,7 @@ import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_controllers.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
@@ -80,7 +81,7 @@ class BetaFeedbackEntry extends ConsumerStatefulWidget {
 
   static const Duration snapDuration = Duration(milliseconds: 220);
 
-  static const String label = '意见反馈';
+  static String get label => LoopL10n.current.betaFeedback_feedback;
 
   @override
   ConsumerState<BetaFeedbackEntry> createState() => _BetaFeedbackEntryState();

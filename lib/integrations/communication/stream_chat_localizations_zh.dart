@@ -10,6 +10,8 @@
 import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'package:flutter/widgets.dart';
 import 'package:loop_mobile/core/time/loop_server_clock.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_localizations_en.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// The 24-hour clock LOOP uses everywhere a Stream widget prints a time.
@@ -1086,11 +1088,9 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   String notifyRoleText(String role) => '提醒所有 $role 成员';
 }
 
-/// Installs [LoopStreamChatLocalizations] for every locale.
-///
-/// LOOP ships one language. The delegate answers for any locale so the
-/// official widgets stay Chinese even though the application locale — and
-/// therefore `MaterialLocalizations` — remains the framework default.
+/// Installs LOOP's Stream copy for the app's language (decision 0281):
+/// [LoopStreamChatLocalizations] in Chinese, the SDK's own English
+/// ([LoopStreamChatEnglishLocalizations]) for every other locale.
 class LoopStreamChatLocalizationsDelegate
     extends LocalizationsDelegate<StreamChatLocalizations> {
   /// Creates the delegate.
@@ -1102,7 +1102,9 @@ class LoopStreamChatLocalizationsDelegate
   @override
   Future<StreamChatLocalizations> load(Locale locale) =>
       SynchronousFuture<StreamChatLocalizations>(
-        const LoopStreamChatLocalizations(),
+        locale.languageCode == LoopL10n.simplifiedChinese.languageCode
+            ? const LoopStreamChatLocalizations()
+            : const LoopStreamChatEnglishLocalizations(),
       );
 
   @override

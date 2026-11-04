@@ -29,6 +29,7 @@ import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_live_v
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/app/loop_locale.dart';
 import 'package:loop_mobile/app/loop_balance_visibility.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
@@ -75,6 +76,7 @@ import 'package:loop_mobile/integrations/notifications/loop_push_token_source.da
 import 'package:loop_mobile/integrations/personalization/shared_preferences_external_wallet_intro_store.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_app_lock_prompt_store.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_locale_store.dart';
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_group_alias_providers.dart';
@@ -149,7 +151,11 @@ Future<void> main() async {
   final firebaseStarting = config.canInitializeFirebase
       ? LoopFirebaseIngress.ensureApp(diagnostics: pushDiagnostics)
       : null;
+  // Decision 0281: the language an earlier run picked, read before the
+  // first frame so the app never opens in the wrong one.
+  final localeBootstrapping = bootstrapSharedPreferencesLocale();
   final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
+  final localeBootstrap = await localeBootstrapping;
   final snapshotStore = await snapshotStoreOpening;
   final firebaseApp = await firebaseStarting;
   await orientationLock;
@@ -193,6 +199,8 @@ Future<void> main() async {
         loopDisplayPreferencesInitialProvider.overrideWithValue(
           displayBootstrap.initial,
         ),
+        loopLocaleStoreProvider.overrideWithValue(localeBootstrap.store),
+        loopLocaleInitialProvider.overrideWithValue(localeBootstrap.initial),
         // The device-local application lock. The authenticator is the
         // operating system's own prompt; the store keeps one boolean and
         // nothing else, because LOOP holds no PIN and no biometric material.

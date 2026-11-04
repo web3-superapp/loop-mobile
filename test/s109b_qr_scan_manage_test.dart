@@ -362,7 +362,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(opened.locations, isEmpty);
-      expect(find.text('不是 LOOP 二维码'), findsOneWidget);
+      expect(find.text('Not a LOOP QR code'), findsOneWidget);
       expect(find.text('WIFI:S:home;;'), findsOneWidget);
       await _tap(
         tester,
@@ -388,7 +388,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(opened.locations, <String>['/profile/referral?code=LOOP-1ZR9N']);
-      expect(find.text('不是 LOOP 二维码'), findsNothing);
+      expect(find.text('Not a LOOP QR code'), findsNothing);
       // No confirmation panel any more (decision 0235 item 2 retired).
       expect(find.byKey(const ValueKey<String>('scan-invite')), findsNothing);
       expect(find.text('去填写邀请码'), findsNothing);
@@ -428,7 +428,7 @@ void main() {
       final opened = await _pumpScan(tester, image: const LoopQrImageNoCode());
       await _tap(tester, find.byKey(const ValueKey<String>('scan-pick-image')));
       expect(opened.locations, isEmpty);
-      expect(find.text('这张图片里没有识别到二维码'), findsOneWidget);
+      expect(find.text('No QR code found in this image'), findsOneWidget);
     });
 
     testWidgets('the camera fills the screen, not a card (decision 0133)', (
@@ -457,7 +457,7 @@ void main() {
       // The window to aim at is drawn over the picture; the bar and the two
       // tools float on it.
       expect(find.byKey(const ValueKey<String>('scan-mask')), findsOneWidget);
-      expect(find.text('扫一扫'), findsOneWidget);
+      expect(find.text('Scan'), findsOneWidget);
       final hint = tester.getRect(
         find.byKey(const ValueKey<String>('scan-hint')),
       );
@@ -472,7 +472,7 @@ void main() {
           find.byKey(const ValueKey<String>('scan-pick-image')),
         ),
         matchesSemantics(
-          label: '从相册选图',
+          label: 'Choose from Photos',
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -485,7 +485,7 @@ void main() {
       final opened = await _pumpScan(tester);
       await _tap(tester, find.byKey(const ValueKey<String>('scan-torch')));
       expect(opened.scanner.session.torchToggles, 1);
-      expect(find.text('关闭手电筒'), findsOneWidget);
+      expect(find.text('Turn off flashlight'), findsOneWidget);
     });
 
     testWidgets('loading, permission and error are the camera\'s own states', (

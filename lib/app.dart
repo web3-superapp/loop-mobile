@@ -12,6 +12,7 @@ import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/app/loop_locale.dart';
 import 'package:loop_mobile/app/loop_profile_link_inbox.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_navigation.dart';
@@ -137,6 +138,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_localizations
 import 'package:loop_mobile/integrations/communication/stream_chat_presence.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
@@ -238,14 +240,18 @@ final loopStreamChatConfiguration = StreamChatConfigurationData(
   ),
 );
 
-/// The one application locale (decision 0130): Simplified Chinese, China.
-const Locale loopAppLocale = Locale('zh', 'CN');
+/// The default application locale. Decision 0281 retired the single fixed
+/// locale of decision 0130: the app opens in English and the reader may pick
+/// 简体中文; the live value is [loopLocaleProvider].
+@Deprecated('Read loopLocaleProvider; LoopL10n.fallbackLocale is the default')
+const Locale loopAppLocale = LoopL10n.fallbackLocale;
 
-/// Every localization the application installs (decision 0130): Stream's
-/// Chinese copy, and the framework's own Material, Cupertino and Widgets
-/// strings for [loopAppLocale].
+/// Every localization the application installs (decision 0281): LOOP's own
+/// copy, Stream's Chinese copy (English is the SDK's own), and the
+/// framework's Material, Cupertino and Widgets strings.
 const List<LocalizationsDelegate<Object>> loopLocalizationsDelegates =
     <LocalizationsDelegate<Object>>[
+      LoopL10n.delegate,
       LoopStreamChatLocalizationsDelegate(),
       GlobalMaterialLocalizations.delegate,
       GlobalCupertinoLocalizations.delegate,
@@ -706,18 +712,17 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         (preferences) => preferences.reduceMotion,
       ),
     );
+    final locale = ref.watch(loopLocaleProvider);
     return MaterialApp.router(
       title: 'LOOP',
       debugShowCheckedModeBanner: false,
-      // Decision 0130 (audit 2026-10-09 M4): LOOP ships one language, and
-      // the system's own controls speak it too — the text-selection toolbar
-      // (粘贴 / 全选), date pickers, and every label a screen reader reads off
-      // a Material or Cupertino widget. The locale is fixed rather than taken
-      // from the device: every LOOP page writes its Chinese copy directly, so
-      // an English device would otherwise get Chinese pages with English
-      // system controls. The Stream delegate answers for any locale.
-      locale: loopAppLocale,
-      supportedLocales: const <Locale>[loopAppLocale],
+      // Decision 0281 (retiring 0130's fixed zh-CN): the app speaks the
+      // language the reader picked in 设置 · Language — English until they
+      // pick — and the system's own controls (text-selection toolbar, date
+      // pickers, screen-reader labels) follow it. The device language is not
+      // consulted.
+      locale: locale,
+      supportedLocales: LoopL10n.supportedLocales,
       localizationsDelegates: loopLocalizationsDelegates,
       theme: LoopTheme.dark,
       darkTheme: LoopTheme.dark,
@@ -798,10 +803,15 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         // Decision 0234: every field's keyboard goes away on a tap outside
         // it, and an iOS number pad gets a 完成 bar. Above the root
         // navigator, so sheets and dialogs are covered by the same scope.
-        return LoopKeyboardScope(
-          child: LoopPageRecoveryScope(
-            retry: metaObserver.retryObservation,
-            child: LoopAppLockGate(child: LoopToastHost(child: content)),
+        // Decision 0281: `LoopL10n.current` follows the language this tree
+        // resolved, and a switch repaints the copy it serves.
+        return LoopLocaleScope(
+          locale: Localizations.localeOf(context),
+          child: LoopKeyboardScope(
+            child: LoopPageRecoveryScope(
+              retry: metaObserver.retryObservation,
+              child: LoopAppLockGate(child: LoopToastHost(child: content)),
+            ),
           ),
         );
       },

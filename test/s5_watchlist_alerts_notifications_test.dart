@@ -454,8 +454,8 @@ void main() {
       );
       expect(find.textContaining('WBNB 触发 700（观察值 747.39）'), findsOneWidget);
       // A provider LOOP names elsewhere is named the same way here.
-      expect(find.textContaining('来源 DexScreener'), findsOneWidget);
-      expect(find.textContaining('来源 dexscreener'), findsNothing);
+      expect(find.textContaining('Source: DexScreener'), findsOneWidget);
+      expect(find.textContaining('Source: dexscreener'), findsNothing);
       // The alert id addresses the row this entry highlights; it is not copy.
       expect(find.textContaining('提醒 $s5AlertId'), findsNothing);
       expect(find.textContaining(s5AlertId), findsNothing);
@@ -716,7 +716,10 @@ void main() {
       expect(lockedSwitch.value, isTrue);
       expect(lockedSwitch.onChanged, isNull);
       expect(
-        find.descendant(of: lockedRow, matching: find.textContaining('无法关闭')),
+        find.descendant(
+          of: lockedRow,
+          matching: find.textContaining('Can\'t be turned off'),
+        ),
         findsOneWidget,
       );
       expect(tester.widget<LoopRecordRow>(lockedRow).onTap, isNull);

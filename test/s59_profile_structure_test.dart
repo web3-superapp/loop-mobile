@@ -124,21 +124,23 @@ void main() {
       // moved to 我的 and 资产与挖矿 left.
       expect(
         _labels(tester),
-        containsAllInOrder(<String>['隐私与安全', '通用', '关于']),
+        containsAllInOrder(<String>['隐私与安全', 'General', 'About']),
       );
       expect(_labels(tester), isNot(contains('账号')));
       expect(_labels(tester), isNot(contains('资产与挖矿')));
-      expect(_labels(tester).where((label) => label == '通用'), hasLength(1));
+      expect(
+        _labels(tester).where((label) => label == 'General'),
+        hasLength(1),
+      );
 
-      // §D+ #11: 语言 reads its value, not a sentence about why it is fixed;
-      // decision 0133 (m8) makes it a read-only value with one shared note.
+      // §D+ #11: 语言 reads its value, not a sentence. Decision 0281 made
+      // it the language picker: it opens a sheet instead of being fixed.
       final language = tester.widget<LoopRecordRow>(
         find.byKey(const ValueKey<String>('settings-language')),
       );
       expect(language.subtitle, isNull);
-      expect(language.trailing, isNotNull);
-      expect(language.readOnly, isTrue);
-      expect(language.onTap, isNull);
+      expect(language.trailing, 'English');
+      expect(language.onTap, isNotNull);
     });
   });
 
@@ -161,7 +163,13 @@ void main() {
         find.byKey(const ValueKey<String>('notification-preferences-summary')),
         findsOneWidget,
       );
-      expect(_labels(tester), <String>['挖矿', 'Launch', '交易', '社区', '安全']);
+      expect(_labels(tester), <String>[
+        'Mining',
+        'Launch',
+        'Trade',
+        'Community',
+        'Security',
+      ]);
 
       for (final category in LoopNotificationCategory.values) {
         final row = find.byKey(

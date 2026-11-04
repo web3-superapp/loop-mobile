@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/beta_feedback/beta_feedback_controllers.dar
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_copy.dart';
 import 'package:loop_mobile/features/beta_feedback/beta_feedback_models.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
@@ -58,17 +59,17 @@ class _BetaFeedbackMineScreenState
       child: LoopDashboardPage(
         key: const ValueKey<String>('beta-feedback-mine-screen'),
         archetype: LoopPageArchetype.listing,
-        title: '我的反馈',
+        title: context.l10n.betaFeedback_mineTitle,
         onBack: widget.onBack,
         updating: resource.refreshing,
         onRefresh: resource.mode == LoopChainGatewayMode.unavailable
             ? null
             : _reload,
         block: resource.phase == LoopChainViewPhase.unavailable
-            ? const LoopPageBlock(
+            ? LoopPageBlock(
                 key: ValueKey<String>('beta-feedback-mine-unavailable'),
-                title: '意见反馈暂不可用',
-                message: '现在读不到反馈记录。',
+                title: context.l10n.betaFeedback_mineUnavailableTitle,
+                message: context.l10n.betaFeedback_mineUnavailableMessage,
               )
             : null,
         sections: <Widget>[
@@ -83,7 +84,7 @@ class _BetaFeedbackMineScreenState
                 vertical: 48,
               ),
               child: Text(
-                '还没有提交过反馈',
+                context.l10n.betaFeedback_mineEmpty,
                 textAlign: TextAlign.center,
                 style: LoopType.caption.copyWith(color: LoopColors.text3),
               ),
@@ -113,19 +114,19 @@ class _BetaFeedbackMineScreenState
         cause: resource.failureKind == LoopChainFailureKind.timedOut
             ? LoopOfflineCause.timeout
             : LoopOfflineCause.connection,
-        pausedActions: const <String>['提交反馈'],
+        pausedActions: <String>[LoopL10n.current.betaFeedback_send],
         onRetry: () => unawaited(_reload()),
       ),
       LoopChainViewPhase.permission => LoopPermissionState(
         key: const ValueKey<String>('beta-feedback-mine-permission'),
         icon: 'lock',
-        title: '没有权限',
+        title: LoopL10n.current.betaFeedback_minePermissionTitle,
         purpose: betaFeedbackFailureReason(resource.failureKind, write: false),
         denied: true,
       ),
       LoopChainViewPhase.error => LoopErrorState(
         key: const ValueKey<String>('beta-feedback-mine-error'),
-        title: '没有读到反馈',
+        title: LoopL10n.current.betaFeedback_mineErrorTitle,
         reason: betaFeedbackFailureReason(resource.failureKind, write: false),
         onRetry: () => unawaited(_reload()),
       ),

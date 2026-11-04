@@ -73,17 +73,22 @@ void main() {
         settings: FakeAccountSettingsGateway(),
       );
 
+      // Decision 0281: 语言 is this device's language picker, not the
+      // account value; it names the app's current language.
       final language = find.byKey(const ValueKey<String>('settings-language'));
       final currency = find.byKey(
         const ValueKey<String>('settings-display-currency'),
       );
-      expect(tester.widget<LoopRecordRow>(language).onTap, isNull);
+      expect(tester.widget<LoopRecordRow>(language).onTap, isNotNull);
       expect(tester.widget<LoopRecordRow>(currency).onTap, isNull);
-      expect(find.text('简体中文'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
       expect(find.text('USD'), findsOneWidget);
       // The CAS version and whether a row exists are write-path mechanics,
       // not facts about the account.
-      expect(findProvenanceContaining('当前使用默认设置'), findsOneWidget);
+      expect(
+        findProvenanceContaining('Using default settings'),
+        findsOneWidget,
+      );
       expect(find.textContaining('版本 0'), findsNothing);
       expect(find.textContaining('尚未写入过'), findsNothing);
     });

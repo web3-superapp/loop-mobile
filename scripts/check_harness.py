@@ -15,6 +15,11 @@ import zlib
 from pathlib import Path
 from typing import Any
 
+# Decision 0281: the l10n tools and the harness share one reading of what is
+# hard-coded copy (scripts/l10n/harness_rules.py).
+sys.path.insert(0, str(Path(__file__).resolve().parent / "l10n"))
+import harness_rules as L10N_RULES  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PRIMARY_DESTINATIONS = ["Chat", "Square", "Meme", "Intel", "Wallet"]
@@ -30,6 +35,8 @@ PINNED_DEPENDENCIES = {
     "flutter_secure_storage": "10.3.1",
     "flutter_svg": "2.3.0",
     "go_router": "17.5.0",
+    # Decision 0281: gen-l10n output imports intl; the lockfile's version.
+    "intl": "0.20.3",
     "mobile_scanner": "7.4.2",
     "privy_flutter": "0.11.0",
     "reown_appkit": "1.8.4",
@@ -4507,6 +4514,9 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
             "lib/integrations/personalization/"
             "shared_preferences_dapp_browser_store.dart"
         ),
+        # Decision 0281: the application language, one `loop.locale` tag,
+        # pinned by `check_l10n_locale_contract`.
+        L10N_RULES.LOCALE_STORE_OWNER,
     }
     lib_root = root / "lib"
     if lib_root.is_dir():
@@ -4627,8 +4637,9 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
                 errors.append(
                     "H12 must expose exactly one implemented display switch"
                 )
+            # Decision 0281: `settings-language` is the device-local
+            # language picker now, pinned by `check_l10n_locale_contract`.
             for key in (
-                "settings-language",
                 "settings-display-currency",
                 "settings-theme",
             ):
@@ -6297,7 +6308,9 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
                 "'x-api-key'",
             ),
             "lib/integrations/backend/loop_backend_providers.dart": (
-                "LoopDioFactory.createLoopBackend(origin: endpoint.uri)",
+                # Decision 0281 added the Accept-Language source.
+                "LoopDioFactory.createLoopBackend(\n    origin: endpoint.uri,",
+                "acceptLanguage: () => LoopL10n.currentLocale.toLanguageTag()",
             ),
             "lib/integrations/hyperliquid/hyperliquid_http_providers.dart": (
                 "final hyperliquidPublicDioProvider = Provider<Dio>",
@@ -7336,7 +7349,8 @@ def require_fragments(root: Path, contracts: dict[str, tuple[str, ...]]) -> list
             continue
         text = read_text(path)
         for fragment in fragments:
-            if fragment not in text:
+            # Decision 0281: a locked Chinese phrase may live in ARB.
+            if not L10N_RULES.copy_present(root, text, fragment):
                 errors.append(f"{relative} is missing locked value `{fragment}`")
     return errors
 
@@ -9060,24 +9074,34 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             errors.append("LoopShell must retain one inspectable destination list")
         else:
             block = source[start:end]
+            # Decision 0281: the labels are ARB copy (`shell_tab*`, zh
+            # 聊天 / 广场 / 情报 / 我的); the list keeps the paths in order and
+            # `labelIn` maps each slug to its key.
             markers = (
-                ("'聊天'", "'/chat'"),
-                ("'广场'", "'/square'"),
-                ("'MEME'", "'/meme'"),
-                ("'情报'", "'/intel'"),
+                ("shell_tabChat", "chatPath", "聊天"),
+                ("shell_tabSquare", "'/square'", "广场"),
+                (None, "'/meme'", "MEME"),
+                ("shell_tabIntel", "'/intel'", "情报"),
                 # S343 · decision 0271: the 钱包 tab is 我的; path unchanged.
-                ("'我的'", "'/wallet'"),
+                ("shell_tabMe", "'/wallet'", "我的"),
             )
+            zh_copy, _ = L10N_RULES.arb_tables(root)
             positions: list[int] = []
-            for label, path in markers:
-                label_at = block.find(label)
-                path_at = block.find(path, label_at)
-                if label_at < 0 or path_at < 0:
+            for key, path, label in markers:
+                path_at = block.find(path)
+                if path_at < 0:
                     errors.append(
                         f"LoopShell must retain the V2 destination {label} at {path}"
                     )
-                else:
-                    positions.append(label_at)
+                    continue
+                positions.append(path_at)
+                if key is None:
+                    if f"=> '{label}'" not in source:
+                        errors.append(f"LoopShell must label {path} `{label}`")
+                elif f"l10n.{key}" not in source or zh_copy.get(key) != label:
+                    errors.append(
+                        f"LoopShell must label {path} with `{key}` = {label} (decision 0281)"
+                    )
             if len(positions) == len(markers) and positions != sorted(positions):
                 errors.append("LoopShell V2 destinations must retain their reviewed order")
             for forbidden in (
@@ -14429,8 +14453,8 @@ IA_SIGN_OUT_PAGES = (
     "lib/features/profile/profile_v2_screens.dart",
     "lib/features/profile/settings/settings_screen.dart",
 )
+# Decision 0281: 语言 left this list — it opens the language picker.
 IA_SETTINGS_READ_ONLY_KEYS = (
-    "settings-language",
     "settings-display-currency",
     "settings-theme",
 )
@@ -15498,7 +15522,7 @@ PRESS_HAPTICS_TEST_MARKERS = {
         "choosing a segment plays a selection; re-choosing does not",
         "a pull plays one light touch when it is far enough to refresh",
         "a draggable sheet draws a handle and closes on a downward drag",
-        "system controls speak Chinese",
+        "system controls speak the app language",  # decision 0281
         "shared controls meet the tap target guidelines",
         "the wallet round key shows a pressed state",
     ),
@@ -15632,22 +15656,39 @@ def check_press_haptics_contract(root: Path) -> list[str]:
                 "(`splashFactory: NoSplash.splashFactory`, decision 0130)"
             )
 
-    # Rule 12: the system controls speak the application's one language.
+    # Rule 12: the system controls speak the application's language.
+    # Decision 0281 retired 0130's one fixed zh-CN: the locale is the
+    # reader's pick (English by default) and every delegate follows it.
     application = root / "lib/app.dart"
     if application.is_file():
         text = strip_dart_comments(read_text(application))
         for fragment in (
+            "LoopL10n.delegate",
             "GlobalMaterialLocalizations.delegate",
             "GlobalCupertinoLocalizations.delegate",
             "GlobalWidgetsLocalizations.delegate",
-            "Locale('zh', 'CN')",
-            "locale: loopAppLocale",
-            "supportedLocales: const <Locale>[loopAppLocale]",
+            "ref.watch(loopLocaleProvider)",
+            "locale: locale",
+            "supportedLocales: LoopL10n.supportedLocales",
         ):
             if fragment not in text:
                 errors.append(
-                    "lib/app.dart must install Chinese system localizations "
-                    f"(`{fragment}`, decision 0130)"
+                    "lib/app.dart must install the reader's system localizations "
+                    f"(`{fragment}`, decisions 0130 / 0281)"
+                )
+    l10n = root / "lib/l10n/loop_l10n.dart"
+    if l10n.is_file():
+        text = strip_dart_comments(read_text(l10n))
+        for fragment in (
+            "static const Locale fallbackLocale = english;",
+            "static const Locale english = Locale('en');",
+            "static const Locale simplifiedChinese = Locale('zh', 'CN');",
+        ):
+            if fragment not in text:
+                errors.append(
+                    "lib/l10n/loop_l10n.dart must keep English as the default "
+                    f"and Simplified Chinese as the other language (`{fragment}`, "
+                    "decision 0281)"
                 )
 
     for path in sorted(lib.rglob("*.dart")):
@@ -15792,6 +15833,13 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_flat_family_contract(root))  # S186-5
     errors.extend(check_family_guard_contract(root))  # S186-7
     errors.extend(check_type_ladder_contract(root))  # S197-1
+    # Decision 0281: copy reads from ARB; English default, zh on request.
+    errors.extend(
+        L10N_RULES.check_no_hardcoded_cjk(
+            root, COPY_INTERNAL_VOCABULARY, COPY_STEP_ID
+        )
+    )
+    errors.extend(L10N_RULES.check_l10n_locale_contract(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -16303,7 +16351,7 @@ def main() -> int:
         "declared light grounds, pages mounted under the product theme, "
         "armed page ground probe, watched self-mounted pages, "
         "plate-free launch icon, glyph-only top-bar actions, "
-        "one haptics owner, pressed states, Chinese system controls, one toast, "
+        "one haptics owner, pressed states, system controls in the reader's language, one toast, "
         "native money forms with one sheet surface and no hero on tool pages, "
         "confirmed sign-out, one entry per destination, stated values, "
         "a full-screen scanner, explanations behind (i), portrait iOS, "
@@ -16315,6 +16363,7 @@ def main() -> int:
         "flat second-level pages and a v1-free voice / community / social family, "  # S186-5
         "token-only feature corners, no v1 accent and no new v1 widget, "  # S186-7
         "a final type ladder with no off-ladder size and an 11px floor, "  # S197-1
+        "copy read from ARB with English as the default language, "  # S354
         "and secret rules are consistent."
     )
     return 0

@@ -159,7 +159,7 @@ void main() {
 
     // S343 · decision 0271: 我 is the 我的 tab; 退出登录 lives behind its
     // gear, on 设置.
-    await tester.tap(find.widgetWithText(LoopTabItem, '我的'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Me'));
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey<String>('profile-open-settings')),

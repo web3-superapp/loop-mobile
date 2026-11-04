@@ -161,6 +161,33 @@ void main() {
       },
     );
 
+    test('backend client sends the app language on every request', () async {
+      var language = 'en';
+      final client = LoopDioFactory.createLoopBackend(
+        origin: Uri.parse('https://api.example.com/'),
+        acceptLanguage: () => language,
+      );
+      addTearDown(() => client.close(force: true));
+      final dispatched = <RequestOptions>[];
+      _resolveRequests(client, dispatched);
+
+      await client.get<Object?>('/v2/meta');
+      language = 'zh-CN';
+      await client.get<Object?>('/v2/meta');
+      await client.get<Object?>(
+        '/v2/meta',
+        options: Options(
+          headers: const <String, String>{'accept-language': 'fr'},
+        ),
+      );
+
+      // Dio's header map ignores case: the request's own value is kept.
+      expect(
+        dispatched.map((options) => options.headers['Accept-Language']),
+        <Object?>['en', 'zh-CN', 'fr'],
+      );
+    });
+
     test('backend client rejects persistent authorization defaults', () async {
       final client = LoopDioFactory.createLoopBackend(
         origin: Uri.parse('https://api.example.com/'),

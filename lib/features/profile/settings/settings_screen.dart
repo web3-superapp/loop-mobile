@@ -3,17 +3,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/app/loop_locale.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/features/profile/settings/language_sheet.dart';
 import 'package:loop_mobile/features/profile/settings/settings_controller.dart';
 import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
 import 'package:loop_mobile/features/profile/sign_out_button.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -61,24 +64,30 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
     }
     final settings = state.value;
     final preferences = ref.watch(loopDisplayPreferencesProvider);
+    final locale = ref.watch(loopLocaleProvider);
     final persistenceDetail = switch (preferences.persistence) {
-      LoopDisplayPreferencesPersistence.available => '只保存在本机，不写入账号，也不调用后端',
-      LoopDisplayPreferencesPersistence.saving => '已生效，正在保存到本机',
-      LoopDisplayPreferencesPersistence.unavailable => '本次运行内生效；本机保存当前不可用',
+      LoopDisplayPreferencesPersistence.available =>
+        context.l10n.profileSettings_displaySavedLocally,
+      LoopDisplayPreferencesPersistence.saving =>
+        context.l10n.profileSettings_displaySaving,
+      LoopDisplayPreferencesPersistence.unavailable =>
+        context.l10n.profileSettings_displaySessionOnly,
     };
 
     final appLock = ref.watch(loopAppLockProvider);
     final appLockLabel = appLock.busy
-        ? '验证中…'
+        ? context.l10n.common_verifying
         : !appLock.isAvailable
-        ? '不可用'
+        ? context.l10n.common_unavailable
         : appLock.enabled
-        ? '已开启'
-        : '已关闭';
+        ? context.l10n.common_on
+        : context.l10n.profileSettings_appLockOff;
     final appLockDetail = appLock.capability == null
-        ? '还没有读到这台设备的锁屏能力'
+        ? context.l10n.profileSettings_appLockCapabilityUnknown
         : appLock.enabled && !appLock.persisted
-        ? '${loopAppLockFactorText(appLock.capability!)} · 这次有效，重开 App 后不会记得'
+        ? context.l10n.profileSettings_appLockNotPersisted(
+            loopAppLockFactorText(appLock.capability!),
+          )
         : loopAppLockFactorText(appLock.capability!);
 
     // The one implemented display switch; the row and its switch share it.
@@ -91,7 +100,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
       child: LoopDashboardPage(
         key: const ValueKey<String>('settings-screen'),
         archetype: LoopPageArchetype.action,
-        title: '设置',
+        title: context.l10n.common_settings,
         onBack: widget.onBack,
         // The prototype opens straight on 通用. A hero here restated the page
         // title as its own heading — 「设置」 above 「设置」 (audit 2026-09-21
@@ -100,11 +109,11 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
           // S343 · decision 0271: 隐私与安全, 通用, 关于 and 退出登录. The
           // account rows moved to 我的; 分享名片 is on its identity card.
           ProfileSettingsEntries(onNavigate: widget.onNavigate),
-          const LoopLabel('通用'),
+          LoopLabel(context.l10n.profileSettings_general),
           if (blocked)
             LoopUnavailableLine(
               key: const ValueKey<String>('settings-capability-block'),
-              label: '账号设置当前不可用',
+              label: context.l10n.profileSettings_capabilityBlocked,
               reasonCode:
                   capability.reasonCode ?? 'SETTINGS_RUNTIME_UNAVAILABLE',
             )
@@ -113,7 +122,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               keyPrefix: 'settings',
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: '还没有账号设置',
+              emptyMessage: context.l10n.profileSettings_empty,
               onRetry: () => unawaited(
                 ref.read(accountSettingsControllerProvider.notifier).reload(),
               ),
@@ -128,33 +137,33 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
           // half of the page answered.
           LoopRecordGroup(
             rows: <LoopRecordRow>[
-              if (settings != null) ...<LoopRecordRow>[
-                LoopRecordRow(
-                  key: const ValueKey<String>('settings-language'),
-                  title: '语言',
-                  trailing: settings.values.languageLabel,
-                  readOnly: true,
-                  position: LoopRowPosition.first,
-                ),
+              // Decision 0281: the application language is this
+              // installation's choice, read from the device, not the account
+              // value the server publishes; it stays whatever the account
+              // half of the page answered.
+              LoopRecordRow(
+                key: const ValueKey<String>('settings-language'),
+                title: context.l10n.common_language,
+                trailing: LoopL10n.nativeName(locale),
+                onTap: () => unawaited(showLoopLanguageSheet(context)),
+                position: LoopRowPosition.first,
+              ),
+              if (settings != null)
                 LoopRecordRow(
                   key: const ValueKey<String>('settings-display-currency'),
-                  title: '货币单位',
+                  title: context.l10n.profileSettings_currency,
                   trailing: settings.values.displayCurrency,
                   readOnly: true,
                 ),
-              ],
               LoopRecordRow(
                 key: const ValueKey<String>('settings-theme'),
-                title: '主题',
-                trailing: '深色',
+                title: context.l10n.profileSettings_theme,
+                trailing: context.l10n.profileSettings_themeDark,
                 readOnly: true,
-                position: settings == null
-                    ? LoopRowPosition.first
-                    : LoopRowPosition.middle,
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('settings-reduce-motion'),
-                title: '减少动效',
+                title: context.l10n.profileSettings_reduceMotion,
                 // The storage line is only news when it is not the usual one.
                 subtitle:
                     preferences.persistence ==
@@ -167,8 +176,12 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
                 ),
                 chevron: false,
                 onTap: toggleReduceMotion,
-                semanticLabel:
-                    '减少动效，${preferences.reduceMotion ? '已开启' : '已关闭'}',
+                semanticLabel: context.l10n
+                    .profileSettings_reduceMotionSemantic(
+                      preferences.reduceMotion
+                          ? context.l10n.common_on
+                          : context.l10n.profileSettings_appLockOff,
+                    ),
               ),
               // The device-local lock belongs beside 减少动效: it is this
               // installation's choice, it reads no account resource, and the
@@ -176,7 +189,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               // with it. The prototype's three groups stay three.
               LoopRecordRow(
                 key: const ValueKey<String>('settings-app-lock'),
-                title: '应用锁',
+                title: context.l10n.profileSettings_appLock,
                 subtitle: appLockDetail,
                 subtitleMaxLines: 2,
                 trailingBadge: appLock.isAvailable && !appLock.busy
@@ -205,8 +218,10 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
                       )
                     : null,
                 semanticLabel: appLock.isAvailable
-                    ? '应用锁，$appLockLabel，点按后验证身份可切换'
-                    : '应用锁，不可用：$appLockDetail',
+                    ? context.l10n.profileSettings_appLockSemantic(appLockLabel)
+                    : context.l10n.profileSettings_appLockUnavailableSemantic(
+                        appLockDetail,
+                      ),
                 position: LoopRowPosition.last,
               ),
             ],
@@ -218,7 +233,9 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
             key: const ValueKey<String>('settings-fixed-values-note'),
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: Text(
-              settings == null ? '主题在当前版本固定，不能更改。' : '语言、货币单位与主题在当前版本固定，不能更改。',
+              settings == null
+                  ? context.l10n.profileSettings_fixedThemeNote
+                  : context.l10n.profileSettings_fixedValuesNote,
               style: LoopType.caption,
             ),
           ),
@@ -230,8 +247,8 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               ),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '本机保存不可用',
-              body: '减少动效仍会在本次运行内生效。重试只会再读一次本机存储，不会使用账号或后端。',
+              title: context.l10n.profileSettings_storageUnavailableTitle,
+              body: context.l10n.profileSettings_storageUnavailableBody,
               margin: const EdgeInsets.fromLTRB(
                 LoopSpacing.page,
                 12,
@@ -240,7 +257,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               ),
               trailing: LoopButton(
                 key: const ValueKey<String>('settings-retry-display-storage'),
-                label: '重试',
+                label: context.l10n.common_retry,
                 onPressed: ref
                     .read(loopDisplayPreferencesProvider.notifier)
                     .retryPersistence,
@@ -249,18 +266,18 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
           // Decision 0133 (audit m9): a destination has one entry per hub.
           // 隐私中心, 安全中心 and 通知设置 are rows of
           // [ProfileSettingsEntries] above.
-          const LoopLabel('关于'),
+          LoopLabel(context.l10n.common_aboutSection),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('settings-open-about'),
-                title: '关于与法务',
+                title: context.l10n.profileSettings_aboutAndLegal,
                 onTap: () => widget.onNavigate('about'),
                 position: LoopRowPosition.first,
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('settings-open-support'),
-                title: '帮助与客服',
+                title: context.l10n.profileSettings_helpAndSupport,
                 onTap: () => widget.onNavigate('support'),
                 position: LoopRowPosition.last,
               ),
@@ -274,8 +291,10 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               // 「尚未写入过」 named a row in a table rather than anything the
               // reader did or did not do.
               text: settings.updatedAt == null
-                  ? '当前使用默认设置'
-                  : '更新于 ${loopRelativeTime(settings.updatedAt!)}',
+                  ? context.l10n.profileSettings_usingDefaults
+                  : context.l10n.profileSettings_updatedAt(
+                      loopRelativeTime(settings.updatedAt!),
+                    ),
             ),
           if (widget.onSignOut != null)
             LoopSignOutButton(

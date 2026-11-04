@@ -1,0 +1,1312 @@
+{
+  "@@locale": "en",
+  "betaFeedback_cameraFailed": "Couldn't open the camera",
+  "@betaFeedback_cameraFailed": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94"
+  },
+  "betaFeedback_categoryOther": "Other",
+  "@betaFeedback_categoryOther": {
+    "description": "lib/features/beta_feedback/beta_feedback_models.dart:13"
+  },
+  "betaFeedback_categorySuggestion": "Suggestion",
+  "@betaFeedback_categorySuggestion": {
+    "description": "lib/features/beta_feedback/beta_feedback_models.dart:12"
+  },
+  "betaFeedback_copyBootstrapRequired": "Your account isn't set up yet. Try again later.",
+  "@betaFeedback_copyBootstrapRequired": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:20"
+  },
+  "betaFeedback_copyLoadFailed": "Couldn't load feedback. Try again later.",
+  "@betaFeedback_copyLoadFailed": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:22"
+  },
+  "betaFeedback_copyLoadMalformed": "The response was incomplete.",
+  "@betaFeedback_copyLoadMalformed": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:21"
+  },
+  "betaFeedback_copyLoadOffline": "No network; couldn't load feedback.",
+  "@betaFeedback_copyLoadOffline": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:11"
+  },
+  "betaFeedback_copyRateLimited": "Too many submissions. Try again later.",
+  "@betaFeedback_copyRateLimited": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:18"
+  },
+  "betaFeedback_copyRegionBlocked": "This account can't send feedback.",
+  "@betaFeedback_copyRegionBlocked": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:17"
+  },
+  "betaFeedback_copySubmissionUnknown": "The result isn't confirmed. Submitting again won't create a duplicate.",
+  "@betaFeedback_copySubmissionUnknown": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:14"
+  },
+  "betaFeedback_copySubmitFailed": "Feedback wasn't sent. Try again later.",
+  "@betaFeedback_copySubmitFailed": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:22"
+  },
+  "betaFeedback_copySubmitMalformed": "The response was incomplete; the result isn't confirmed.",
+  "@betaFeedback_copySubmitMalformed": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:21"
+  },
+  "betaFeedback_copySubmitOffline": "No network; feedback wasn't sent.",
+  "@betaFeedback_copySubmitOffline": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:11"
+  },
+  "betaFeedback_copyUnavailable": "Feedback isn't available right now.",
+  "@betaFeedback_copyUnavailable": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:15"
+  },
+  "betaFeedback_copyValidationFailed": "The text or images don't meet the requirements. Edit them and try again.",
+  "@betaFeedback_copyValidationFailed": {
+    "description": "lib/features/beta_feedback/beta_feedback_copy.dart:19"
+  },
+  "betaFeedback_description": "Description",
+  "@betaFeedback_description": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:172"
+  },
+  "betaFeedback_envDevice": "Device",
+  "@betaFeedback_envDevice": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:413"
+  },
+  "betaFeedback_envPage": "Page",
+  "@betaFeedback_envPage": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:415"
+  },
+  "betaFeedback_envSystem": "OS",
+  "@betaFeedback_envSystem": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:414"
+  },
+  "betaFeedback_envVersion": "Version",
+  "@betaFeedback_envVersion": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:408"
+  },
+  "betaFeedback_environment": "Environment",
+  "@betaFeedback_environment": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:199"
+  },
+  "betaFeedback_feedback": "Feedback",
+  "@betaFeedback_feedback": {
+    "description": "lib/features/beta_feedback/beta_feedback_entry.dart:83, lib/features/beta_feedback/beta_feedback_screen.dart:137"
+  },
+  "betaFeedback_imageLimit": "Up to {maximumImages} images",
+  "@betaFeedback_imageLimit": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:79",
+    "placeholders": {
+      "maximumImages": {
+        "type": "Object?"
+      }
+    }
+  },
+  "betaFeedback_imageUnusable": "Some images can't be used",
+  "@betaFeedback_imageUnusable": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:83"
+  },
+  "betaFeedback_images": "Images",
+  "@betaFeedback_images": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:188"
+  },
+  "betaFeedback_mineEmpty": "No feedback yet",
+  "@betaFeedback_mineEmpty": {
+    "description": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:86"
+  },
+  "betaFeedback_mineErrorTitle": "Couldn't load feedback",
+  "@betaFeedback_mineErrorTitle": {
+    "description": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:128"
+  },
+  "betaFeedback_minePermissionTitle": "No permission",
+  "@betaFeedback_minePermissionTitle": {
+    "description": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:122"
+  },
+  "betaFeedback_mineTitle": "My feedback",
+  "@betaFeedback_mineTitle": {
+    "description": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:61, lib/features/beta_feedback/beta_feedback_screen.dart:144"
+  },
+  "betaFeedback_mineUnavailableMessage": "Feedback history can't be loaded right now.",
+  "@betaFeedback_mineUnavailableMessage": {
+    "description": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:71"
+  },
+  "betaFeedback_mineUnavailableTitle": "Feedback isn't available",
+  "@betaFeedback_mineUnavailableTitle": {
+    "description": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:70, lib/features/beta_feedback/beta_feedback_screen.dart:151"
+  },
+  "betaFeedback_noCameraAccess": "No camera access",
+  "@betaFeedback_noCameraAccess": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:89"
+  },
+  "betaFeedback_noPhotoAccess": "No photo access",
+  "@betaFeedback_noPhotoAccess": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:89"
+  },
+  "betaFeedback_notSent": "Not sent",
+  "@betaFeedback_notSent": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:112, lib/features/beta_feedback/beta_feedback_screen.dart:206"
+  },
+  "betaFeedback_photos": "Photos",
+  "@betaFeedback_photos": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:258"
+  },
+  "betaFeedback_photosFailed": "Couldn't open Photos",
+  "@betaFeedback_photosFailed": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:90, lib/features/beta_feedback/beta_feedback_screen.dart:94"
+  },
+  "betaFeedback_removeImage": "Remove image",
+  "@betaFeedback_removeImage": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:315"
+  },
+  "betaFeedback_send": "Send feedback",
+  "@betaFeedback_send": {
+    "description": "lib/features/beta_feedback/beta_feedback_mine_screen.dart:116"
+  },
+  "betaFeedback_statusOpen": "Open",
+  "@betaFeedback_statusOpen": {
+    "description": "lib/features/beta_feedback/beta_feedback_models.dart:29"
+  },
+  "betaFeedback_statusResolved": "Resolved",
+  "@betaFeedback_statusResolved": {
+    "description": "lib/features/beta_feedback/beta_feedback_models.dart:31"
+  },
+  "betaFeedback_statusWontFix": "Won't fix",
+  "@betaFeedback_statusWontFix": {
+    "description": "lib/features/beta_feedback/beta_feedback_models.dart:32"
+  },
+  "betaFeedback_takePhoto": "Take photo",
+  "@betaFeedback_takePhoto": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:264"
+  },
+  "betaFeedback_unavailableMessage": "Feedback can't be sent right now.",
+  "@betaFeedback_unavailableMessage": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:152"
+  },
+  "betaFeedback_uploading": "Uploading images {uploaded} / {images}",
+  "@betaFeedback_uploading": {
+    "description": "lib/features/beta_feedback/beta_feedback_screen.dart:129",
+    "placeholders": {
+      "images": {
+        "type": "Object?"
+      },
+      "uploaded": {
+        "type": "Object?"
+      }
+    }
+  },
+  "common_about": "Notes",
+  "@common_about": {
+    "description": "common"
+  },
+  "common_aboutSection": "About",
+  "@common_aboutSection": {
+    "description": "common"
+  },
+  "common_actionIncomplete": "The action didn't finish.",
+  "@common_actionIncomplete": {
+    "description": "common"
+  },
+  "common_actions": "Actions",
+  "@common_actions": {
+    "description": "common"
+  },
+  "common_all": "All",
+  "@common_all": {
+    "description": "common"
+  },
+  "common_amount": "Amount",
+  "@common_amount": {
+    "description": "common"
+  },
+  "common_assets": "Assets",
+  "@common_assets": {
+    "description": "common"
+  },
+  "common_awaitingSignature": "Awaiting signature",
+  "@common_awaitingSignature": {
+    "description": "common"
+  },
+  "common_back": "Back",
+  "@common_back": {
+    "description": "common"
+  },
+  "common_blockList": "Block list",
+  "@common_blockList": {
+    "description": "common"
+  },
+  "common_bridge": "Bridge",
+  "@common_bridge": {
+    "description": "common"
+  },
+  "common_broadcast": "Broadcast",
+  "@common_broadcast": {
+    "description": "common"
+  },
+  "common_buy": "Buy",
+  "@common_buy": {
+    "description": "common"
+  },
+  "common_cancel": "Cancel",
+  "@common_cancel": {
+    "description": "common"
+  },
+  "common_cancelled": "Cancelled",
+  "@common_cancelled": {
+    "description": "common"
+  },
+  "common_chart": "Chart",
+  "@common_chart": {
+    "description": "common"
+  },
+  "common_chat": "Chat",
+  "@common_chat": {
+    "description": "common"
+  },
+  "common_claim": "Claim",
+  "@common_claim": {
+    "description": "common"
+  },
+  "common_close": "Close",
+  "@common_close": {
+    "description": "common"
+  },
+  "common_community": "Community",
+  "@common_community": {
+    "description": "common"
+  },
+  "common_confirm": "Confirm",
+  "@common_confirm": {
+    "description": "common"
+  },
+  "common_confirmed": "Confirmed",
+  "@common_confirmed": {
+    "description": "common"
+  },
+  "common_continueAction": "Continue",
+  "@common_continueAction": {
+    "description": "common"
+  },
+  "common_contract": "Contract",
+  "@common_contract": {
+    "description": "common"
+  },
+  "common_copied": "Copied",
+  "@common_copied": {
+    "description": "common"
+  },
+  "common_copy": "Copy",
+  "@common_copy": {
+    "description": "common"
+  },
+  "common_dataSource": "Data source",
+  "@common_dataSource": {
+    "description": "common"
+  },
+  "common_dataUnavailable": "Data unavailable",
+  "@common_dataUnavailable": {
+    "description": "common"
+  },
+  "common_delete": "Delete",
+  "@common_delete": {
+    "description": "common"
+  },
+  "common_demoData": "Demo data",
+  "@common_demoData": {
+    "description": "common"
+  },
+  "common_details": "Details",
+  "@common_details": {
+    "description": "common"
+  },
+  "common_devPreview": "Development preview",
+  "@common_devPreview": {
+    "description": "common"
+  },
+  "common_directMessage": "Direct message",
+  "@common_directMessage": {
+    "description": "common"
+  },
+  "common_disconnected": "Disconnected",
+  "@common_disconnected": {
+    "description": "common"
+  },
+  "common_done": "Done",
+  "@common_done": {
+    "description": "common"
+  },
+  "common_draft": "Draft",
+  "@common_draft": {
+    "description": "common"
+  },
+  "common_edit": "Edit",
+  "@common_edit": {
+    "description": "common"
+  },
+  "common_ended": "Ended",
+  "@common_ended": {
+    "description": "common"
+  },
+  "common_estimatedReceive": "Estimated to receive",
+  "@common_estimatedReceive": {
+    "description": "common"
+  },
+  "common_exit": "Exit",
+  "@common_exit": {
+    "description": "common"
+  },
+  "common_expired": "Expired",
+  "@common_expired": {
+    "description": "common"
+  },
+  "common_failed": "Failed",
+  "@common_failed": {
+    "description": "common"
+  },
+  "common_feed": "Feed",
+  "@common_feed": {
+    "description": "common"
+  },
+  "common_follow": "Follow",
+  "@common_follow": {
+    "description": "common"
+  },
+  "common_followers": "Followers",
+  "@common_followers": {
+    "description": "common"
+  },
+  "common_following": "Following",
+  "@common_following": {
+    "description": "common"
+  },
+  "common_gotIt": "Got it",
+  "@common_gotIt": {
+    "description": "common"
+  },
+  "common_graduate": "Graduate",
+  "@common_graduate": {
+    "description": "common"
+  },
+  "common_graduated": "Graduated",
+  "@common_graduated": {
+    "description": "common"
+  },
+  "common_groupChat": "Group chat",
+  "@common_groupChat": {
+    "description": "common"
+  },
+  "common_holders": "Holders",
+  "@common_holders": {
+    "description": "common"
+  },
+  "common_holdings": "Holdings",
+  "@common_holdings": {
+    "description": "common"
+  },
+  "common_inProgress": "In progress",
+  "@common_inProgress": {
+    "description": "common"
+  },
+  "common_inReview": "In review",
+  "@common_inReview": {
+    "description": "common"
+  },
+  "common_itemUnavailable": "This item can't be loaded right now.",
+  "@common_itemUnavailable": {
+    "description": "common"
+  },
+  "common_joining": "Joining…",
+  "@common_joining": {
+    "description": "common"
+  },
+  "common_justNow": "Just now",
+  "@common_justNow": {
+    "description": "common"
+  },
+  "common_language": "Language",
+  "@common_language": {
+    "description": "common"
+  },
+  "common_lastActionIncomplete": "The last action didn't finish",
+  "@common_lastActionIncomplete": {
+    "description": "common"
+  },
+  "common_launchpad": "Launchpad",
+  "@common_launchpad": {
+    "description": "common"
+  },
+  "common_learnMore": "Learn more",
+  "@common_learnMore": {
+    "description": "common"
+  },
+  "common_link": "Link",
+  "@common_link": {
+    "description": "common"
+  },
+  "common_linkCopied": "Link copied",
+  "@common_linkCopied": {
+    "description": "common"
+  },
+  "common_liquidity": "Liquidity",
+  "@common_liquidity": {
+    "description": "common"
+  },
+  "common_listSeparator": ", ",
+  "@common_listSeparator": {
+    "description": "common: joins the parts of one screen-reader label"
+  },
+  "common_loading": "Loading",
+  "@common_loading": {
+    "description": "common"
+  },
+  "common_loadingEllipsis": "Loading…",
+  "@common_loadingEllipsis": {
+    "description": "common"
+  },
+  "common_market": "Market",
+  "@common_market": {
+    "description": "common"
+  },
+  "common_marketCap": "Market cap",
+  "@common_marketCap": {
+    "description": "common"
+  },
+  "common_me": "Me",
+  "@common_me": {
+    "description": "common"
+  },
+  "common_members": "Members",
+  "@common_members": {
+    "description": "common"
+  },
+  "common_messageRequests": "Message requests",
+  "@common_messageRequests": {
+    "description": "common"
+  },
+  "common_minimumReceive": "Minimum received",
+  "@common_minimumReceive": {
+    "description": "common"
+  },
+  "common_mining": "Mining",
+  "@common_mining": {
+    "description": "common"
+  },
+  "common_more": "More",
+  "@common_more": {
+    "description": "common"
+  },
+  "common_mute": "Mute",
+  "@common_mute": {
+    "description": "common"
+  },
+  "common_muted": "Muted",
+  "@common_muted": {
+    "description": "common"
+  },
+  "common_name": "Name",
+  "@common_name": {
+    "description": "common"
+  },
+  "common_network": "Network",
+  "@common_network": {
+    "description": "common"
+  },
+  "common_next": "Next",
+  "@common_next": {
+    "description": "common"
+  },
+  "common_nextPageFailed": "Couldn't load the next page",
+  "@common_nextPageFailed": {
+    "description": "common"
+  },
+  "common_noPermission": "This account doesn't have permission",
+  "@common_noPermission": {
+    "description": "common"
+  },
+  "common_noTradesYet": "No trades yet",
+  "@common_noTradesYet": {
+    "description": "common"
+  },
+  "common_none": "None",
+  "@common_none": {
+    "description": "common"
+  },
+  "common_normal": "Normal",
+  "@common_normal": {
+    "description": "common"
+  },
+  "common_notConfigured": "Not configured",
+  "@common_notConfigured": {
+    "description": "common"
+  },
+  "common_notOpenYet": "Not available yet",
+  "@common_notOpenYet": {
+    "description": "common"
+  },
+  "common_nothingHereYet": "Nothing here yet",
+  "@common_nothingHereYet": {
+    "description": "common"
+  },
+  "common_notificationSettings": "Notification settings",
+  "@common_notificationSettings": {
+    "description": "common"
+  },
+  "common_notifications": "Notifications",
+  "@common_notifications": {
+    "description": "common"
+  },
+  "common_ok": "OK",
+  "@common_ok": {
+    "description": "common"
+  },
+  "common_on": "On",
+  "@common_on": {
+    "description": "common"
+  },
+  "common_openSecurityCenter": "Go to Security Center",
+  "@common_openSecurityCenter": {
+    "description": "common"
+  },
+  "common_openSettings": "Open Settings",
+  "@common_openSettings": {
+    "description": "common"
+  },
+  "common_paused": "Paused",
+  "@common_paused": {
+    "description": "common"
+  },
+  "common_pay": "Pay",
+  "@common_pay": {
+    "description": "common"
+  },
+  "common_pendingConfirmation": "Pending confirmation",
+  "@common_pendingConfirmation": {
+    "description": "common"
+  },
+  "common_power": "Power",
+  "@common_power": {
+    "description": "common"
+  },
+  "common_priceAlerts": "Price alerts",
+  "@common_priceAlerts": {
+    "description": "common"
+  },
+  "common_profile": "Profile",
+  "@common_profile": {
+    "description": "common"
+  },
+  "common_receive": "Receive",
+  "@common_receive": {
+    "description": "common"
+  },
+  "common_refresh": "Refresh",
+  "@common_refresh": {
+    "description": "common"
+  },
+  "common_rejected": "Rejected",
+  "@common_rejected": {
+    "description": "common"
+  },
+  "common_reload": "Reload",
+  "@common_reload": {
+    "description": "common"
+  },
+  "common_report": "Report",
+  "@common_report": {
+    "description": "common"
+  },
+  "common_retry": "Retry",
+  "@common_retry": {
+    "description": "common"
+  },
+  "common_reverted": "Reverted",
+  "@common_reverted": {
+    "description": "common"
+  },
+  "common_save": "Save",
+  "@common_save": {
+    "description": "common"
+  },
+  "common_scan": "Scan",
+  "@common_scan": {
+    "description": "common"
+  },
+  "common_search": "Search",
+  "@common_search": {
+    "description": "common"
+  },
+  "common_security": "Security",
+  "@common_security": {
+    "description": "common"
+  },
+  "common_securityCenter": "Security Center",
+  "@common_securityCenter": {
+    "description": "common"
+  },
+  "common_sell": "Sell",
+  "@common_sell": {
+    "description": "common"
+  },
+  "common_send": "Send",
+  "@common_send": {
+    "description": "common"
+  },
+  "common_settings": "Settings",
+  "@common_settings": {
+    "description": "common"
+  },
+  "common_share": "Share",
+  "@common_share": {
+    "description": "common"
+  },
+  "common_sign": "Sign",
+  "@common_sign": {
+    "description": "common"
+  },
+  "common_simulationPassed": "Simulation passed",
+  "@common_simulationPassed": {
+    "description": "common"
+  },
+  "common_simulationRejected": "Simulation rejected",
+  "@common_simulationRejected": {
+    "description": "common"
+  },
+  "common_simulationResult": "Simulation result",
+  "@common_simulationResult": {
+    "description": "common"
+  },
+  "common_simulationUnavailable": "Simulation unavailable",
+  "@common_simulationUnavailable": {
+    "description": "common"
+  },
+  "common_slippageLimit": "Slippage limit",
+  "@common_slippageLimit": {
+    "description": "common"
+  },
+  "common_snapshotBlock": "Snapshot block",
+  "@common_snapshotBlock": {
+    "description": "common"
+  },
+  "common_submit": "Submit",
+  "@common_submit": {
+    "description": "common"
+  },
+  "common_submitted": "Submitted",
+  "@common_submitted": {
+    "description": "common"
+  },
+  "common_submitting": "Submitting",
+  "@common_submitting": {
+    "description": "common"
+  },
+  "common_success": "Success",
+  "@common_success": {
+    "description": "common"
+  },
+  "common_swap": "Swap",
+  "@common_swap": {
+    "description": "common"
+  },
+  "common_today": "Today",
+  "@common_today": {
+    "description": "common"
+  },
+  "common_token": "Token",
+  "@common_token": {
+    "description": "common"
+  },
+  "common_tokenApprovals": "Token approvals",
+  "@common_tokenApprovals": {
+    "description": "common"
+  },
+  "common_totalSupply": "Total supply",
+  "@common_totalSupply": {
+    "description": "common"
+  },
+  "common_trade": "Trade",
+  "@common_trade": {
+    "description": "common"
+  },
+  "common_unavailable": "Unavailable",
+  "@common_unavailable": {
+    "description": "common"
+  },
+  "common_unknown": "Unknown",
+  "@common_unknown": {
+    "description": "common"
+  },
+  "common_unmute": "Unmute",
+  "@common_unmute": {
+    "description": "common"
+  },
+  "common_unread": "Unread",
+  "@common_unread": {
+    "description": "common"
+  },
+  "common_uploading": "Uploading…",
+  "@common_uploading": {
+    "description": "common"
+  },
+  "common_user": "User",
+  "@common_user": {
+    "description": "common"
+  },
+  "common_validUntil": "Valid until",
+  "@common_validUntil": {
+    "description": "common"
+  },
+  "common_verifying": "Verifying…",
+  "@common_verifying": {
+    "description": "common"
+  },
+  "common_voiceRooms": "Voice rooms",
+  "@common_voiceRooms": {
+    "description": "common"
+  },
+  "common_waitingForData": "Waiting for data",
+  "@common_waitingForData": {
+    "description": "common"
+  },
+  "common_watchlist": "Watchlist",
+  "@common_watchlist": {
+    "description": "common"
+  },
+  "notifications_applicationNoReason": "No reason was given. Edit the community profile and submit again.",
+  "@notifications_applicationNoReason": {
+    "description": "lib/features/notifications/community_application_notifications.dart:93"
+  },
+  "notifications_applicationReason": "Reason: {reason}",
+  "@notifications_applicationReason": {
+    "description": "lib/features/notifications/community_application_notifications.dart:93",
+    "placeholders": {
+      "reason": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_applicationRejected": "{subject} wasn't approved",
+  "@notifications_applicationRejected": {
+    "description": "lib/features/notifications/community_application_notifications.dart:85",
+    "placeholders": {
+      "subject": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_applicationSubject": "Your community",
+  "@notifications_applicationSubject": {
+    "description": "lib/features/notifications/community_application_notifications.dart:82"
+  },
+  "notifications_applicationSubjectNamed": "Your community \"{communityName}\"",
+  "@notifications_applicationSubjectNamed": {
+    "description": "lib/features/notifications/community_application_notifications.dart:82",
+    "placeholders": {
+      "communityName": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_applicationVerified": "{subject} was approved",
+  "@notifications_applicationVerified": {
+    "description": "lib/features/notifications/community_application_notifications.dart:84",
+    "placeholders": {
+      "subject": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_applicationVerifiedBody": "The verified badge is showing; mining weight and the official group are open.",
+  "@notifications_applicationVerifiedBody": {
+    "description": "lib/features/notifications/community_application_notifications.dart:91"
+  },
+  "notifications_badgeMinted": "Consensus badge minted",
+  "@notifications_badgeMinted": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:280"
+  },
+  "notifications_bellUnread": "Notifications, {label} unread",
+  "@notifications_bellUnread": {
+    "description": "lib/features/notifications/notification_bell.dart:60",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_categoryAnnouncement": "Announcements",
+  "@notifications_categoryAnnouncement": {
+    "description": "lib/features/notifications/notification_models.dart:19"
+  },
+  "notifications_categoryCommunityAll": "All messages",
+  "@notifications_categoryCommunityAll": {
+    "description": "lib/features/notifications/notification_models.dart:20"
+  },
+  "notifications_categoryCommunityAllDetail": "Best kept off for large groups",
+  "@notifications_categoryCommunityAllDetail": {
+    "description": "lib/features/notifications/notification_models.dart:20"
+  },
+  "notifications_categoryGraduation": "Graduations",
+  "@notifications_categoryGraduation": {
+    "description": "lib/features/notifications/notification_models.dart:15"
+  },
+  "notifications_categoryLaunchRound": "Eligibility snapshots and start reminders",
+  "@notifications_categoryLaunchRound": {
+    "description": "lib/features/notifications/notification_models.dart:14"
+  },
+  "notifications_categoryLaunchRoundDetail": "Includes consensus badges, launch review results and on-chain progress",
+  "@notifications_categoryLaunchRoundDetail": {
+    "description": "lib/features/notifications/notification_models.dart:14"
+  },
+  "notifications_categoryMention": "Mentions of me",
+  "@notifications_categoryMention": {
+    "description": "lib/features/notifications/notification_models.dart:18"
+  },
+  "notifications_categoryPriceAlertDetail": "When off, price alerts are still recorded but no notification is sent",
+  "@notifications_categoryPriceAlertDetail": {
+    "description": "lib/features/notifications/notification_models.dart:17"
+  },
+  "notifications_categorySecurityDetail": "Can't be turned off",
+  "@notifications_categorySecurityDetail": {
+    "description": "lib/features/notifications/notification_models.dart:21"
+  },
+  "notifications_categorySettlement": "Daily settlement complete",
+  "@notifications_categorySettlement": {
+    "description": "lib/features/notifications/notification_models.dart:9"
+  },
+  "notifications_categoryTradeResult": "Trade results",
+  "@notifications_categoryTradeResult": {
+    "description": "lib/features/notifications/notification_models.dart:16"
+  },
+  "notifications_categoryWeight": "Weight changes",
+  "@notifications_categoryWeight": {
+    "description": "lib/features/notifications/notification_models.dart:10"
+  },
+  "notifications_categoryWeightDetail": "When a held token's Mining Weight changes",
+  "@notifications_categoryWeightDetail": {
+    "description": "lib/features/notifications/notification_models.dart:10"
+  },
+  "notifications_deployFailed": "Deployment failed",
+  "@notifications_deployFailed": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:327"
+  },
+  "notifications_deviceSessionRevoked": "A device session was revoked",
+  "@notifications_deviceSessionRevoked": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:360"
+  },
+  "notifications_earlier": "Earlier",
+  "@notifications_earlier": {
+    "description": "lib/features/notifications/notification_inbox.dart:251"
+  },
+  "notifications_emptyMessage": "Token graduations, badge mints, friend requests and security alerts show up here.",
+  "@notifications_emptyMessage": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:134"
+  },
+  "notifications_emptyTitle": "No notifications yet",
+  "@notifications_emptyTitle": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:133"
+  },
+  "notifications_friendAccepted": "Friend request accepted",
+  "@notifications_friendAccepted": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:299"
+  },
+  "notifications_friendAcceptedBody": "You and {name} are now friends",
+  "@notifications_friendAcceptedBody": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:300",
+    "placeholders": {
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_friendRequest": "New friend request",
+  "@notifications_friendRequest": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:293"
+  },
+  "notifications_friendRequestBody": "{name} wants to add you as a friend",
+  "@notifications_friendRequestBody": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:294",
+    "placeholders": {
+      "name": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_graduated": "A project you joined graduated",
+  "@notifications_graduated": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:272"
+  },
+  "notifications_graduatedNamed": "{subject} graduated",
+  "@notifications_graduatedNamed": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:271",
+    "placeholders": {
+      "subject": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_launchApprovedBody": "Sign to deploy the launch",
+  "@notifications_launchApprovedBody": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:309"
+  },
+  "notifications_launchDeployFailed": "Launch deployment failed",
+  "@notifications_launchDeployFailed": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:327"
+  },
+  "notifications_launchOnChain": "Your launch is on-chain",
+  "@notifications_launchOnChain": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:321"
+  },
+  "notifications_launchReviewApproved": "Launch approved",
+  "@notifications_launchReviewApproved": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:308"
+  },
+  "notifications_launchReviewRejected": "Launch not approved",
+  "@notifications_launchReviewRejected": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:314"
+  },
+  "notifications_launchSaleStart": "Sale starts {saleStartAt}",
+  "@notifications_launchSaleStart": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:322",
+    "placeholders": {
+      "saleStartAt": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_onChain": "On-chain",
+  "@notifications_onChain": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:321"
+  },
+  "notifications_priceAlertBody": "Target {threshold} · Observed {observed}",
+  "@notifications_priceAlertBody": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:352",
+    "placeholders": {
+      "observed": {
+        "type": "Object?"
+      },
+      "threshold": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_priceAlertTriggered": "Price alert triggered",
+  "@notifications_priceAlertTriggered": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:347"
+  },
+  "notifications_priceAlertTriggeredNamed": "{symbol} price alert triggered",
+  "@notifications_priceAlertTriggeredNamed": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:347",
+    "placeholders": {
+      "symbol": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_readAll": "Mark all read",
+  "@notifications_readAll": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:106"
+  },
+  "notifications_readAllDone": "All marked as read",
+  "@notifications_readAllDone": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:203"
+  },
+  "notifications_readAllFailed": "Couldn't mark as read. Try again later",
+  "@notifications_readAllFailed": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:203"
+  },
+  "notifications_reviewApproved": "Approved",
+  "@notifications_reviewApproved": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:308"
+  },
+  "notifications_reviewRejected": "Not approved",
+  "@notifications_reviewRejected": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:314"
+  },
+  "notifications_securityEvent": "Security event",
+  "@notifications_securityEvent": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:361, lib/features/notifications/notification_models.dart:21"
+  },
+  "notifications_settingsSubtitle": "Choose which notifications you get",
+  "@notifications_settingsSubtitle": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:125"
+  },
+  "notifications_source": "Source: {factSourceLabel}",
+  "@notifications_source": {
+    "description": "lib/features/notifications/notification_models.dart:315",
+    "placeholders": {
+      "factSourceLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "notifications_unreadCount": "{unreadCount} unread",
+  "@notifications_unreadCount": {
+    "description": "lib/features/notifications/notification_inbox_screen.dart:99",
+    "placeholders": {
+      "unreadCount": {
+        "type": "Object?"
+      }
+    }
+  },
+  "profileSettings_aboutAndLegal": "About and legal",
+  "@profileSettings_aboutAndLegal": {
+    "description": "lib/features/profile/settings/settings_screen.dart:261"
+  },
+  "profileSettings_appLock": "App lock",
+  "@profileSettings_appLock": {
+    "description": "lib/features/profile/settings/settings_screen.dart:183"
+  },
+  "profileSettings_appLockCapabilityUnknown": "This device's screen lock hasn't been read yet",
+  "@profileSettings_appLockCapabilityUnknown": {
+    "description": "lib/features/profile/settings/settings_screen.dart:83"
+  },
+  "profileSettings_appLockNotPersisted": "{appLockFactorText} · Applies now; won't be remembered after the app restarts",
+  "@profileSettings_appLockNotPersisted": {
+    "description": "lib/features/profile/settings/settings_screen.dart:85",
+    "placeholders": {
+      "appLockFactorText": {
+        "type": "Object?"
+      }
+    }
+  },
+  "profileSettings_appLockOff": "Off",
+  "@profileSettings_appLockOff": {
+    "description": "lib/features/profile/settings/settings_screen.dart:81"
+  },
+  "profileSettings_appLockSemantic": "App lock, {appLockLabel}. Tap and verify to change",
+  "@profileSettings_appLockSemantic": {
+    "description": "lib/features/profile/settings/settings_screen.dart:212",
+    "placeholders": {
+      "appLockLabel": {
+        "type": "Object?"
+      }
+    }
+  },
+  "profileSettings_appLockUnavailableSemantic": "App lock, unavailable: {appLockDetail}",
+  "@profileSettings_appLockUnavailableSemantic": {
+    "description": "lib/features/profile/settings/settings_screen.dart:213",
+    "placeholders": {
+      "appLockDetail": {
+        "type": "Object?"
+      }
+    }
+  },
+  "profileSettings_capabilityBlocked": "Account settings aren't available right now",
+  "@profileSettings_capabilityBlocked": {
+    "description": "lib/features/profile/settings/settings_screen.dart:111"
+  },
+  "profileSettings_currency": "Currency",
+  "@profileSettings_currency": {
+    "description": "lib/features/profile/settings/settings_screen.dart:149"
+  },
+  "profileSettings_displaySavedLocally": "Saved on this device only; never written to your account or sent to the server",
+  "@profileSettings_displaySavedLocally": {
+    "description": "lib/features/profile/settings/settings_screen.dart:69"
+  },
+  "profileSettings_displaySaving": "Applied; saving to this device",
+  "@profileSettings_displaySaving": {
+    "description": "lib/features/profile/settings/settings_screen.dart:70"
+  },
+  "profileSettings_displaySessionOnly": "Applies for this session; saving on this device isn't available",
+  "@profileSettings_displaySessionOnly": {
+    "description": "lib/features/profile/settings/settings_screen.dart:71"
+  },
+  "profileSettings_empty": "No account settings yet",
+  "@profileSettings_empty": {
+    "description": "lib/features/profile/settings/settings_screen.dart:120"
+  },
+  "profileSettings_fixedThemeNote": "Theme is fixed in this version.",
+  "@profileSettings_fixedThemeNote": {
+    "description": "lib/features/profile/settings/settings_screen.dart:225"
+  },
+  "profileSettings_fixedValuesNote": "Currency and theme are fixed in this version.",
+  "@profileSettings_fixedValuesNote": {
+    "description": "lib/features/profile/settings/settings_screen.dart:225"
+  },
+  "profileSettings_general": "General",
+  "@profileSettings_general": {
+    "description": "lib/features/profile/settings/settings_screen.dart:107"
+  },
+  "profileSettings_helpAndSupport": "Help and support",
+  "@profileSettings_helpAndSupport": {
+    "description": "lib/features/profile/settings/settings_screen.dart:267"
+  },
+  "profileSettings_reduceMotion": "Reduce motion",
+  "@profileSettings_reduceMotion": {
+    "description": "lib/features/profile/settings/settings_screen.dart:161"
+  },
+  "profileSettings_reduceMotionSemantic": "Reduce motion, {preferences}",
+  "@profileSettings_reduceMotionSemantic": {
+    "description": "lib/features/profile/settings/settings_screen.dart:175",
+    "placeholders": {
+      "preferences": {
+        "type": "Object?"
+      }
+    }
+  },
+  "profileSettings_storageUnavailableBody": "Reduce motion still applies for this session. Retry only reads this device's storage again; it doesn't use your account or the server.",
+  "@profileSettings_storageUnavailableBody": {
+    "description": "lib/features/profile/settings/settings_screen.dart:238"
+  },
+  "profileSettings_storageUnavailableTitle": "Can't save on this device",
+  "@profileSettings_storageUnavailableTitle": {
+    "description": "lib/features/profile/settings/settings_screen.dart:237"
+  },
+  "profileSettings_theme": "Theme",
+  "@profileSettings_theme": {
+    "description": "lib/features/profile/settings/settings_screen.dart:155"
+  },
+  "profileSettings_themeDark": "Dark",
+  "@profileSettings_themeDark": {
+    "description": "lib/features/profile/settings/settings_screen.dart:156"
+  },
+  "profileSettings_updatedAt": "Updated {relativeTime}",
+  "@profileSettings_updatedAt": {
+    "description": "lib/features/profile/settings/settings_screen.dart:282",
+    "placeholders": {
+      "relativeTime": {
+        "type": "Object?"
+      }
+    }
+  },
+  "profileSettings_usingDefaults": "Using default settings",
+  "@profileSettings_usingDefaults": {
+    "description": "lib/features/profile/settings/settings_screen.dart:281"
+  },
+  "scan_cameraDeniedBody": "Scanning is unavailable. Turn it back on in Settings → LOOP → Camera.",
+  "@scan_cameraDeniedBody": {
+    "description": "lib/features/scan/scan_screen.dart:20"
+  },
+  "scan_cameraErrorReason": "The camera didn't open. Retry, or use Photos below.",
+  "@scan_cameraErrorReason": {
+    "description": "lib/features/scan/scan_screen.dart:550"
+  },
+  "scan_cameraNoAccess": "No camera access",
+  "@scan_cameraNoAccess": {
+    "description": "lib/features/scan/scan_screen.dart:530"
+  },
+  "scan_cameraOpening": "Opening camera…",
+  "@scan_cameraOpening": {
+    "description": "lib/features/scan/scan_screen.dart:521"
+  },
+  "scan_cameraUnsupported": "This device has no available camera",
+  "@scan_cameraUnsupported": {
+    "description": "lib/features/scan/scan_screen.dart:540"
+  },
+  "scan_cameraUnsupportedDetail": "Use Photos below to read a QR code from an image.",
+  "@scan_cameraUnsupportedDetail": {
+    "description": "lib/features/scan/scan_screen.dart:541"
+  },
+  "scan_contentCopied": "QR code content copied",
+  "@scan_contentCopied": {
+    "description": "lib/features/scan/scan_screen.dart:194"
+  },
+  "scan_hint": "Point at a LOOP profile card, invite poster, community QR code or wallet address QR code.",
+  "@scan_hint": {
+    "description": "lib/features/scan/scan_screen.dart:296"
+  },
+  "scan_imageNoCode": "No QR code found in this image",
+  "@scan_imageNoCode": {
+    "description": "lib/features/scan/scan_screen.dart:175"
+  },
+  "scan_imageNoPhotoAccess": "No photo access. Allow LOOP to access Photos in Settings, then try again",
+  "@scan_imageNoPhotoAccess": {
+    "description": "lib/features/scan/scan_screen.dart:181"
+  },
+  "scan_imageUnreadable": "Couldn't read the image. Try another one",
+  "@scan_imageUnreadable": {
+    "description": "lib/features/scan/scan_screen.dart:187"
+  },
+  "scan_keepScanning": "Keep scanning",
+  "@scan_keepScanning": {
+    "description": "lib/features/scan/scan_screen.dart:634"
+  },
+  "scan_pickImageLabel": "Photos",
+  "@scan_pickImageLabel": {
+    "description": "lib/features/scan/scan_screen.dart:314"
+  },
+  "scan_pickImageReading": "Reading…",
+  "@scan_pickImageReading": {
+    "description": "lib/features/scan/scan_screen.dart:314"
+  },
+  "scan_pickImageSemantic": "Choose from Photos",
+  "@scan_pickImageSemantic": {
+    "description": "lib/features/scan/scan_screen.dart:315"
+  },
+  "scan_torch": "Flashlight",
+  "@scan_torch": {
+    "description": "lib/features/scan/scan_screen.dart:325"
+  },
+  "scan_torchOff": "Turn off flashlight",
+  "@scan_torchOff": {
+    "description": "lib/features/scan/scan_screen.dart:325"
+  },
+  "scan_unavailable": "Scanning isn't available right now",
+  "@scan_unavailable": {
+    "description": "lib/features/scan/scan_screen.dart:210"
+  },
+  "scan_unavailableDetail": "This build doesn't include camera scanning; this page won't open the camera.",
+  "@scan_unavailableDetail": {
+    "description": "lib/features/scan/scan_screen.dart:211"
+  },
+  "scan_unknownBody": "LOOP won't open this content; it's only shown below.",
+  "@scan_unknownBody": {
+    "description": "lib/features/scan/scan_screen.dart:612"
+  },
+  "scan_unknownTitle": "Not a LOOP QR code",
+  "@scan_unknownTitle": {
+    "description": "lib/features/scan/scan_screen.dart:611"
+  },
+  "shell_payUnavailableHeadline": "Pay isn't available",
+  "@shell_payUnavailableHeadline": {
+    "description": "lib/features/shell/loop_pending_surface.dart:27"
+  },
+  "shell_payUnavailableMessage": "Pay isn't open yet. This page doesn't scan codes, ask for camera access, collect payment details or submit any transaction.",
+  "@shell_payUnavailableMessage": {
+    "description": "lib/features/shell/loop_pending_surface.dart:32"
+  },
+  "shell_pendingBackToCommunity": "Back to community",
+  "@shell_pendingBackToCommunity": {
+    "description": "lib/features/shell/loop_pending_surface.dart:59"
+  },
+  "shell_pendingHeadline": "This page isn't open yet",
+  "@shell_pendingHeadline": {
+    "description": "lib/features/shell/loop_pending_surface.dart:26"
+  },
+  "shell_pendingMessage": "\"{title}\" isn't open yet. Nothing is shown here and no action can be taken.",
+  "@shell_pendingMessage": {
+    "description": "lib/features/shell/loop_pending_surface.dart:112",
+    "placeholders": {
+      "title": {
+        "type": "Object?"
+      }
+    }
+  },
+  "shell_pendingSourceLine": "Module: {label}",
+  "@shell_pendingSourceLine": {
+    "description": "lib/features/shell/loop_pending_surface.dart:34",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "shell_tabChat": "Chat",
+  "@shell_tabChat": {
+    "description": "lib/features/shell/loop_shell.dart:55"
+  },
+  "shell_tabIntel": "Intel",
+  "@shell_tabIntel": {
+    "description": "lib/features/shell/loop_shell.dart:58"
+  },
+  "shell_tabMe": "Me",
+  "@shell_tabMe": {
+    "description": "lib/features/shell/loop_shell.dart:59"
+  },
+  "shell_tabNewMessages": "{label}, new messages",
+  "@shell_tabNewMessages": {
+    "description": "lib/features/shell/loop_shell.dart:736",
+    "placeholders": {
+      "label": {
+        "type": "Object?"
+      }
+    }
+  },
+  "shell_tabSquare": "Square",
+  "@shell_tabSquare": {
+    "description": "lib/features/shell/loop_shell.dart:56"
+  }
+}

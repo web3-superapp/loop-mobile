@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
@@ -9,7 +11,6 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_faces.dart';
 import 'package:loop_mobile/widgets/loop_unread_badge.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/legacy_chat_identity.dart';
@@ -1047,11 +1048,10 @@ Future<void> _pumpInChannel(
     MaterialApp(
       // The product's own zh-CN Stream copy, so an assertion here reads the
       // words the member reads instead of the SDK's English defaults.
-      localizationsDelegates: const <LocalizationsDelegate<Object?>>[
-        LoopStreamChatLocalizationsDelegate(),
-        DefaultMaterialLocalizations.delegate,
-        DefaultWidgetsLocalizations.delegate,
-      ],
+      // Decision 0281: chat is not migrated yet (S355).
+      locale: LoopL10n.simplifiedChinese,
+      supportedLocales: LoopL10n.supportedLocales,
+      localizationsDelegates: loopLocalizationsDelegates,
       home: StreamChat(
         client: harness.client,
         componentBuilders: StreamComponentBuilders(

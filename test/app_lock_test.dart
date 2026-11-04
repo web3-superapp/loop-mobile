@@ -383,7 +383,7 @@ void main() {
       unawaited(container.read(loopAppLockProvider.notifier).unlock());
       await tester.pumpAndSettle();
 
-      expect(tester.widget<LoopRecordRow>(row).semanticLabel, contains('已开启'));
+      expect(tester.widget<LoopRecordRow>(row).semanticLabel, contains('On'));
 
       await tester.tap(row);
       await tester.pumpAndSettle();

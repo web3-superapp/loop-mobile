@@ -13,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/attachments/stream_token_card_message_preview_formatter.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
@@ -27,7 +29,6 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_gateway.dart';
 import 'package:loop_mobile/features/social/public_profile/public_profile_models.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
-import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_connection.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -317,9 +318,11 @@ final class _Room {
               loopStreamTheme(),
             ],
           ),
-          localizationsDelegates: const <LocalizationsDelegate<Object>>[
-            LoopStreamChatLocalizationsDelegate(),
-          ],
+          // Decision 0281: chat is not migrated yet (S355); this case reads
+          // LOOP's Chinese Stream copy.
+          locale: LoopL10n.simplifiedChinese,
+          supportedLocales: LoopL10n.supportedLocales,
+          localizationsDelegates: loopLocalizationsDelegates,
           builder: (context, child) => StreamChat(
             client: client,
             themeData: loopStreamChatThemeData(),
