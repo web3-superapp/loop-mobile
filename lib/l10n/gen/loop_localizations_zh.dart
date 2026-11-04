@@ -2476,6 +2476,9 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get chatTokenCard_viewPartial => '数据缺失';
 
   @override
+  String get chatTokenCard_viewProvenanceSeparator => '；';
+
+  @override
   String get chatTokenCard_viewRisk => '风险事实';
 
   @override
@@ -3233,6 +3236,11 @@ class LoopLocalizationsZh extends LoopLocalizations {
   @override
   String get chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand =>
       '这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。';
+
+  @override
+  String chatV2_voiceRoomScreensCommandConfirmTitle(Object? command) {
+    return '$command？';
+  }
 
   @override
   String get chatV2_voiceRoomScreensConfirmLabel => '离开';

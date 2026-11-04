@@ -515,7 +515,9 @@ class _Footnotes extends StatelessWidget {
           key: const ValueKey<String>('loop-token-card-provenance'),
           semanticsLabel: context.l10n
               .chatTokenCard_viewLoopTokenCardProvenanceSemanticsLabel(
-                provenance.join('；'),
+                provenance.join(
+                  context.l10n.chatTokenCard_viewProvenanceSeparator,
+                ),
               ),
           onTap: () => unawaited(
             showLoopInfoSheet(

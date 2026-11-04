@@ -2799,6 +2799,9 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get chatTokenCard_viewPartial => 'Data missing';
 
   @override
+  String get chatTokenCard_viewProvenanceSeparator => '; ';
+
+  @override
   String get chatTokenCard_viewRisk => 'Risk facts';
 
   @override
@@ -3652,6 +3655,11 @@ class LoopLocalizationsEn extends LoopLocalizations {
   @override
   String get chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand =>
       'The server sends the actions available for each row; only the ones you can actually use are listed.';
+
+  @override
+  String chatV2_voiceRoomScreensCommandConfirmTitle(Object? command) {
+    return '$command?';
+  }
 
   @override
   String get chatV2_voiceRoomScreensConfirmLabel => 'Leave';

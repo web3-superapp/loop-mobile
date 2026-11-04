@@ -195,6 +195,12 @@
     "where": "lib/features/chat/token_card/chat_token_card_view.dart:60",
     "zh": "数据缺失"
   },
+  "chatTokenCard_viewProvenanceSeparator": {
+    "en": "; ",
+    "placeholders": {},
+    "where": "lib/features/chat/token_card/chat_token_card_view.dart:518",
+    "zh": "；"
+  },
   "chatTokenCard_viewRisk": {
     "en": "Risk facts",
     "placeholders": {},

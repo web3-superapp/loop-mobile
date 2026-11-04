@@ -3324,6 +3324,10 @@
   "@chatTokenCard_viewPartial": {
     "description": "lib/features/chat/token_card/chat_token_card_view.dart:60"
   },
+  "chatTokenCard_viewProvenanceSeparator": "; ",
+  "@chatTokenCard_viewProvenanceSeparator": {
+    "description": "lib/features/chat/token_card/chat_token_card_view.dart:518"
+  },
   "chatTokenCard_viewRisk": "Risk facts",
   "@chatTokenCard_viewRisk": {
     "description": "lib/features/chat/token_card/chat_token_card_view.dart:61"
@@ -4386,6 +4390,15 @@
   "chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand": "The server sends the actions available for each row; only the ones you can actually use are listed.",
   "@chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand": {
     "description": "lib/features/chat/v2/voice_room_screens.dart:1735"
+  },
+  "chatV2_voiceRoomScreensCommandConfirmTitle": "{command}?",
+  "@chatV2_voiceRoomScreensCommandConfirmTitle": {
+    "description": "lib/features/chat/v2/voice_room_screens.dart:1284",
+    "placeholders": {
+      "command": {
+        "type": "Object?"
+      }
+    }
   },
   "chatV2_voiceRoomScreensConfirmLabel": "Leave",
   "@chatV2_voiceRoomScreensConfirmLabel": {

@@ -1281,7 +1281,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     final name = voiceRoomMemberName(member);
     final confirmed = await confirmCommunityAction(
       context,
-      title: '${command.label}？',
+      title: LoopL10n.current.chatV2_voiceRoomScreensCommandConfirmTitle(
+        command.label,
+      ),
       body: switch (command) {
         VoiceRoomMemberCommand.inviteSpeaker =>
           LoopL10n.current.chatV2_voiceRoomScreensInviteSpeaker(name),

@@ -4466,6 +4466,12 @@ abstract class LoopLocalizations {
   /// **'Data missing'**
   String get chatTokenCard_viewPartial;
 
+  /// lib/features/chat/token_card/chat_token_card_view.dart:518
+  ///
+  /// In en, this message translates to:
+  /// **'; '**
+  String get chatTokenCard_viewProvenanceSeparator;
+
   /// lib/features/chat/token_card/chat_token_card_view.dart:61
   ///
   /// In en, this message translates to:
@@ -5759,6 +5765,12 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'The server sends the actions available for each row; only the ones you can actually use are listed.'**
   String get chatV2_voiceRoomScreensChooseVoiceRoomMemberCommand;
+
+  /// lib/features/chat/v2/voice_room_screens.dart:1284
+  ///
+  /// In en, this message translates to:
+  /// **'{command}?'**
+  String chatV2_voiceRoomScreensCommandConfirmTitle(Object? command);
 
   /// lib/features/chat/v2/voice_room_screens.dart:1120, lib/features/chat/v2/voice_room_screens.dart:2069, lib/features/chat/v2/voice_room_screens.dart:2342, lib/features/chat/v2/voice_room_stage.dart:820, lib/features/chat/v2/voice_room_stage.dart:844
   ///
