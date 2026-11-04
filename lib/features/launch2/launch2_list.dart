@@ -25,6 +25,7 @@ import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/market/market_fomo_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
@@ -41,7 +42,9 @@ const String launch2DeskTabMemoryKey = 'meme-desk';
 /// The sentence a closed `launch2` capability is explained with.
 String launch2CapabilityText(LoopCapabilityProjection capability) {
   if (capability.isUnobserved) {
-    return capability.unreachable ? '暂时连不上 LOOP' : 'MEME v2 状态还没有读到';
+    return capability.unreachable
+        ? LoopL10n.current.launch2_launch2ListIf
+        : LoopL10n.current.launch2_launch2ListS;
   }
   return launch2ReasonText(
     capability.reasonCode ?? 'LAUNCH2_RUNTIME_UNAVAILABLE',
@@ -324,7 +327,12 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       key: ValueKey<String>(_keyBase),
       archetype: LoopPageArchetype.listing,
       title:
-          widget.tabTitle ?? (scope == Launch2ListScope.all ? 'v2 发射' : '已毕业'),
+          widget.tabTitle ??
+          (scope == Launch2ListScope.all
+              ? context
+                    .l10n
+                    .launch2Creator_launch2EntryLaunch2CreateChooserV2Title
+              : context.l10n.common_graduated),
       embedded: widget.tabTitle == null,
       // S264 · decision 0220: the MEME home stands on the still wall, its
       // title over the wall crown.
@@ -342,7 +350,9 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
         if (state == null)
           LoopInlineUnavailable(
             key: ValueKey<String>('$_keyBase-unavailable'),
-            message: 'MEME v2 暂时不可用 · ${launch2CapabilityText(capability)}',
+            message: context.l10n.launch2_launch2ListMessage(
+              launch2CapabilityText(capability),
+            ),
           )
         else
           ..._rows(
@@ -379,7 +389,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           keyPrefix: _keyBase,
           phase: state.phase,
           failureKind: state.failureKind,
-          emptyMessage: '还没有 v2 项目',
+          emptyMessage: LoopL10n.current.launch2_launch2ListEmptyMessage,
           onRetry: () => unawaited(controller.reload()),
         ),
       ];
@@ -390,14 +400,18 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
         LoopEmptyState(
           key: ValueKey<String>('$_keyBase-empty'),
           illustration: LoopIllustration.launchpad,
-          title: graduated ? '还没有毕业的 v2 项目' : '还没有 v2 项目',
+          title: graduated
+              ? LoopL10n.current.launch2_launch2ListTitle2
+              : LoopL10n.current.launch2_launch2ListEmptyMessage,
           action: widget.onEmptyAction == null
               ? null
               : LoopButton(
                   key: ValueKey<String>('$_keyBase-empty-action'),
                   // Decision 0217: the MEME Tab is the v2 desk alone; the
                   // graduated list's step goes back to it.
-                  label: graduated ? '看正在发射的' : '看经典发射',
+                  label: graduated
+                      ? LoopL10n.current.launch2_launch2ListLabel
+                      : LoopL10n.current.launch2_launch2ListLabel2,
                   primary: true,
                   onPressed: widget.onEmptyAction,
                 ),
@@ -423,7 +437,9 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       // Decision 0273: 战绩 is gone; the page's one source line stays.
       LoopProvenanceLine(
         key: ValueKey<String>('$_keyBase-provenance'),
-        sources: const <String>['LOOP 链上索引'],
+        sources: <String>[
+          LoopL10n.current.launch2_launch2InstanceLoopProvenanceLine,
+        ],
         observedAt: controller.valueObservedAt,
       ),
     ];
@@ -441,7 +457,7 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
       if (controller.appendFailed && !state.busy)
         LoopInlineUnavailable(
           key: ValueKey<String>('$keyBase-more-failed'),
-          message: '下一页没有读到',
+          message: LoopL10n.current.common_nextPageFailed,
           onRetry: () => unawaited(controller.loadMore()),
         )
       else if (cursor != null) ...<Widget>[
@@ -612,9 +628,10 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
                 : null,
           )
         else
-          const LoopAtmoEmpty(
+          LoopAtmoEmpty(
             key: ValueKey<String>('launch2-live-empty'),
-            message: '现在没有铸造或内盘中的项目',
+            message:
+                LoopL10n.current.launch2_launch2ListLaunch2LiveEmptyMessage,
             crownKey: ValueKey<String>('launch2-live-empty-crown'),
           ),
       ..._footer(state, controller, _keyBase),
@@ -650,16 +667,16 @@ class _Launch2ListSegmentState extends ConsumerState<Launch2ListSegment> {
           keyPrefix: keyBase,
           phase: state.phase,
           failureKind: state.failureKind,
-          emptyMessage: '还没有毕业的 v2 项目',
+          emptyMessage: LoopL10n.current.launch2_launch2ListTitle2,
           onRetry: () => unawaited(controller.reload()),
         ),
       ];
     }
     if (page.items.isEmpty) {
-      return const <Widget>[
+      return <Widget>[
         LoopAtmoEmpty(
           key: ValueKey<String>('launch2-graduated-empty'),
-          message: '还没有毕业的 v2 项目',
+          message: LoopL10n.current.launch2_launch2ListTitle2,
           crownKey: ValueKey<String>('launch2-graduated-empty-crown'),
         ),
       ];

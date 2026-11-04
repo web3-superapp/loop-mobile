@@ -593,7 +593,10 @@ void main() {
       );
       expect(cancelled.broadcast, isFalse);
       expect(cancelled.reasonCode, loopStepUpCancelledCode);
-      expect(launch2SignReasonText(cancelled.reasonCode), '已取消，没有发生任何变化。');
+      expect(
+        launch2SignReasonText(cancelled.reasonCode),
+        'Cancelled. Nothing changed.',
+      );
       expect(wallet.handed, hasLength(1));
     });
   });

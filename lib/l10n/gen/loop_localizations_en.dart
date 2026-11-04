@@ -591,6 +591,3346 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get common_watchlist => 'Watchlist';
 
   @override
+  String launch2Creator_figureWithNote(Object? figure, Object? note) {
+    return '$figure ($note)';
+  }
+
+  @override
+  String get launch2Creator_launch2AwaitingExecutor => 'Queued';
+
+  @override
+  String get launch2Creator_launch2BootstrapRequired =>
+      'Your account is still being set up. Try again later.';
+
+  @override
+  String get launch2Creator_launch2Build => 'Bonding pool for sale';
+
+  @override
+  String get launch2Creator_launch2Build10 =>
+      'Fixed by the platform template; can\'t be changed.';
+
+  @override
+  String get launch2Creator_launch2Build11 =>
+      'The platform hasn\'t set a buyback recipient address yet, so you can\'t submit right now.';
+
+  @override
+  String get launch2Creator_launch2Build2 => 'Graduation reserve';
+
+  @override
+  String get launch2Creator_launch2Build3 => 'Bonding pool trade tax';
+
+  @override
+  String get launch2Creator_launch2Build4 => 'DEX pool trade tax';
+
+  @override
+  String get launch2Creator_launch2Build5 => 'DEX pool buy tax';
+
+  @override
+  String get launch2Creator_launch2Build6 => 'Per-address cap';
+
+  @override
+  String get launch2Creator_launch2Build7 => 'Mint price';
+
+  @override
+  String get launch2Creator_launch2Build8 => 'Mint period';
+
+  @override
+  String get launch2Creator_launch2Build9 => 'Set by the instance';
+
+  @override
+  String launch2Creator_launch2CapFigure(Object? launch2CurveCapFigure) {
+    return '$launch2CurveCapFigure tokens';
+  }
+
+  @override
+  String get launch2Creator_launch2Claimed => 'Preparing to deploy';
+
+  @override
+  String get launch2Creator_launch2Confirmed => 'Verifying';
+
+  @override
+  String get launch2Creator_launch2CreateBody =>
+      'What you\'ve entered won\'t be saved.';
+
+  @override
+  String get launch2Creator_launch2CreateCancelLabel => 'Keep editing';
+
+  @override
+  String get launch2Creator_launch2CreateConfig => 'Saving configuration…';
+
+  @override
+  String get launch2Creator_launch2CreateConfirmLabel => 'Discard';
+
+  @override
+  String get launch2Creator_launch2CreateEmptyMessage =>
+      'Couldn\'t find this project';
+
+  @override
+  String launch2Creator_launch2CreateFailed(Object? memeFailureText) {
+    return 'Image upload failed: $memeFailureText';
+  }
+
+  @override
+  String get launch2Creator_launch2CreateFor => 'X (optional)';
+
+  @override
+  String get launch2Creator_launch2CreateFor2 => 'Telegram (optional)';
+
+  @override
+  String get launch2Creator_launch2CreateFor3 => 'Website (optional)';
+
+  @override
+  String get launch2Creator_launch2CreateFor4 => 'Discord (optional)';
+
+  @override
+  String get launch2Creator_launch2CreateGroupTitle => 'Images';
+
+  @override
+  String get launch2Creator_launch2CreateGroupTitle2 => 'Basic info';
+
+  @override
+  String get launch2Creator_launch2CreateHint => 'Enter project name';
+
+  @override
+  String get launch2Creator_launch2CreateHint2 => 'Enter ticker';
+
+  @override
+  String get launch2Creator_launch2CreateHint3 => 'Describe your project';
+
+  @override
+  String get launch2Creator_launch2CreateIf =>
+      'Only links starting with https:// are supported';
+
+  @override
+  String get launch2Creator_launch2CreateLabel => 'Retry submission';
+
+  @override
+  String get launch2Creator_launch2CreateLabel2 => 'Submit for review';
+
+  @override
+  String get launch2Creator_launch2CreateLabel3 => 'Ticker';
+
+  @override
+  String get launch2Creator_launch2CreateLabel4 => 'Description (optional)';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateLinksCommunityHint =>
+      'To bind a community, the community owner does it under Community management → Bind token.';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateLinksHeading =>
+      'External links';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateLinksLine =>
+      'The project\'s X / Telegram / website / Discord, all optional; reviewers and users will see them.';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateLogoMissing => 'Avatar';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateLogoMissing2 =>
+      'A launch needs a square avatar';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateNftMissing => 'NFT image';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateNftMissing2 =>
+      'NFT image (optional)';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateNftMissing3 =>
+      'A launch needs an NFT image';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateRejectionTitle =>
+      'Review notes';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateSaleStartLabel =>
+      'Choose mint start time';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateSaleStartMissingBody =>
+      'Choose a mint start time first.';
+
+  @override
+  String launch2Creator_launch2CreateLaunch2CreateSaleTooEarlyBody(
+    Object? leadLabel,
+    Object? localTimestampLabel,
+  ) {
+    return 'The mint start time is too early: the platform needs at least $leadLabel of lead time, earliest $localTimestampLabel. Choose again.';
+  }
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateScreenTitle =>
+      'Edit details';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2CreateScreenTitle2 =>
+      'Start a v2 launch';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2NameInvisibleMessage =>
+      'Name must contain visible characters';
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2SaleStartHint =>
+      'The platform sets the earliest time; too early gets sent back.';
+
+  @override
+  String launch2Creator_launch2CreateLaunch2SaleStartHint2(
+    Object? leadLabel,
+    Object? localTimestampLabel,
+  ) {
+    return 'Minting must start at least $leadLabel from now, earliest $localTimestampLabel.';
+  }
+
+  @override
+  String get launch2Creator_launch2CreateLaunch2TickerInvisibleMessage =>
+      'Ticker must contain visible characters';
+
+  @override
+  String launch2Creator_launch2CreateLeadLabel(Object? minutes) {
+    return '${minutes}h';
+  }
+
+  @override
+  String launch2Creator_launch2CreateLeadLabel2(Object? minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get launch2Creator_launch2CreateLoopButton => 'Submitting for review…';
+
+  @override
+  String get launch2Creator_launch2CreateLoopLabel =>
+      'Buyback recipient address';
+
+  @override
+  String get launch2Creator_launch2CreateLoopLabel2 => 'Launch template';
+
+  @override
+  String get launch2Creator_launch2CreateLoopSheetHeading => 'Mint start time';
+
+  @override
+  String get launch2Creator_launch2CreateNote =>
+      'Square image; crop before upload';
+
+  @override
+  String get launch2Creator_launch2CreateProject => 'Saving details…';
+
+  @override
+  String get launch2Creator_launch2CreateText => 'Launch';
+
+  @override
+  String get launch2Creator_launch2CreateTitle => 'Discard this launch?';
+
+  @override
+  String get launch2Creator_launch2DeploymentAction => 'View project page';
+
+  @override
+  String get launch2Creator_launch2DeploymentAction2 => 'Sign again';
+
+  @override
+  String launch2Creator_launch2DeploymentBuild(Object? confirmations) {
+    return 'Confirmations: $confirmations';
+  }
+
+  @override
+  String launch2Creator_launch2DeploymentBuild2(Object? blockNumber) {
+    return 'Block $blockNumber';
+  }
+
+  @override
+  String get launch2Creator_launch2DeploymentLabel => 'Deploy transaction';
+
+  @override
+  String get launch2Creator_launch2DeploymentLabel2 => 'Activation transaction';
+
+  @override
+  String get launch2Creator_launch2DeploymentLabel3 => 'Copy BscScan link';
+
+  @override
+  String get launch2Creator_launch2DeploymentLaunch2DeploymentActivatedBody =>
+      'Activated. Creating the project page…';
+
+  @override
+  String get launch2Creator_launch2DeploymentLaunch2DeploymentActivatedBody2 =>
+      'Activated. You\'re this project\'s owner.';
+
+  @override
+  String get launch2Creator_launch2DeploymentLaunch2DeploymentCancelledBody =>
+      'This deployment was cancelled.';
+
+  @override
+  String get launch2Creator_launch2DeploymentLaunch2DeploymentMissingMessage =>
+      'The link has no valid project or job ID.';
+
+  @override
+  String get launch2Creator_launch2DeploymentLaunch2DeploymentMissingTitle =>
+      'Couldn\'t find this deployment';
+
+  @override
+  String get launch2Creator_launch2DeploymentLaunch2DeploymentQueuedBody =>
+      'Signature verified and recorded; waiting for the platform executor to deploy. Nothing is on-chain yet.';
+
+  @override
+  String get launch2Creator_launch2DeploymentLaunch2DeploymentScreenTitle =>
+      'Deployment progress';
+
+  @override
+  String get launch2Creator_launch2DeploymentLaunch2DeploymentStaleBody =>
+      'Couldn\'t load the latest progress. Showing the last status; retrying automatically.';
+
+  @override
+  String get launch2Creator_launch2DeploymentLoopLabel => 'Progress';
+
+  @override
+  String get launch2Creator_launch2DeploymentMessage => 'BscScan link copied';
+
+  @override
+  String get launch2Creator_launch2EntryLaunch2CreateChooserClassicSubtitle =>
+      'Bonding curve token; moves to PancakeSwap when it fills';
+
+  @override
+  String get launch2Creator_launch2EntryLaunch2CreateChooserClassicTitle =>
+      'Classic launch';
+
+  @override
+  String get launch2Creator_launch2EntryLaunch2CreateChooserV2Subtitle =>
+      'NFT presale + priority buy + public pool, graduates to the official DEX pool';
+
+  @override
+  String get launch2Creator_launch2EntryLaunch2CreateChooserV2Title =>
+      'v2 launch';
+
+  @override
+  String get launch2Creator_launch2EntryLaunch2CreatorEntryLabel =>
+      'v2 launch (NFT presale + official DEX pool)';
+
+  @override
+  String get launch2Creator_launch2EntryLaunch2MyProjectsEntryLabel =>
+      'My projects';
+
+  @override
+  String get launch2Creator_launch2IdempotencyConflict =>
+      'This submission differs from the last one. Sign again.';
+
+  @override
+  String get launch2Creator_launch2InvalidData =>
+      'The server didn\'t accept these details. Most often the mint start time is too early and leaves no time to deploy and activate. Move it later and submit again.';
+
+  @override
+  String launch2Creator_launch2Label(
+    Object? current,
+    Object? labels,
+    Object? labels2,
+  ) {
+    return 'Step $current of $labels, $labels2';
+  }
+
+  @override
+  String launch2Creator_launch2Label2(Object? semanticLabel) {
+    return 'Upload $semanticLabel';
+  }
+
+  @override
+  String launch2Creator_launch2Label3(Object? semanticLabel) {
+    return '$semanticLabel, replace';
+  }
+
+  @override
+  String get launch2Creator_launch2Launch2ConfigVersionUsedCode =>
+      'Another project in your wallet already used this configuration version. Edit the details and save a new version.';
+
+  @override
+  String launch2Creator_launch2Launch2DurationLabel(Object? seconds) {
+    return '${seconds}d';
+  }
+
+  @override
+  String launch2Creator_launch2Launch2DurationLabel2(Object? seconds) {
+    return '${seconds}h';
+  }
+
+  @override
+  String launch2Creator_launch2Launch2DurationLabel3(Object? seconds) {
+    return '$seconds min';
+  }
+
+  @override
+  String get launch2Creator_launch2Launch2FixedRecipientAddress =>
+      'Not configured yet';
+
+  @override
+  String get launch2Creator_launch2Launch2FixedRecipientAddressLabel =>
+      'Buyback recipient address not configured yet';
+
+  @override
+  String launch2Creator_launch2Launch2FixedRecipientAddressLabel2(
+    Object? value,
+  ) {
+    return 'Buyback recipient address $value, fixed by the platform, can\'t be changed';
+  }
+
+  @override
+  String get launch2Creator_launch2Launch2NftImageHelp =>
+      'Shown in wallets as the project NFT image';
+
+  @override
+  String get launch2Creator_launch2Launch2RecipientFixedCode =>
+      'The buyback recipient address must be the platform\'s fixed address. This version uses another one. Edit the details and save a new version (needs review again).';
+
+  @override
+  String get launch2Creator_launch2Launch2RecipientUnavailableCode =>
+      'The platform\'s buyback recipient address isn\'t configured, so you can\'t save or sign right now. Try again later.';
+
+  @override
+  String launch2Creator_launch2Launch2RejectedRowText(Object? label) {
+    return 'Rejected · $label';
+  }
+
+  @override
+  String launch2Creator_launch2Launch2RejectionTitle(Object? label) {
+    return 'Review rejected: $label';
+  }
+
+  @override
+  String launch2Creator_launch2Launch2SaleStartLabel(
+    Object? inDays,
+    Object? local,
+  ) {
+    return '$local (in ${inDays}d)';
+  }
+
+  @override
+  String launch2Creator_launch2Launch2SaleStartLabel2(
+    Object? inHours,
+    Object? local,
+  ) {
+    return '$local (in ${inHours}h)';
+  }
+
+  @override
+  String launch2Creator_launch2Launch2SaleStartLabel3(
+    Object? inMinutes,
+    Object? local,
+  ) {
+    return '$local (in $inMinutes min)';
+  }
+
+  @override
+  String launch2Creator_launch2Launch2SupplyLabel(Object? formatDecimal) {
+    return '$formatDecimal';
+  }
+
+  @override
+  String launch2Creator_launch2Launch2SupplyLabel2(Object? formatDecimal) {
+    return '$formatDecimal';
+  }
+
+  @override
+  String get launch2Creator_launch2LoopBadge => 'Fixed by platform';
+
+  @override
+  String launch2Creator_launch2LoopNotice(Object? note) {
+    return 'Review notes: $note';
+  }
+
+  @override
+  String launch2Creator_launch2LoopNotice2(
+    Object? configuration,
+    Object? localTimestampLabel,
+  ) {
+    return '$configuration didn\'t pass review ($localTimestampLabel). Edit it and submit again.';
+  }
+
+  @override
+  String get launch2Creator_launch2ModelsActive => 'Activated';
+
+  @override
+  String get launch2Creator_launch2ModelsDeployFailed => 'Deployment failed';
+
+  @override
+  String get launch2Creator_launch2ModelsDeployed => 'On-chain';
+
+  @override
+  String get launch2Creator_launch2ModelsDeploying => 'Deploying';
+
+  @override
+  String get launch2Creator_launch2ModelsIsFailure => 'Review';
+
+  @override
+  String get launch2Creator_launch2ModelsIsFailure2 => 'Deploy';
+
+  @override
+  String get launch2Creator_launch2ModelsIsFailure3 => 'Activate';
+
+  @override
+  String get launch2Creator_launch2ModelsSigning => 'Signing';
+
+  @override
+  String get launch2Creator_launch2ModelsVerified => 'Activating';
+
+  @override
+  String get launch2Creator_launch2NotFound =>
+      'Couldn\'t find this project. It may not belong to this account.';
+
+  @override
+  String get launch2Creator_launch2PermissionDenied =>
+      'This account can\'t do this step.';
+
+  @override
+  String get launch2Creator_launch2ProjectAction => 'Continue';
+
+  @override
+  String get launch2Creator_launch2ProjectAction2 => 'Edit and resubmit';
+
+  @override
+  String get launch2Creator_launch2ProjectAction3 => 'Sign to deploy';
+
+  @override
+  String get launch2Creator_launch2ProjectAction4 => 'View deployment progress';
+
+  @override
+  String get launch2Creator_launch2ProjectLabel => 'Configuration version';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectMissingMessage =>
+      'The link has no valid project ID.';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextActiveBody =>
+      'Activated. Creating the project page; pull down to refresh.';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextDeployingBody =>
+      'Deployment in progress.';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextDraftBody =>
+      'Details saved; the launch configuration is still missing.';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextDraftBody2 =>
+      'Not submitted for review yet.';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextFailedBody =>
+      'The deployment didn\'t finish.';
+
+  @override
+  String
+  get launch2Creator_launch2ProjectLaunch2ProjectNextRecipientOutdatedBody =>
+      'This version\'s buyback recipient address isn\'t the platform\'s fixed address, so it can\'t be signed and deployed. Saving a new version needs review again.';
+
+  @override
+  String
+  get launch2Creator_launch2ProjectLaunch2ProjectNextRecipientOutdatedTitle =>
+      'Buyback recipient address needs updating';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextRejectedBody =>
+      'This review didn\'t pass. Edit and submit again.';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextReviewBody =>
+      'The platform is reviewing the launch configuration. The result shows here; pull down to refresh.';
+
+  @override
+  String launch2Creator_launch2ProjectLaunch2ProjectNextReviewBody2(
+    Object? localTimestampLabel,
+  ) {
+    return 'Submitted $localTimestampLabel. The result shows here; pull down to refresh.';
+  }
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextSignBody =>
+      'Sign with your wallet and the platform will deploy and activate.';
+
+  @override
+  String launch2Creator_launch2ProjectLaunch2ProjectNextSignBody2(
+    Object? localTimestampLabel,
+  ) {
+    return 'Approved $localTimestampLabel. Sign with your wallet and the platform will deploy and activate.';
+  }
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectNextSignTitle =>
+      'Approved';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectSaleStartLabel =>
+      'Mint starts';
+
+  @override
+  String get launch2Creator_launch2ProjectLaunch2ProjectScreenTitle =>
+      'Project';
+
+  @override
+  String get launch2Creator_launch2ProjectLoopLabel => 'Launch configuration';
+
+  @override
+  String launch2Creator_launch2ProjectSemanticLabel(
+    Object? label,
+    Object? launch2CreatorMilestones,
+  ) {
+    return 'Progress: $launch2CreatorMilestones, $label';
+  }
+
+  @override
+  String get launch2Creator_launch2ProjectsLaunch2ProjectsEmptyMessage =>
+      'NFT presale + official DEX pool, in one launch.';
+
+  @override
+  String get launch2Creator_launch2ProjectsLaunch2ProjectsEmptyTitle =>
+      'No projects yet';
+
+  @override
+  String launch2Creator_launch2ProjectsSemanticLabel(Object? name) {
+    return '$name, launch configuration unavailable';
+  }
+
+  @override
+  String get launch2Creator_launch2ProjectsSubtitle =>
+      'Couldn\'t load the launch configuration. Pull to refresh or tap to retry';
+
+  @override
+  String get launch2Creator_launch2ProjectsSwitch => 'Rejected';
+
+  @override
+  String get launch2Creator_launch2ProjectsSwitch2 =>
+      'No launch configuration yet';
+
+  @override
+  String launch2Creator_launch2ProjectsSwitch3(Object? localTimestampLabel) {
+    return 'Mint starts $localTimestampLabel';
+  }
+
+  @override
+  String get launch2Creator_launch2Reorged => 'Chain reorg, reconfirming';
+
+  @override
+  String get launch2Creator_launch2S =>
+      'v2 launch isn\'t open yet. You can continue here once it opens.';
+
+  @override
+  String get launch2Creator_launch2S2 =>
+      'The launch factory isn\'t available (or is computing addresses). Try again later.';
+
+  @override
+  String get launch2Creator_launch2S3 =>
+      'The configuration is waiting for platform approval. Sign after it\'s approved.';
+
+  @override
+  String get launch2Creator_launch2S4 =>
+      'The signing request expired. Renew it and sign again.';
+
+  @override
+  String launch2Creator_launch2S5(Object? confirmations) {
+    return 'On-chain, confirmations: $confirmations';
+  }
+
+  @override
+  String get launch2Creator_launch2S6 =>
+      'Tokens bought back go to this address. The platform fixes it; it can\'t be changed.';
+
+  @override
+  String get launch2Creator_launch2S7 => 'Upload';
+
+  @override
+  String get launch2Creator_launch2S8 => 'Replace';
+
+  @override
+  String get launch2Creator_launch2SignIf =>
+      'Preparing the signing request; the server may take a few seconds to compute addresses.';
+
+  @override
+  String launch2Creator_launch2SignLabel(Object? address) {
+    return 'Token address $address';
+  }
+
+  @override
+  String get launch2Creator_launch2SignLabel2 => 'Signature valid for';
+
+  @override
+  String get launch2Creator_launch2SignLaunch2SignExpiredBody =>
+      'The signing request expired. Renewing gets a new request that you need to sign again.';
+
+  @override
+  String get launch2Creator_launch2SignLaunch2SignNoWalletBody =>
+      'Loading wallet…';
+
+  @override
+  String get launch2Creator_launch2SignLaunch2SignNoWalletBody2 =>
+      'No wallet available. Create or activate one in Wallet first.';
+
+  @override
+  String get launch2Creator_launch2SignLaunch2SignRefreshedBody =>
+      'The configuration or nonce changed. The signing request was refreshed; sign again.';
+
+  @override
+  String get launch2Creator_launch2SignLaunch2SignRenewLabel =>
+      'Renew signing request';
+
+  @override
+  String get launch2Creator_launch2SignLaunch2SignScreenTitle =>
+      'Sign deployment';
+
+  @override
+  String get launch2Creator_launch2SignLaunch2SignSheetTitle =>
+      'Authorize deployment';
+
+  @override
+  String get launch2Creator_launch2SignLoopButton => 'Sign and submit';
+
+  @override
+  String get launch2Creator_launch2SignLoopLabel => 'What you sign';
+
+  @override
+  String launch2Creator_launch2SignLoopSignFact(Object? tickerLabel) {
+    return 'Authorize deploying $tickerLabel';
+  }
+
+  @override
+  String get launch2Creator_launch2SignLoopSignFact2 => 'Signing wallet';
+
+  @override
+  String get launch2Creator_launch2SignLoopSignFact3 => 'Cost';
+
+  @override
+  String get launch2Creator_launch2SignLoopSignFact4 =>
+      'None (signature only, no transaction)';
+
+  @override
+  String get launch2Creator_launch2SignReady => 'Token address';
+
+  @override
+  String get launch2Creator_launch2SignSigning =>
+      'Waiting for wallet signature…';
+
+  @override
+  String get launch2Creator_launch2SignSubmitting => 'Submitting…';
+
+  @override
+  String get launch2Creator_launch2SignSwitch =>
+      'You cancelled the signature in your wallet. Nothing was submitted.';
+
+  @override
+  String get launch2Creator_launch2SignSwitch2 =>
+      'This signing request belongs to another wallet. Switch to the project owner\'s wallet.';
+
+  @override
+  String get launch2Creator_launch2SignSwitch3 =>
+      'The signing request is for the wrong network. Nothing was signed.';
+
+  @override
+  String get launch2Creator_launch2SignSwitch4 =>
+      'The embedded wallet isn\'t available. Sign in again and retry.';
+
+  @override
+  String get launch2Creator_launch2SignSwitch5 =>
+      'The wallet didn\'t finish signing. Nothing was submitted.';
+
+  @override
+  String get launch2Creator_launch2SignText =>
+      'This is an authorization signature and spends nothing. The platform deploys and activates once it receives it; progress is on the next page.';
+
+  @override
+  String launch2Creator_launch2SignValue(Object? minutes, Object? seconds) {
+    return 'Expires in $minutes:$seconds';
+  }
+
+  @override
+  String get launch2Creator_launch2Switch =>
+      'The signature expired. Sign and submit again.';
+
+  @override
+  String get launch2Creator_launch2Switch10 =>
+      'The platform is processing and will retry automatically.';
+
+  @override
+  String get launch2Creator_launch2Switch11 =>
+      'The deployment didn\'t finish. Contact the platform.';
+
+  @override
+  String get launch2Creator_launch2Switch12 => 'Edit name or ticker';
+
+  @override
+  String get launch2Creator_launch2Switch13 => 'Edit mint start time';
+
+  @override
+  String get launch2Creator_launch2Switch14 =>
+      'On-chain, awaiting confirmation';
+
+  @override
+  String get launch2Creator_launch2Switch15 => 'Retrying';
+
+  @override
+  String get launch2Creator_launch2Switch16 =>
+      'Signature verified and recorded';
+
+  @override
+  String get launch2Creator_launch2Switch17 => 'Claimed by executor';
+
+  @override
+  String get launch2Creator_launch2Switch18 => 'Deploy transaction broadcast';
+
+  @override
+  String get launch2Creator_launch2Switch19 => 'Transaction included';
+
+  @override
+  String get launch2Creator_launch2Switch2 =>
+      'The configuration was updated. Sign again.';
+
+  @override
+  String get launch2Creator_launch2Switch20 => 'Deployment confirmed';
+
+  @override
+  String get launch2Creator_launch2Switch21 => 'Module check passed';
+
+  @override
+  String get launch2Creator_launch2Switch22 =>
+      'Activation transaction broadcast';
+
+  @override
+  String get launch2Creator_launch2Switch23 =>
+      'Activation transaction included';
+
+  @override
+  String get launch2Creator_launch2Switch24 => 'Chain reorg, reconfirming';
+
+  @override
+  String get launch2Creator_launch2Switch25 => 'Status update';
+
+  @override
+  String get launch2Creator_launch2Switch3 =>
+      'The configuration approval lapsed. Sign again after the platform approves.';
+
+  @override
+  String get launch2Creator_launch2Switch4 => 'Invalid signature. Sign again.';
+
+  @override
+  String get launch2Creator_launch2Switch5 =>
+      'The wallet nonce changed. Sign again.';
+
+  @override
+  String get launch2Creator_launch2Switch6 =>
+      'This version is already deployed on-chain. Contact the platform.';
+
+  @override
+  String get launch2Creator_launch2Switch7 =>
+      'Too close to the mint start to activate. Change the mint start time and submit again.';
+
+  @override
+  String get launch2Creator_launch2Switch8 =>
+      'The name or ticker isn\'t allowed. Edit and submit again.';
+
+  @override
+  String get launch2Creator_launch2Switch9 =>
+      'The deployment check didn\'t match, so the project wasn\'t activated. Contact the platform.';
+
+  @override
+  String get launch2Creator_launch2VersionConflict =>
+      'The details were changed elsewhere and have been reloaded. Check them and submit again.';
+
+  @override
+  String get launch2Creator_projectDetails => 'Project details';
+
+  @override
+  String get launch2_buybackExecuted => 'Filled';
+
+  @override
+  String get launch2_candlesCandles => 'candles';
+
+  @override
+  String get launch2_candlesGraduationMark => ', graduation marked';
+
+  @override
+  String get launch2_candlesLine => 'close-price line';
+
+  @override
+  String get launch2_intentAction => 'Action';
+
+  @override
+  String get launch2_intentNounBuy => 'buy';
+
+  @override
+  String get launch2_intentNounSell => 'sell';
+
+  @override
+  String get launch2_launch2AtmosphereActionLabel => 'Launch a token';
+
+  @override
+  String launch2_launch2AtmosphereBuild(Object? prefix) {
+    return '${prefix}TBD';
+  }
+
+  @override
+  String get launch2_launch2AtmosphereCountdown => 'Mint in ';
+
+  @override
+  String get launch2_launch2AtmosphereCountdown2 => 'Ends in ';
+
+  @override
+  String get launch2_launch2AtmosphereIf => 'Live trades, no trades yet';
+
+  @override
+  String get launch2_launch2AtmosphereLaunch2TickerAllLabel =>
+      'All live trades';
+
+  @override
+  String get launch2_launch2AtmosphereLaunch2TickerEmpty => 'No trades yet';
+
+  @override
+  String get launch2_launch2AtmosphereMessage => 'No projects in the queue yet';
+
+  @override
+  String launch2_launch2AtmosphereS(Object? items) {
+    return 'Live trades, $items';
+  }
+
+  @override
+  String launch2_launch2AtmosphereSwitch(Object? soldCount) {
+    return 'Minted $soldCount';
+  }
+
+  @override
+  String get launch2_launch2AtmosphereSwitch2 => 'Building allowlist';
+
+  @override
+  String get launch2_launch2AtmosphereSwitch3 => 'Platform checking';
+
+  @override
+  String get launch2_launch2AtmosphereText => 'Live';
+
+  @override
+  String get launch2_launch2Build =>
+      'Allowlist addresses aren\'t listed in the app; check them in the publish transaction.';
+
+  @override
+  String get launch2_launch2CampaignsLaunch2CampaignDefaultCta => 'View';
+
+  @override
+  String launch2_launch2CampaignsLaunch2CampaignKicker(
+    Object? monthDay,
+    Object? monthDay2,
+  ) {
+    return '$monthDay – $monthDay2';
+  }
+
+  @override
+  String launch2_launch2CampaignsLaunch2CampaignStamp(Object? monthDay) {
+    return 'Starts $monthDay';
+  }
+
+  @override
+  String get launch2_launch2CampaignsLaunch2CampaignStamp2 => 'Ends today';
+
+  @override
+  String launch2_launch2CampaignsLaunch2CampaignStamp3(Object? inDays) {
+    return '${inDays}d left';
+  }
+
+  @override
+  String get launch2_launch2CampaignsMessage =>
+      'Couldn\'t open the browser. Link copied';
+
+  @override
+  String get launch2_launch2CandleChartLaunch2CandlesEmptyText =>
+      'No trades yet. Candles appear after the first trade';
+
+  @override
+  String get launch2_launch2CandleChartLaunch2CandlesExpandLabel =>
+      'Open full-screen chart';
+
+  @override
+  String get launch2_launch2CandleChartLaunch2CandlesFailedText =>
+      'Couldn\'t load candles. Tap to retry';
+
+  @override
+  String launch2_launch2CandleChartSemanticLabel(
+    Object? candles,
+    Object? label,
+    Object? line,
+    Object? mark,
+  ) {
+    return '$candles $label $line, in USD1$mark';
+  }
+
+  @override
+  String get launch2_launch2CandleModelsFifteenMinutes => '15m';
+
+  @override
+  String get launch2_launch2CandleModelsFiveMinutes => '5m';
+
+  @override
+  String get launch2_launch2CandleModelsFourHours => '4h';
+
+  @override
+  String get launch2_launch2CandleModelsOneDay => '1D';
+
+  @override
+  String get launch2_launch2CandleModelsOneHour => '1h';
+
+  @override
+  String get launch2_launch2CandleModelsOneMinute => '1m';
+
+  @override
+  String get launch2_launch2Countdown => 'Mint ';
+
+  @override
+  String get launch2_launch2DynamicPoolImpact =>
+      'DEX pool trading and rewards for this project aren\'t available right now.';
+
+  @override
+  String get launch2_launch2DynamicPoolLabel => 'Buy base tax total';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynProvenanceDetail =>
+      'The drop is measured on 5-minute candles; buyback buys don\'t earn reward weight.';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynRewardsLink => 'This round';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynRewardsLinkLabel =>
+      'My rewards';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicEndText =>
+      'Ends on the first 5-minute candle that closes at or above its open (up, flat or no trades all count)';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicFeeRows =>
+      'Dynamic tax total';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicFeeRows2 =>
+      'Sell base tax total';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicIdleText =>
+      'A drop of more than 10% within 5 minutes turns on dynamic tax and buy rewards';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicRoundRows => 'Reward pool';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicRoundRows2 =>
+      'Current drop';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicRoundRows3 =>
+      'Candle closed, awaiting settlement';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicRoundRows4 =>
+      'My weight this round';
+
+  @override
+  String launch2_launch2DynamicPoolLaunch2DynamicRoundRows5(
+    Object? formatDecimal,
+    Object? launch2Usd1Label,
+  ) {
+    return '$launch2Usd1Label · $formatDecimal% share';
+  }
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicRoundRows6 =>
+      'This candle ends';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2DynamicRoundRows7 =>
+      'End condition';
+
+  @override
+  String get launch2_launch2DynamicPoolLaunch2SectionLabel => 'Fees collected';
+
+  @override
+  String get launch2_launch2DynamicPoolLoopBadge => 'Active';
+
+  @override
+  String get launch2_launch2DynamicPoolNext => 'Tap Retry later to load again.';
+
+  @override
+  String get launch2_launch2DynamicPoolS => 'Inactive';
+
+  @override
+  String get launch2_launch2DynamicPoolTitle => 'DEX pool unavailable';
+
+  @override
+  String get launch2_launch2DynamicRewardsBuild =>
+      'You haven\'t bought this round';
+
+  @override
+  String get launch2_launch2DynamicRewardsBuild2 =>
+      'Buys while the round is open count toward its weight. Claim here after it ends.';
+
+  @override
+  String get launch2_launch2DynamicRewardsConfirmedText =>
+      'DEX pool rewards claimed and confirmed on-chain.';
+
+  @override
+  String launch2_launch2DynamicRewardsConfirmedText2(
+    Object? launch2ShortAddress,
+  ) {
+    return 'Claim submitted ($launch2ShortAddress), waiting for on-chain confirmation. Don\'t claim again.';
+  }
+
+  @override
+  String get launch2_launch2DynamicRewardsLabel => 'Preparing…';
+
+  @override
+  String get launch2_launch2DynamicRewardsLabel2 => 'Claimed';
+
+  @override
+  String get launch2_launch2DynamicRewardsLabel3 => 'Confirming claim…';
+
+  @override
+  String get launch2_launch2DynamicRewardsLabel4 => 'Period';
+
+  @override
+  String get launch2_launch2DynamicRewardsLabel5 => 'My weight / total weight';
+
+  @override
+  String get launch2_launch2DynamicRewardsLabel6 => 'Round rewards';
+
+  @override
+  String get launch2_launch2DynamicRewardsLabel7 => 'Claimable';
+
+  @override
+  String get launch2_launch2DynamicRewardsLabel8 => 'Claimed so far';
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynRewardsBlockedTitle =>
+      'MEME v2 isn\'t available right now';
+
+  @override
+  String launch2_launch2DynamicRewardsLaunch2DynRewardsEmptyMessage(
+    Object? launch2DynamicIdleText,
+  ) {
+    return '$launch2DynamicIdleText. Once on, buys from any app count toward the round\'s weight. Claim here after it ends.';
+  }
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynRewardsEmptyTitle =>
+      'No DEX pool rewards yet';
+
+  @override
+  String
+  get launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityMessage =>
+      'Nothing was requested and no other project was loaded instead.';
+
+  @override
+  String
+  get launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityTitle =>
+      'The route has no usable project ID';
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidRouteTitle =>
+      'DEX pool rewards';
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynRewardsNoWalletMessage =>
+      'DEX pool rewards are recorded per wallet. Activate a wallet to view and claim.';
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynRewardsNoWalletTitle =>
+      'No wallet available';
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynRewardsNoneMessage =>
+      'Only projects with dynamic tax have per-round DEX pool rewards.';
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynRewardsNoneTitle =>
+      'This project has no DEX pool rewards';
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynRewardsProvenanceDetail =>
+      'Weight is each wallet\'s buy amount this round (USD1); buyback buys don\'t count. Claims follow on-chain confirmation.';
+
+  @override
+  String get launch2_launch2DynamicRewardsLaunch2DynamicNoRewardText =>
+      'No rewards to claim this round';
+
+  @override
+  String launch2_launch2DynamicRewardsLaunch2SectionLabel(Object? id) {
+    return 'Round $id';
+  }
+
+  @override
+  String get launch2_launch2DynamicRewardsOpen =>
+      'Claimable after the round ends';
+
+  @override
+  String get launch2_launch2DynamicRewardsPending =>
+      'Broadcast, but no confirmation yet. It may still be confirming; check again later. Don\'t claim again.';
+
+  @override
+  String get launch2_launch2DynamicRewardsReason =>
+      'The DEX pool is syncing. Try again later';
+
+  @override
+  String get launch2_launch2DynamicRewardsS => 'Nothing to claim';
+
+  @override
+  String get launch2_launch2DynamicRewardsS2 =>
+      'You didn\'t buy this round, so you have no reward weight.';
+
+  @override
+  String launch2_launch2DynamicRewardsSpan(Object? start) {
+    return 'From $start · in progress';
+  }
+
+  @override
+  String launch2_launch2DynamicRewardsStart(Object? startCandle) {
+    return 'Candle #$startCandle';
+  }
+
+  @override
+  String launch2_launch2DynamicRewardsText(Object? text) {
+    return 'Reporting $text failed; the on-chain result isn\'t affected. Don\'t claim again.';
+  }
+
+  @override
+  String get launch2_launch2DynamicRewardsValue =>
+      'Settled after the round ends';
+
+  @override
+  String get launch2_launch2FormatActivationMissing =>
+      'No activation record on-chain yet; the platform is checking';
+
+  @override
+  String get launch2_launch2FormatBalance => 'Wallet balance';
+
+  @override
+  String get launch2_launch2FormatBroadcast => 'Publishing allowlist';
+
+  @override
+  String get launch2_launch2FormatClosed => 'Trading closed at this stage';
+
+  @override
+  String get launch2_launch2FormatClosedNoHolders => 'Closed';
+
+  @override
+  String get launch2_launch2FormatDeployedEventMismatch =>
+      'The on-chain deploy record doesn\'t match the registration; the platform is checking';
+
+  @override
+  String get launch2_launch2FormatGraduated => 'Trading in the official pool';
+
+  @override
+  String get launch2_launch2FormatInventory => 'Bonding pool stock left';
+
+  @override
+  String launch2_launch2FormatLaunch2ActionFailure(Object? parts) {
+    return 'Not enough USD1: $parts';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2ActionFailure2(Object? parts) {
+    return 'Sell amount exceeds holdings: $parts';
+  }
+
+  @override
+  String get launch2_launch2FormatLaunch2AddressFrozenText =>
+      'The USD1 issuer has restricted this project\'s contract address; trading and claims are unavailable';
+
+  @override
+  String get launch2_launch2FormatLaunch2BuybackHeldLine =>
+      'Source: chain read · auto buyback';
+
+  @override
+  String get launch2_launch2FormatLaunch2ClosedNoHoldersText =>
+      'No one minted, closed';
+
+  @override
+  String launch2_launch2FormatLaunch2CountdownText(
+    Object? days,
+    Object? two,
+    Object? two2,
+    Object? two3,
+  ) {
+    return '${days}d $two:$two2:$two3';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2CurveCapSentence(
+    Object? launch2CurveCapFigure,
+  ) {
+    return 'Each address can buy up to $launch2CurveCapFigure tokens';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2GasFailureText(Object? bnb) {
+    return 'this needs about $bnb';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2GasFailureText2(Object? bnb) {
+    return 'wallet has $bnb';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2GasFailureText3(
+    Object? loopLaunchNativeSymbolText,
+    Object? parts,
+  ) {
+    return 'Not enough $loopLaunchNativeSymbolText for fees: $parts. Top up and retry';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2GasShortText(
+    Object? loopLaunchNativeSymbolText,
+    Object? loopLaunchNativeSymbolText2,
+  ) {
+    return 'Not enough $loopLaunchNativeSymbolText for fees: your wallet\'s $loopLaunchNativeSymbolText2 can\'t cover this network fee. Top up and retry';
+  }
+
+  @override
+  String get launch2_launch2FormatLaunch2KeeperLine => 'Auto buyback running';
+
+  @override
+  String get launch2_launch2FormatLaunch2KeeperLine2 =>
+      'One on its way on-chain';
+
+  @override
+  String launch2_launch2FormatLaunch2KeeperLine3(Object? dateTimeLabel) {
+    return 'Last $dateTimeLabel';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2KeeperLine4(Object? reason) {
+    return 'Buyback on hold: $reason';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2KeeperLine5(Object? clockLabel) {
+    return 'Retry at $clockLabel';
+  }
+
+  @override
+  String get launch2_launch2FormatLaunch2NoMemeText =>
+      'You don\'t hold this token yet';
+
+  @override
+  String get launch2_launch2FormatLaunch2NoUsd1Text =>
+      'No USD1 in your wallet yet';
+
+  @override
+  String get launch2_launch2FormatLaunch2OpenedWithoutHoldersText =>
+      'No NFT holders, public pool opened directly';
+
+  @override
+  String launch2_launch2FormatLaunch2QuotaExhaustedText(
+    Object? launch2CurveCapFigure,
+  ) {
+    return 'Used up the per-address cap of $launch2CurveCapFigure tokens';
+  }
+
+  @override
+  String get launch2_launch2FormatLaunch2QuoteZeroText =>
+      'This amount can\'t buy the smallest unit. Try another amount';
+
+  @override
+  String launch2_launch2FormatLaunch2SaleDurationLabel(Object? hours) {
+    return '${hours}d';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2SaleDurationLabel2(Object? hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2SaleDurationLabel3(Object? minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get launch2_launch2FormatLaunch2SnapshotPendingMessage =>
+      'Waiting for the cutoff block; the 1-hour priority buy starts once the allowlist is published';
+
+  @override
+  String launch2_launch2FormatLaunch2SnapshotPendingMessage2(
+    Object? groupedFigure,
+  ) {
+    return 'Cutoff block #$groupedFigure; the 1-hour priority buy starts once the allowlist is published';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2SpokenDuration(
+    Object? days,
+    Object? hours,
+  ) {
+    return '${days}d ${hours}h';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2SpokenDuration2(
+    Object? hours,
+    Object? minutes,
+  ) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String launch2_launch2FormatLaunch2SpokenDuration3(Object? minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String get launch2_launch2FormatLaunch2SpokenDuration4 => 'Under 1m';
+
+  @override
+  String launch2_launch2FormatLaunch2TradingHoldSinceText(
+    Object? localClockLabel,
+  ) {
+    return 'Since $localClockLabel';
+  }
+
+  @override
+  String get launch2_launch2FormatLaunch2Usd1PausedText =>
+      'The USD1 issuer has paused USD1; trading and claims are unavailable';
+
+  @override
+  String get launch2_launch2FormatMismatch =>
+      'Allowlist publish issue; the platform is handling it';
+
+  @override
+  String get launch2_launch2FormatMismatch2 =>
+      'Check mismatch; the platform is handling it';
+
+  @override
+  String get launch2_launch2FormatNftSale => 'Minting';
+
+  @override
+  String get launch2_launch2FormatNftSale2 => 'Time left';
+
+  @override
+  String get launch2_launch2FormatPaused => 'Paused';
+
+  @override
+  String get launch2_launch2FormatPending => 'Verifying';
+
+  @override
+  String get launch2_launch2FormatPriority => 'Priority buy';
+
+  @override
+  String get launch2_launch2FormatPriority2 => 'Holders first · time left';
+
+  @override
+  String get launch2_launch2FormatPublic => 'Public pool';
+
+  @override
+  String get launch2_launch2FormatPublic2 =>
+      'Open to all; graduates when sold out';
+
+  @override
+  String launch2_launch2FormatQuota(Object? launch2CurveCapFigure) {
+    return 'Per-address cap $launch2CurveCapFigure tokens';
+  }
+
+  @override
+  String launch2_launch2FormatReason(Object? live) {
+    return 'Next one on hold: $live';
+  }
+
+  @override
+  String launch2_launch2FormatReason2(Object? live, Object? reason) {
+    return 'Next one on hold: $live (on-chain read); $reason (auto buyback)';
+  }
+
+  @override
+  String get launch2_launch2FormatReplaceAll => ', on hold';
+
+  @override
+  String get launch2_launch2FormatReplaceAll2 => ', runs shortly';
+
+  @override
+  String get launch2_launch2FormatS => 'taken from the MEME you receive';
+
+  @override
+  String launch2_launch2FormatS2(Object? localTimestampLabel) {
+    return 'Since $localTimestampLabel';
+  }
+
+  @override
+  String get launch2_launch2FormatS3 => 'Allowlist on-chain, syncing';
+
+  @override
+  String launch2_launch2FormatS4(Object? days) {
+    return '${days}d';
+  }
+
+  @override
+  String get launch2_launch2FormatSnapshotPending =>
+      '1-hour priority buy starts once the allowlist is published';
+
+  @override
+  String get launch2_launch2FormatSoldSupply => 'Bonding pool sellable amount';
+
+  @override
+  String get launch2_launch2FormatSwitch =>
+      'The platform is checking this project';
+
+  @override
+  String get launch2_launch2FormatSwitch10 =>
+      'Legacy price protection active, on hold';
+
+  @override
+  String get launch2_launch2FormatSwitch11 => 'On hold';
+
+  @override
+  String get launch2_launch2FormatSwitch12 =>
+      'Official pool principal protection: principal under 10,000 USD1 or one order over 1%';
+
+  @override
+  String get launch2_launch2FormatSwitch13 => 'Contract buyback paused';
+
+  @override
+  String get launch2_launch2FormatSwitch14 =>
+      'The project hasn\'t graduated yet';
+
+  @override
+  String get launch2_launch2FormatSwitch15 =>
+      'Buyback executor account isn\'t ready; the platform is handling it';
+
+  @override
+  String get launch2_launch2FormatSwitch16 =>
+      'Escrow records don\'t match the chain; the platform is checking';
+
+  @override
+  String get launch2_launch2FormatSwitch17 =>
+      'The trade received 0; the platform is handling it';
+
+  @override
+  String get launch2_launch2FormatSwitch18 => 'Legacy price protection active';
+
+  @override
+  String get launch2_launch2FormatSwitch19 => 'On-chain fees too high';
+
+  @override
+  String get launch2_launch2FormatSwitch2 => 'taken from the USD1 you pay';
+
+  @override
+  String get launch2_launch2FormatSwitch20 =>
+      'The contract refused to execute; the platform is handling it';
+
+  @override
+  String get launch2_launch2FormatSwitch21 =>
+      'The executor account is short on fees; the platform is handling it';
+
+  @override
+  String get launch2_launch2FormatSwitch22 =>
+      'On-chain fees too high; retrying later';
+
+  @override
+  String get launch2_launch2FormatSwitch23 =>
+      'The last one didn\'t execute; retrying later';
+
+  @override
+  String get launch2_launch2FormatSwitch24 => 'This project doesn\'t exist';
+
+  @override
+  String get launch2_launch2FormatSwitch25 =>
+      'Trading isn\'t open at this stage; the project status was reloaded';
+
+  @override
+  String get launch2_launch2FormatSwitch26 =>
+      'Priority buy is buy-only; selling opens with the public pool';
+
+  @override
+  String get launch2_launch2FormatSwitch27 => 'The bonding pool is sold out';
+
+  @override
+  String get launch2_launch2FormatSwitch28 => 'Used up the per-address buy cap';
+
+  @override
+  String get launch2_launch2FormatSwitch29 => 'The project is paused';
+
+  @override
+  String get launch2_launch2FormatSwitch3 => 'The next one can run';
+
+  @override
+  String get launch2_launch2FormatSwitch30 =>
+      'This wallet already minted the NFT (1 per address, ever)';
+
+  @override
+  String get launch2_launch2FormatSwitch31 =>
+      'The price changed and was refreshed';
+
+  @override
+  String get launch2_launch2FormatSwitch32 =>
+      'The quote expired and was refreshed';
+
+  @override
+  String get launch2_launch2FormatSwitch33 => 'Not enough USD1';
+
+  @override
+  String get launch2_launch2FormatSwitch34 => 'Sell amount exceeds holdings';
+
+  @override
+  String launch2_launch2FormatSwitch35(Object? loopLaunchNativeSymbolText) {
+    return 'Not enough $loopLaunchNativeSymbolText for fees. Top up and retry';
+  }
+
+  @override
+  String get launch2_launch2FormatSwitch36 => 'Invalid amount';
+
+  @override
+  String get launch2_launch2FormatSwitch37 => 'Over the buy limit';
+
+  @override
+  String get launch2_launch2FormatSwitch38 =>
+      'The quote changed. Get a new quote';
+
+  @override
+  String get launch2_launch2FormatSwitch39 =>
+      'Only the LOOP built-in wallet can buy';
+
+  @override
+  String get launch2_launch2FormatSwitch4 => 'Buyback paused';
+
+  @override
+  String get launch2_launch2FormatSwitch40 =>
+      'Priority buy is for allowlisted holders only';
+
+  @override
+  String get launch2_launch2FormatSwitch41 => 'Not available right now';
+
+  @override
+  String get launch2_launch2FormatSwitch42 =>
+      'This transaction expired and nothing was submitted. Start again';
+
+  @override
+  String get launch2_launch2FormatSwitch43 =>
+      'The simulation failed; this transaction would be rejected on-chain';
+
+  @override
+  String get launch2_launch2FormatSwitch44 =>
+      'Approve first; the simulation can\'t run before approval';
+
+  @override
+  String get launch2_launch2FormatSwitch45 =>
+      'Checking the allowlist; priority buy is unavailable';
+
+  @override
+  String get launch2_launch2FormatSwitch46 =>
+      'The MEME v2 contract isn\'t configured yet';
+
+  @override
+  String get launch2_launch2FormatSwitch47 =>
+      'The MEME v2 service isn\'t available right now';
+
+  @override
+  String get launch2_launch2FormatSwitch48 =>
+      'Couldn\'t read on-chain data right now';
+
+  @override
+  String get launch2_launch2FormatSwitch49 =>
+      'Couldn\'t load the wallet directory right now';
+
+  @override
+  String get launch2_launch2FormatSwitch5 => 'Buyback starts after graduation';
+
+  @override
+  String get launch2_launch2FormatSwitch50 => 'Trading is closed for now';
+
+  @override
+  String get launch2_launch2FormatSwitch51 => 'Mainnet signing isn\'t open yet';
+
+  @override
+  String get launch2_launch2FormatSwitch52 => 'MEME v2 isn\'t open yet';
+
+  @override
+  String get launch2_launch2FormatSwitch53 => 'Over the per-transaction limit';
+
+  @override
+  String get launch2_launch2FormatSwitch54 => 'Over today\'s limit';
+
+  @override
+  String get launch2_launch2FormatSwitch55 =>
+      'This transaction isn\'t allowed right now';
+
+  @override
+  String launch2_launch2FormatSwitch56(Object? usd1) {
+    return 'need $usd1';
+  }
+
+  @override
+  String launch2_launch2FormatSwitch57(Object? usd1) {
+    return 'have $usd1';
+  }
+
+  @override
+  String launch2_launch2FormatSwitch58(Object? usd1) {
+    return 'can pay up to $usd1';
+  }
+
+  @override
+  String launch2_launch2FormatSwitch59(Object? meme) {
+    return 'need $meme';
+  }
+
+  @override
+  String get launch2_launch2FormatSwitch6 => 'Escrow balance below one order';
+
+  @override
+  String launch2_launch2FormatSwitch60(Object? meme) {
+    return 'holding $meme';
+  }
+
+  @override
+  String launch2_launch2FormatSwitch61(Object? meme) {
+    return 'can sell up to $meme';
+  }
+
+  @override
+  String get launch2_launch2FormatSwitch62 => 'NFT allowlist published';
+
+  @override
+  String get launch2_launch2FormatSwitch7 =>
+      'Less than 10 seconds since the last one, runs shortly';
+
+  @override
+  String get launch2_launch2FormatSwitch8 =>
+      'Official pool principal protection: principal under 10,000 USD1 or one order over 1%';
+
+  @override
+  String get launch2_launch2FormatSwitch9 =>
+      'Couldn\'t read the contract quote, on hold';
+
+  @override
+  String get launch2_launch2FormatUpcoming => 'Minting soon';
+
+  @override
+  String get launch2_launch2FormatUpcoming2 => 'Mint countdown';
+
+  @override
+  String get launch2_launch2FormatVerified => 'Verified';
+
+  @override
+  String get launch2_launch2FullChartLaunch2ChartFullBlockedTitle =>
+      'Full-screen chart';
+
+  @override
+  String get launch2_launch2FullChartLaunch2ChartFullInvalidTitle =>
+      'Couldn\'t open this chart';
+
+  @override
+  String launch2_launch2Graduated(Object? launch2PriceLabel) {
+    return 'Graduation price $launch2PriceLabel';
+  }
+
+  @override
+  String launch2_launch2HeroLaunch2RecordFoot(
+    Object? launch2HeroDetail,
+    Object? past,
+  ) {
+    return '$past% of mint period passed · $launch2HeroDetail';
+  }
+
+  @override
+  String get launch2_launch2HeroNftSale => 'Consensus medal minting';
+
+  @override
+  String launch2_launch2HeroNftSale2(Object? perNft, Object? soldCount) {
+    return '$soldCount minted · $perNft';
+  }
+
+  @override
+  String launch2_launch2HeroNftSale3(Object? perNft, Object? soldCount) {
+    return '$soldCount minted · $perNft. Holders join the snapshot allowlist; a 1-hour priority buy follows its publication.';
+  }
+
+  @override
+  String launch2_launch2HeroNftSale4(
+    Object? launch2SaleDurationLabel,
+    Object? launch2ShortDateTime,
+  ) {
+    return 'Mint period $launch2SaleDurationLabel · ends $launch2ShortDateTime';
+  }
+
+  @override
+  String get launch2_launch2HeroNftSale5 => 'Mint ends in';
+
+  @override
+  String launch2_launch2HeroPerNft(Object? launch2Usd1Label) {
+    return '$launch2Usd1Label each';
+  }
+
+  @override
+  String get launch2_launch2HeroPriority => 'Priority buy live';
+
+  @override
+  String launch2_launch2HeroPriority2(
+    Object? launch2BpsLabel,
+    Object? launch2HeroPrice,
+  ) {
+    return 'Bonding pool $launch2BpsLabel sold · $launch2HeroPrice';
+  }
+
+  @override
+  String launch2_launch2HeroPriority3(
+    Object? launch2BpsLabel,
+    Object? launch2HeroPrice,
+    Object? soldCount,
+  ) {
+    return '$soldCount minted · bonding pool $launch2BpsLabel sold · $launch2HeroPrice';
+  }
+
+  @override
+  String get launch2_launch2HeroPriority4 => 'Priority buy ends in';
+
+  @override
+  String launch2_launch2HeroPublic(Object? launch2HeroPrice) {
+    return '$launch2HeroPrice · graduates when sold out';
+  }
+
+  @override
+  String launch2_launch2HeroPublic2(Object? launch2HeroPrice) {
+    return '$launch2HeroPrice · graduates at 800M sold';
+  }
+
+  @override
+  String launch2_launch2HeroS(Object? left) {
+    return 'Mint in $left';
+  }
+
+  @override
+  String launch2_launch2HeroS2(Object? launch2ShortDateTime) {
+    return 'Priority buy live · ends $launch2ShortDateTime';
+  }
+
+  @override
+  String get launch2_launch2HeroSnapshotPending =>
+      '1-hour priority buy after the allowlist is published';
+
+  @override
+  String get launch2_launch2HeroSwitch => 'Bonding pool sprint';
+
+  @override
+  String get launch2_launch2HeroSwitch2 => 'Mint time TBD';
+
+  @override
+  String launch2_launch2HeroSwitch3(Object? left) {
+    return 'Ends in $left';
+  }
+
+  @override
+  String launch2_launch2HeroSwitch4(Object? soldCount) {
+    return '$soldCount minted';
+  }
+
+  @override
+  String launch2_launch2HeroSwitch5(Object? launch2BpsLabel) {
+    return 'Bonding pool $launch2BpsLabel sold';
+  }
+
+  @override
+  String get launch2_launch2HeroSwitch6 => 'Bonding pool progress';
+
+  @override
+  String launch2_launch2HeroUpcoming(
+    Object? launch2SaleDurationLabel,
+    Object? perNft,
+  ) {
+    return '$perNft · mint period $launch2SaleDurationLabel';
+  }
+
+  @override
+  String launch2_launch2HeroUpcoming2(
+    Object? launch2SaleDurationLabel,
+    Object? launch2ShortDateTime,
+    Object? perNft,
+  ) {
+    return 'Mint starts $launch2ShortDateTime · $perNft · mint period $launch2SaleDurationLabel';
+  }
+
+  @override
+  String launch2_launch2HeroUpcoming3(Object? launch2ShortDateTime) {
+    return 'Mint starts $launch2ShortDateTime';
+  }
+
+  @override
+  String get launch2_launch2HeroUpcoming4 => 'Mint in';
+
+  @override
+  String launch2_launch2InstanceAside(Object? launch2Usd1Label) {
+    return '24h volume $launch2Usd1Label';
+  }
+
+  @override
+  String get launch2_launch2InstanceBody =>
+      'Every v2 project uses the same parameters; project owners can\'t change them.';
+
+  @override
+  String launch2_launch2InstanceBody2(
+    Object? launch2MemeCompact,
+    Object? launch2Usd1Label,
+  ) {
+    return 'Medal mint ($launch2Usd1Label each, 1 per address, ever) → snapshot allowlist and 1-hour priority buy → public pool. Selling out $launch2MemeCompact tokens in any round builds the official pool and graduates.';
+  }
+
+  @override
+  String get launch2_launch2InstanceBody3 =>
+      'Each address can mint only 1, ever. Addresses holding a medal when minting ends join the snapshot allowlist, with a 1-hour priority buy after it\'s published.';
+
+  @override
+  String launch2_launch2InstanceBody4(
+    Object? launch2BpsLabel,
+    Object? tickSpacing,
+  ) {
+    return 'LP fee $launch2BpsLabel, tickSpacing $tickSpacing';
+  }
+
+  @override
+  String launch2_launch2InstanceBody5(
+    Object? buybackMinIntervalSeconds,
+    Object? launch2Usd1Label,
+  ) {
+    return '$launch2Usd1Label per order, at least $buybackMinIntervalSeconds seconds apart. Skipped when the official pool\'s USD1 principal is under 10,000 or an order exceeds 1% of it; refused attempts leave no record.';
+  }
+
+  @override
+  String get launch2_launch2InstanceBuild => 'Mint progress';
+
+  @override
+  String get launch2_launch2InstanceBuild2 => 'Latest';
+
+  @override
+  String get launch2_launch2InstanceLabel => 'Bonding pool';
+
+  @override
+  String get launch2_launch2InstanceLabel2 => 'Graduation reserve';
+
+  @override
+  String get launch2_launch2InstanceLabel3 => 'Bonding pool trade tax';
+
+  @override
+  String get launch2_launch2InstanceLabel4 => 'DEX pool tax';
+
+  @override
+  String get launch2_launch2InstanceLabel5 => 'Per-address cap';
+
+  @override
+  String get launch2_launch2InstanceLabel6 => 'Price each';
+
+  @override
+  String get launch2_launch2InstanceLabel7 => 'Graduated at';
+
+  @override
+  String get launch2_launch2InstanceLabel8 => 'Graduation price';
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuyNftLabel => 'Medal held';
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuyNftLabel2 => 'Mint medal';
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuybackEscrowLabel =>
+      'Escrow balance';
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuybackInfoLabel => 'About buybacks';
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuybackLatestValue => 'None yet';
+
+  @override
+  String launch2_launch2InstanceLaunch2BuybackLiveUnavailableMessage(
+    Object? launch2ReasonText,
+  ) {
+    return 'Couldn\'t read live on-chain data · $launch2ReasonText';
+  }
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuybackNextLabel => 'Next';
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuybackNotBurnBody =>
+      'Tokens bought back go to the project\'s registered recipient address; they aren\'t burned.';
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuybackNotBurnTitle =>
+      'Buyback isn\'t a burn';
+
+  @override
+  String get launch2_launch2InstanceLaunch2BuybackTotalLabel =>
+      'Total bought back';
+
+  @override
+  String launch2_launch2InstanceLaunch2BuybackTotalValue(
+    Object? executedCount,
+    Object? launch2Usd1Label,
+  ) {
+    return '$launch2Usd1Label · orders: $executedCount';
+  }
+
+  @override
+  String launch2_launch2InstanceLaunch2BuybackUnavailableMessage(
+    Object? chainFailureReason,
+  ) {
+    return 'Couldn\'t load buyback details · $chainFailureReason';
+  }
+
+  @override
+  String launch2_launch2InstanceLaunch2CurveSupply(
+    Object? launch2MemeCompact,
+    Object? launch2MemeCompact2,
+  ) {
+    return 'Sold $launch2MemeCompact / $launch2MemeCompact2; graduates to the official pool when sold out';
+  }
+
+  @override
+  String get launch2_launch2InstanceLaunch2EvidencePendingMessage =>
+      'Checking the contract; trading may be unavailable';
+
+  @override
+  String get launch2_launch2InstanceLaunch2InvalidRouteTitle =>
+      'Couldn\'t open this project';
+
+  @override
+  String get launch2_launch2InstanceLaunch2MineOnlyToggle =>
+      'My DEX pool trades';
+
+  @override
+  String get launch2_launch2InstanceLaunch2MyPoolTradesEmptyMessage =>
+      'Trades are still syncing. Refresh later';
+
+  @override
+  String launch2_launch2InstanceLaunch2MyPoolTradesFailedMessage(
+    Object? chainFailureReason,
+  ) {
+    return 'Couldn\'t load my DEX pool trades · $chainFailureReason';
+  }
+
+  @override
+  String get launch2_launch2InstanceLaunch2MyPoolTradesNoWalletMessage =>
+      'Activate a wallet to see only your trades';
+
+  @override
+  String get launch2_launch2InstanceLaunch2MyPoolTradesNoneTitle =>
+      'You have no DEX pool trades yet';
+
+  @override
+  String launch2_launch2InstanceLaunch2MyPoolTradesProvenanceDetail(
+    Object? launch2MyPoolTradesShown,
+  ) {
+    return 'Only trades routed through the official pool, latest $launch2MyPoolTradesShown; amounts are after the 2% DEX pool tax.';
+  }
+
+  @override
+  String get launch2_launch2InstanceLaunch2MyPoolTradesUnsupportedMessage =>
+      'Couldn\'t load my DEX pool trades';
+
+  @override
+  String launch2_launch2InstanceLaunch2NftEnd(Object? dateTimeLabel) {
+    return 'Ends $dateTimeLabel';
+  }
+
+  @override
+  String get launch2_launch2InstanceLaunch2NftHeldLabel => 'I hold';
+
+  @override
+  String get launch2_launch2InstanceLaunch2NftInfo => 'Project NFT';
+
+  @override
+  String get launch2_launch2InstanceLaunch2NftInfoLabel =>
+      'About the project NFT';
+
+  @override
+  String get launch2_launch2InstanceLaunch2NftOpenLabel => 'Mint page';
+
+  @override
+  String launch2_launch2InstanceLaunch2OpenedWithoutHoldersBody(
+    Object? launch2OpenedWithoutHoldersText,
+  ) {
+    return '$launch2OpenedWithoutHoldersText; priority buy skipped.';
+  }
+
+  @override
+  String get launch2_launch2InstanceLaunch2PoolIdTitle =>
+      'Pool ID (Uniswap v4, no pool address)';
+
+  @override
+  String get launch2_launch2InstanceLaunch2PoolInfo => 'Official pool';
+
+  @override
+  String get launch2_launch2InstanceLaunch2PoolInfoLabel =>
+      'About the official pool';
+
+  @override
+  String get launch2_launch2InstanceLaunch2PoolTaxBody =>
+      'Charged on every official pool buy and sell; the Hook adds it to buyback escrow for rule-based buybacks.';
+
+  @override
+  String launch2_launch2InstanceLaunch2PoolTaxTitle(Object? launch2BpsLabel) {
+    return 'DEX pool tax $launch2BpsLabel';
+  }
+
+  @override
+  String get launch2_launch2InstanceLaunch2PoolTradesEmptyTitle =>
+      'No DEX pool trades yet';
+
+  @override
+  String launch2_launch2InstanceLaunch2PoolTradesFailedMessage(Object? state) {
+    return 'Couldn\'t load DEX pool trades · $state';
+  }
+
+  @override
+  String launch2_launch2InstanceLaunch2PoolTradesProvenanceDetail(
+    Object? launch2RecentPoolTradesLimit,
+  ) {
+    return 'Latest $launch2RecentPoolTradesLimit official pool trades, excluding buybacks; sell amounts are received after tax.';
+  }
+
+  @override
+  String get launch2_launch2InstanceLaunch2TemplateInfo => 'Launch rules';
+
+  @override
+  String get launch2_launch2InstanceLaunch2TemplateInfoLabel =>
+      'About launch rules';
+
+  @override
+  String get launch2_launch2InstanceLaunch2TemplateRiskTitle => 'Risks';
+
+  @override
+  String get launch2_launch2InstanceLaunch2TradeSheetBarrierLabel =>
+      'Close trade panel';
+
+  @override
+  String get launch2_launch2InstanceLaunch2TradesProvenanceDetail =>
+      'Latest 20 bonding pool trades; amounts include the 10% tax.';
+
+  @override
+  String get launch2_launch2InstanceLoopBadge => 'You\'re the owner';
+
+  @override
+  String get launch2_launch2InstanceLoopLabel => 'Medal mint';
+
+  @override
+  String get launch2_launch2InstanceLoopLabel2 => 'Latest trades';
+
+  @override
+  String get launch2_launch2InstanceLoopProvenanceLine => 'LOOP on-chain index';
+
+  @override
+  String get launch2_launch2InstanceMessage => 'Token address copied';
+
+  @override
+  String get launch2_launch2InstanceMessage2 =>
+      'No one minted during the mint period. This project uses a legacy contract, so no allowlist can be built and priority buy and the public pool won\'t start.';
+
+  @override
+  String launch2_launch2InstanceNftSale(Object? soldCount) {
+    return '1 per address · $soldCount minted';
+  }
+
+  @override
+  String get launch2_launch2InstancePartsBuild => 'Current price (USD1)';
+
+  @override
+  String get launch2_launch2InstancePartsBuild2 => 'My holdings';
+
+  @override
+  String launch2_launch2InstancePartsBuild3(
+    Object? launch2PriceLabel,
+    Object? launch2TradeTimeLabel,
+  ) {
+    return '$launch2TradeTimeLabel · price $launch2PriceLabel';
+  }
+
+  @override
+  String get launch2_launch2InstancePartsBuyback => 'Buyback';
+
+  @override
+  String get launch2_launch2InstancePartsEmptyText => 'No trade price yet';
+
+  @override
+  String get launch2_launch2InstancePartsInfo => 'Info';
+
+  @override
+  String get launch2_launch2InstancePartsLabel => 'Value';
+
+  @override
+  String get launch2_launch2InstancePartsLabel2 => 'Cost price';
+
+  @override
+  String get launch2_launch2InstancePartsLabel3 => 'Mine only';
+
+  @override
+  String get launch2_launch2InstancePartsLaunch2CopyAddressLabel =>
+      'Copy token address';
+
+  @override
+  String launch2_launch2InstancePartsLaunch2DynStripLineLabel(
+    Object? line,
+    Object? state,
+  ) {
+    return 'This round, $state, $line';
+  }
+
+  @override
+  String get launch2_launch2InstancePartsLaunch2HoldingPartialNoteBody =>
+      'Some holdings were transferred in on-chain without a cost record; cost price and P&L only cover the part with cost records.';
+
+  @override
+  String get launch2_launch2InstancePartsLaunch2HoldingPartialNoteTitle =>
+      'Some holdings have no cost record';
+
+  @override
+  String get launch2_launch2InstancePartsLaunch2HoldingPnlInfoLabel => 'P&L';
+
+  @override
+  String get launch2_launch2InstancePartsLaunch2HoldingPnlInfoTitle =>
+      'Holding P&L';
+
+  @override
+  String get launch2_launch2InstancePartsLaunch2HoldingRealizedNoteTitle =>
+      'Realized P&L';
+
+  @override
+  String launch2_launch2InstancePartsPot(Object? launch2Usd1Label) {
+    return 'Reward pool $launch2Usd1Label';
+  }
+
+  @override
+  String launch2_launch2InstancePartsS(Object? launch2BpsLabel) {
+    return 'Drop $launch2BpsLabel';
+  }
+
+  @override
+  String get launch2_launch2InstancePartsText => 'Anonymous';
+
+  @override
+  String get launch2_launch2InstancePartsTrades => 'Trades';
+
+  @override
+  String get launch2_launch2InstancePriority => 'Holders first';
+
+  @override
+  String get launch2_launch2InstanceRows => 'Mint starts';
+
+  @override
+  String get launch2_launch2InstanceRows2 => 'Mint price';
+
+  @override
+  String get launch2_launch2InstanceRows3 => 'Mint duration';
+
+  @override
+  String get launch2_launch2InstanceRows4 => 'Minted';
+
+  @override
+  String launch2_launch2InstanceRows5(Object? soldCount) {
+    return '$soldCount';
+  }
+
+  @override
+  String get launch2_launch2InstanceRows6 => 'My NFT';
+
+  @override
+  String get launch2_launch2InstanceRows7 => 'Wallet not activated';
+
+  @override
+  String get launch2_launch2InstanceRows8 => 'Cutoff block';
+
+  @override
+  String get launch2_launch2InstanceRows9 => 'Closed at';
+
+  @override
+  String launch2_launch2InstanceS(Object? elapsed) {
+    return '$elapsed% passed';
+  }
+
+  @override
+  String launch2_launch2InstanceSemanticLabel(Object? elapsedText) {
+    return 'Mint time $elapsedText';
+  }
+
+  @override
+  String launch2_launch2InstanceSemanticLabel2(Object? launch2BpsLabel) {
+    return 'Bonding pool progress $launch2BpsLabel';
+  }
+
+  @override
+  String get launch2_launch2InstanceSwitch =>
+      'The last one is still confirming on-chain. Trade after it confirms';
+
+  @override
+  String launch2_launch2InstanceText(Object? noun) {
+    return 'Your $noun is confirmed on-chain.';
+  }
+
+  @override
+  String launch2_launch2InstanceText2(Object? noun) {
+    return 'Your DEX pool $noun is confirmed on-chain.';
+  }
+
+  @override
+  String launch2_launch2InstanceText3(Object? noun) {
+    return 'The official pool recorded a new trade, so your DEX pool $noun should be confirmed; your wallet balance is the final amount.';
+  }
+
+  @override
+  String launch2_launch2InstanceText4(Object? launch2IntentNoun) {
+    return 'Broadcast, but no confirmation yet. It may still be confirming; check again later. Don\'t submit the $launch2IntentNoun again.';
+  }
+
+  @override
+  String get launch2_launch2InstanceText5 =>
+      'You\'re seeing the project page as users see it';
+
+  @override
+  String get launch2_launch2InstanceTitle => 'Fixed by the platform template';
+
+  @override
+  String get launch2_launch2InstanceTitle2 => 'Three-stage launch';
+
+  @override
+  String get launch2_launch2InstanceTitle3 => 'All DEX pool trades';
+
+  @override
+  String get launch2_launch2InstanceTitle4 => 'Fees';
+
+  @override
+  String get launch2_launch2InstanceTitle5 => 'Rules';
+
+  @override
+  String get launch2_launch2InstanceTitle6 => 'Recipient address';
+
+  @override
+  String launch2_launch2InstanceUpcoming(
+    Object? launch2SaleDurationLabel,
+    Object? launch2Usd1Label,
+  ) {
+    return '$launch2Usd1Label each · mint period $launch2SaleDurationLabel';
+  }
+
+  @override
+  String launch2_launch2InstanceValue(
+    Object? launch2BpsLabel,
+    Object? launch2CurveCapFigure,
+  ) {
+    return '$launch2CurveCapFigure tokens ($launch2BpsLabel)';
+  }
+
+  @override
+  String launch2_launch2InstanceZero(Object? groupedFigure) {
+    return 'My DEX pool trades · $groupedFigure total';
+  }
+
+  @override
+  String get launch2_launch2Label => 'Top up';
+
+  @override
+  String get launch2_launch2Label2 => 'Get funds';
+
+  @override
+  String get launch2_launch2Launch2SnapshotExplorerLabel =>
+      'View publish transaction on BscScan';
+
+  @override
+  String get launch2_launch2Launch2SnapshotMembersLabel => 'Allowlist size';
+
+  @override
+  String launch2_launch2Launch2SnapshotMembersValue(Object? members) {
+    return '$members';
+  }
+
+  @override
+  String get launch2_launch2Launch2SnapshotPublishedAtLabel => 'Published at';
+
+  @override
+  String get launch2_launch2Launch2SnapshotTxLabel => 'Publish transaction';
+
+  @override
+  String get launch2_launch2Launch2SnapshotVerificationLabel => 'Verification';
+
+  @override
+  String get launch2_launch2LaunchpadBuild => 'TBD';
+
+  @override
+  String launch2_launch2LaunchpadBuyback(Object? ticker, Object? usd1) {
+    return 'Platform bought back $ticker$usd1';
+  }
+
+  @override
+  String get launch2_launch2LaunchpadClosed => 'Paused / no mints';
+
+  @override
+  String launch2_launch2LaunchpadCurveBuy(
+    Object? ticker,
+    Object? usd1,
+    Object? who,
+  ) {
+    return '${who}bought $ticker$usd1';
+  }
+
+  @override
+  String launch2_launch2LaunchpadCurveSell(
+    Object? ticker,
+    Object? usd1,
+    Object? who,
+  ) {
+    return '${who}sold $ticker$usd1';
+  }
+
+  @override
+  String launch2_launch2LaunchpadGraduated(Object? ticker) {
+    return '$ticker graduated';
+  }
+
+  @override
+  String launch2_launch2LaunchpadLaunch2DeskKicker(
+    Object? loopTestnetStampText,
+  ) {
+    return 'Launchpad · $loopTestnetStampText';
+  }
+
+  @override
+  String launch2_launch2LaunchpadLaunch2RelativeTime(Object? inMinutes) {
+    return '${inMinutes}m ago';
+  }
+
+  @override
+  String get launch2_launch2LaunchpadLaunch2TapeActor => 'Someone';
+
+  @override
+  String get launch2_launch2LaunchpadLaunch2TapeFaceName => 'This user';
+
+  @override
+  String get launch2_launch2LaunchpadLoopLabel => 'Live trades';
+
+  @override
+  String launch2_launch2LaunchpadNftMint(Object? ticker, Object? who) {
+    return '${who}minted the $ticker medal';
+  }
+
+  @override
+  String launch2_launch2LaunchpadRewardClaimed(
+    Object? ticker,
+    Object? usd1,
+    Object? who,
+  ) {
+    return '${who}claimed $ticker rewards$usd1';
+  }
+
+  @override
+  String launch2_launch2LaunchpadRoundActivated(Object? ticker) {
+    return 'New $ticker DEX pool round active';
+  }
+
+  @override
+  String get launch2_launch2LaunchpadS => 'Launchpad · BSC';
+
+  @override
+  String get launch2_launch2LaunchpadSemantics => 'Campaigns';
+
+  @override
+  String get launch2_launch2LaunchpadTitle => 'No launches in progress';
+
+  @override
+  String get launch2_launch2LaunchpadUpcoming => 'Upcoming';
+
+  @override
+  String get launch2_launch2ListEmptyMessage => 'No v2 projects yet';
+
+  @override
+  String get launch2_launch2ListIf => 'Can\'t reach LOOP right now';
+
+  @override
+  String get launch2_launch2ListLabel => 'See live launches';
+
+  @override
+  String get launch2_launch2ListLabel2 => 'See classic launches';
+
+  @override
+  String get launch2_launch2ListLaunch2LiveEmptyMessage =>
+      'No projects minting or in the bonding pool right now';
+
+  @override
+  String launch2_launch2ListMessage(Object? launch2CapabilityText) {
+    return 'MEME v2 isn\'t available right now · $launch2CapabilityText';
+  }
+
+  @override
+  String get launch2_launch2ListS => 'MEME v2 status not loaded yet';
+
+  @override
+  String get launch2_launch2ListTitle => 'v2 launch';
+
+  @override
+  String get launch2_launch2ListTitle2 => 'No graduated v2 projects yet';
+
+  @override
+  String get launch2_launch2NftBarrierLabel => 'Close NFT picker';
+
+  @override
+  String get launch2_launch2NftButtonLabel => 'Mint opens at start';
+
+  @override
+  String get launch2_launch2NftButtonLabel2 => 'Held · 1 per address';
+
+  @override
+  String launch2_launch2NftButtonLabel3(Object? launch2Usd1Label) {
+    return 'Mint 1 · $launch2Usd1Label';
+  }
+
+  @override
+  String get launch2_launch2NftButtonLabel4 => 'Activate a wallet to mint';
+
+  @override
+  String get launch2_launch2NftButtonLabel5 => 'Waiting for allowlist';
+
+  @override
+  String get launch2_launch2NftButtonLabel6 => 'Minting ended';
+
+  @override
+  String get launch2_launch2NftButtonLabel7 => 'Go to project page';
+
+  @override
+  String get launch2_launch2NftCardSemantics => 'Default image';
+
+  @override
+  String get launch2_launch2NftEntry => 'Join the snapshot allowlist';
+
+  @override
+  String get launch2_launch2NftEntry2 =>
+      'Hold it when minting ends to join the snapshot allowlist, with a 1-hour bonding pool priority buy after it\'s published';
+
+  @override
+  String get launch2_launch2NftEntry3 => 'Escrow and buyback';
+
+  @override
+  String launch2_launch2NftEntry4(Object? launch2Usd1Label) {
+    return 'Mint payments go to this project\'s escrow contract; after graduation the platform buys back MEME at $launch2Usd1Label per order';
+  }
+
+  @override
+  String get launch2_launch2NftEntry5 => '1 per address';
+
+  @override
+  String launch2_launch2NftEntry6(Object? launch2Usd1Label) {
+    return 'Each address can mint only 1, ever · $launch2Usd1Label each';
+  }
+
+  @override
+  String launch2_launch2NftEntry7(Object? launch2SaleDurationLabel) {
+    return 'Mint period $launch2SaleDurationLabel';
+  }
+
+  @override
+  String launch2_launch2NftIf(Object? tokenId) {
+    return '#$tokenId · on the snapshot allowlist';
+  }
+
+  @override
+  String launch2_launch2NftIf2(Object? tokenId) {
+    return '#$tokenId · on the candidate list';
+  }
+
+  @override
+  String launch2_launch2NftLaunch2NftMedalPictureLabel(
+    Object? bottomLabel,
+    Object? ticker,
+  ) {
+    return '$ticker consensus medal, $bottomLabel';
+  }
+
+  @override
+  String get launch2_launch2NftLaunch2NftMintedToast =>
+      'Minted · joins the allowlist when minting ends';
+
+  @override
+  String get launch2_launch2NftLaunch2NftProvenanceDetail =>
+      'Stages and countdowns come from the server on chain time and reload when due.';
+
+  @override
+  String get launch2_launch2NftLoopLabel => 'What this medal does';
+
+  @override
+  String get launch2_launch2NftLoopLabel2 => 'My medal';
+
+  @override
+  String get launch2_launch2NftLoopLabel3 => 'Choose an NFT to send';
+
+  @override
+  String launch2_launch2NftMintConfirmLabel(Object? noun) {
+    return 'Continue to $noun';
+  }
+
+  @override
+  String launch2_launch2NftMintHeading(Object? noun, Object? ticker) {
+    return '$noun $ticker consensus medal';
+  }
+
+  @override
+  String get launch2_launch2NftMintLaunch2ActionFailure =>
+      'No wallet available. Activate a wallet before minting';
+
+  @override
+  String get launch2_launch2NftMintNoun => 'mint';
+
+  @override
+  String get launch2_launch2NftS => 'Consensus medal';
+
+  @override
+  String launch2_launch2NftSale(Object? left, Object? soldCount) {
+    return 'Minted $soldCount$left';
+  }
+
+  @override
+  String launch2_launch2NftStatus(Object? launch2SnapshotPendingTitle) {
+    return 'Minting ended · $launch2SnapshotPendingTitle';
+  }
+
+  @override
+  String get launch2_launch2NftStatus2 =>
+      'No one minted during the mint period; went straight to the public round';
+
+  @override
+  String get launch2_launch2NftStatus3 => 'Bonding pool open';
+
+  @override
+  String get launch2_launch2NftStatus4 =>
+      'No one minted during the mint period; the project is closed';
+
+  @override
+  String get launch2_launch2NftText =>
+      'Broadcast, but no confirmation yet. It may still be confirming; check again later. Don\'t mint again.';
+
+  @override
+  String get launch2_launch2NftToProject => 'Trade on project page';
+
+  @override
+  String get launch2_launch2PoolTradePanelLaunch2DynPanelNote =>
+      'Buys from any app count toward rewards, credited to the address receiving the MEME';
+
+  @override
+  String get launch2_launch2PoolTradePanelLaunch2GoSwapLabel =>
+      'Or trade in Wallet Swap';
+
+  @override
+  String get launch2_launch2PoolTradePanelLaunch2PoolMaxLabel =>
+      'Fill max sellable';
+
+  @override
+  String get launch2_launch2PoolTradePanelLaunch2PoolModeCaption =>
+      'Input mode';
+
+  @override
+  String get launch2_launch2PoolTradePanelLaunch2PoolSlippageCustomLabel =>
+      'Custom';
+
+  @override
+  String get launch2_launch2PoolTradePanelLaunch2PoolTaxLabel =>
+      'DEX pool trade';
+
+  @override
+  String get launch2_launch2PoolTradePanelLoopProvenanceLine =>
+      'Official pool router';
+
+  @override
+  String launch2_launch2PoolViewModelBase(Object? launch2BpsLabel) {
+    return 'Base tax $launch2BpsLabel';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelConfirmLabel => 'Confirming last one…';
+
+  @override
+  String get launch2_launch2PoolViewModelConfirmLabel2 => 'Confirm buy';
+
+  @override
+  String get launch2_launch2PoolViewModelConfirmLabel3 => 'Confirm sell';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolFailureText =>
+      'Pay (incl. tax)';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolFailureText2 =>
+      'Want to buy';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolFailureText3 =>
+      'Want to receive';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolFailureText4 =>
+      'Pay amount';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolFailureText5 =>
+      'Buy amount';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolFailureText6 =>
+      'Sell amount';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolFailureText7 =>
+      'Get amount';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolLine => 'Estimated payment';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolLine2 => 'Maximum payment';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolLine3 => 'Average price';
+
+  @override
+  String launch2_launch2PoolViewModelLaunch2PoolLine4(
+    Object? launch2BuyFeeSideText,
+    Object? rate,
+  ) {
+    return 'Base tax $rate ($launch2BuyFeeSideText)';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolLine5 =>
+      'This trade earns reward weight';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolLine6 => 'Reward weight';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolLine7 =>
+      'Not active now, no rewards';
+
+  @override
+  String launch2_launch2PoolViewModelLaunch2PoolLine8(
+    Object? base,
+    Object? launch2BpsLabel,
+  ) {
+    return '$base + current dynamic tax $launch2BpsLabel (from USD1)';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolLine9 =>
+      'Of which dynamic tax';
+
+  @override
+  String launch2_launch2PoolViewModelLaunch2PoolSlippageFromInput(
+    Object? launch2MemeLabel,
+    Object? usd1,
+  ) {
+    return '$launch2MemeLabel · pay $usd1';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolTradeView =>
+      'Official pool info is still syncing; trading isn\'t available yet';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolTradeView2 =>
+      'DEX pool trading isn\'t open yet (router not configured)';
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolTradeView3 =>
+      'No wallet available. Activate a wallet to trade';
+
+  @override
+  String launch2_launch2PoolViewModelLaunch2PoolTradeView4(
+    Object? launch2MemeLabel,
+  ) {
+    return 'Sell amount exceeds sellable $launch2MemeLabel';
+  }
+
+  @override
+  String launch2_launch2PoolViewModelLaunch2PoolTradeView5(
+    Object? usd1,
+    Object? usd12,
+  ) {
+    return 'Not enough USD1: needs up to $usd1, wallet has $usd12';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelLaunch2PoolTradeView6 =>
+      'Getting a quote from the official pool…';
+
+  @override
+  String launch2_launch2PoolViewModelLaunch2PoolTradeView7(
+    Object? launch2MemeLabel,
+  ) {
+    return 'Holding $launch2MemeLabel';
+  }
+
+  @override
+  String launch2_launch2PoolViewModelNull(Object? launch2PoolFailureText) {
+    return 'Couldn\'t get a quote · $launch2PoolFailureText';
+  }
+
+  @override
+  String launch2_launch2PoolViewModelProvenance(
+    Object? quote,
+    Object? quotedAtBlock,
+  ) {
+    return 'Based on the official pool at block $quotedAtBlock, $quote; re-quotes automatically when it expires.';
+  }
+
+  @override
+  String launch2_launch2PoolViewModelProvenance2(
+    Object? launch2BpsLabel,
+    Object? quotedAtBlock,
+  ) {
+    return 'Based on the official pool at block $quotedAtBlock, after the $launch2BpsLabel DEX pool tax; re-quotes automatically when it expires.';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelS =>
+      'DEX pool router not configured; trading unavailable';
+
+  @override
+  String get launch2_launch2PoolViewModelS10 =>
+      'The pool doesn\'t support this trade type';
+
+  @override
+  String get launch2_launch2PoolViewModelS11 =>
+      'The pool is busy. Try again later';
+
+  @override
+  String get launch2_launch2PoolViewModelS12 =>
+      'This round hasn\'t ended; claim after it ends';
+
+  @override
+  String get launch2_launch2PoolViewModelS13 =>
+      'This round\'s rewards were already claimed';
+
+  @override
+  String get launch2_launch2PoolViewModelS14 =>
+      'This claim already recorded another transaction';
+
+  @override
+  String get launch2_launch2PoolViewModelS15 =>
+      'Couldn\'t find this claim request';
+
+  @override
+  String get launch2_launch2PoolViewModelS16 => 'Estimated to receive';
+
+  @override
+  String get launch2_launch2PoolViewModelS17 => 'Minimum received';
+
+  @override
+  String get launch2_launch2PoolViewModelS18 => 'Estimated sell';
+
+  @override
+  String get launch2_launch2PoolViewModelS19 => 'Maximum sell';
+
+  @override
+  String get launch2_launch2PoolViewModelS2 =>
+      'DEX pool router check failed; trading unavailable';
+
+  @override
+  String launch2_launch2PoolViewModelS20(
+    Object? launch2MemeLabel,
+    Object? launch2MemeLabel2,
+    Object? tickerLabel,
+  ) {
+    return 'Not enough $tickerLabel: needs up to $launch2MemeLabel, wallet has $launch2MemeLabel2';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelS21 =>
+      'Enter an amount to see a quote';
+
+  @override
+  String launch2_launch2PoolViewModelS22(
+    Object? launch2MemeLabel,
+    Object? launch2MemeLabel2,
+  ) {
+    return 'Holding $launch2MemeLabel · sellable $launch2MemeLabel2';
+  }
+
+  @override
+  String launch2_launch2PoolViewModelS23(
+    Object? launch2MemeLabel,
+    Object? usd1,
+  ) {
+    return '$launch2MemeLabel · get $usd1';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelS3 =>
+      'DEX pool router doesn\'t match the pool; trading unavailable';
+
+  @override
+  String get launch2_launch2PoolViewModelS4 =>
+      'DEX pool check failed; trading unavailable';
+
+  @override
+  String get launch2_launch2PoolViewModelS5 =>
+      'The DEX pool isn\'t initialized yet';
+
+  @override
+  String get launch2_launch2PoolViewModelS6 =>
+      'This pool only supports trading by payment amount';
+
+  @override
+  String get launch2_launch2PoolViewModelS7 =>
+      'This project\'s DEX pool has no reward rounds';
+
+  @override
+  String get launch2_launch2PoolViewModelS8 => 'Invalid round number';
+
+  @override
+  String get launch2_launch2PoolViewModelS9 =>
+      'The pool rejected this trade entry';
+
+  @override
+  String get launch2_launch2PoolViewModelSwitch =>
+      'The official pool simulation failed. Try another amount';
+
+  @override
+  String get launch2_launch2PoolViewModelSwitch2 =>
+      'The project hasn\'t graduated; the official pool isn\'t open yet';
+
+  @override
+  String get launch2_launch2PoolViewModelSwitch3 =>
+      'Not enough liquidity in the official pool. Try a smaller amount';
+
+  @override
+  String get launch2_launch2PoolViewModelSwitch4 =>
+      'This amount is too small and converts to 0';
+
+  @override
+  String get launch2_launch2PoolViewModelSwitch5 =>
+      'DEX pool trading is closed while the platform checks the official pool';
+
+  @override
+  String get launch2_launch2PoolViewModelSwitch6 =>
+      'Not enough USD1; no transaction was made';
+
+  @override
+  String get launch2_launch2PoolViewModelSwitch7 =>
+      'Sell amount exceeds holdings; no transaction was made';
+
+  @override
+  String launch2_launch2PoolViewModelTaxLabel(Object? launch2BpsLabel) {
+    return '$launch2BpsLabel + dynamic sell tax';
+  }
+
+  @override
+  String get launch2_launch2PoolViewModelText =>
+      'Couldn\'t load wallet balance · shown after quote';
+
+  @override
+  String launch2_launch2PoolViewModelText2(Object? launch2MemeLabel) {
+    return 'Bonding pool net buys $launch2MemeLabel · wallet balance shown after quote';
+  }
+
+  @override
+  String launch2_launch2Public(
+    Object? launch2BpsLabel,
+    Object? launch2PriceLabel,
+  ) {
+    return 'Bonding pool progress $launch2BpsLabel, current price $launch2PriceLabel';
+  }
+
+  @override
+  String get launch2_launch2SigningActive => 'Confirm in your wallet';
+
+  @override
+  String get launch2_launch2SigningConfirmLabel => 'Continue to mint';
+
+  @override
+  String launch2_launch2SigningCurve(Object? noun) {
+    return 'Confirm $noun';
+  }
+
+  @override
+  String get launch2_launch2SigningFailed => 'Not completed';
+
+  @override
+  String launch2_launch2SigningHeading(Object? ticker) {
+    return 'Mint $ticker consensus medal';
+  }
+
+  @override
+  String launch2_launch2SigningIf(
+    Object? launch2BpsLabel,
+    Object? launch2BpsLabel2,
+  ) {
+    return 'Base tax $launch2BpsLabel + dynamic tax $launch2BpsLabel2';
+  }
+
+  @override
+  String launch2_launch2SigningIf2(
+    Object? launch2BpsLabel,
+    Object? launch2BuyFeeSideText,
+  ) {
+    return 'Base tax $launch2BpsLabel ($launch2BuyFeeSideText)';
+  }
+
+  @override
+  String launch2_launch2SigningIf3(Object? launch2ShortAddress, Object? noun) {
+    return 'Approval broadcast ($launch2ShortAddress), but the wallet result of the $noun transaction is unknown, so it\'s locked. Don\'t sign again; refresh later.';
+  }
+
+  @override
+  String launch2_launch2SigningIf4(Object? noun) {
+    return 'The wallet result is unknown, so this $noun is locked. Don\'t sign again; refresh later.';
+  }
+
+  @override
+  String launch2_launch2SigningIf5(Object? launch2ShortAddress) {
+    return 'Broadcast ($launch2ShortAddress). Broadcast doesn\'t mean filled; this updates after on-chain confirmation.';
+  }
+
+  @override
+  String launch2_launch2SigningIntentField(Object? meme) {
+    return 'Buy $meme in the official pool';
+  }
+
+  @override
+  String launch2_launch2SigningIntentField2(Object? meme) {
+    return 'Sell $meme in the official pool';
+  }
+
+  @override
+  String get launch2_launch2SigningIntentField3 =>
+      'Can\'t simulate before approval';
+
+  @override
+  String get launch2_launch2SigningLabel => 'Maximum payment (incl. tax)';
+
+  @override
+  String get launch2_launch2SigningLabel2 => 'Approve first';
+
+  @override
+  String get launch2_launch2SigningLabel3 => 'Price';
+
+  @override
+  String launch2_launch2SigningLaunch2NftRisk(Object? launch2NftRiskSentence) {
+    return 'I understand: $launch2NftRiskSentence.';
+  }
+
+  @override
+  String get launch2_launch2SigningLaunch2NftRiskSentence =>
+      'fills and allocation aren\'t guaranteed, and the public pool may not happen';
+
+  @override
+  String launch2_launch2SigningLaunch2NftRiskTickLabel(
+    Object? launch2NftRiskSentence,
+  ) {
+    return 'I understand: $launch2NftRiskSentence';
+  }
+
+  @override
+  String get launch2_launch2SigningLaunch2RefreshedText =>
+      'Quote refreshed: the old quote was about to expire, so it was re-quoted at the latest block within the range you confirmed';
+
+  @override
+  String get launch2_launch2SigningLoopDynamicRewards =>
+      'Confirm DEX pool reward claim';
+
+  @override
+  String launch2_launch2SigningNftMint(Object? noun, Object? ticker) {
+    return '$noun $ticker consensus medal (1 per address)';
+  }
+
+  @override
+  String launch2_launch2SigningOfficialPool(Object? noun) {
+    return 'Confirm DEX pool $noun';
+  }
+
+  @override
+  String get launch2_launch2SigningOfficialPool2 => 'Router';
+
+  @override
+  String launch2_launch2SigningReason(Object? noun) {
+    return 'Your wallet opens twice: approve first, then $noun. The approval covers only this one.';
+  }
+
+  @override
+  String get launch2_launch2SigningRefreshing => 'Refreshing quote';
+
+  @override
+  String get launch2_launch2SigningRewardClaim => 'reward claim';
+
+  @override
+  String launch2_launch2SigningRewardClaim2(Object? meme) {
+    return 'Claim $meme DEX pool rewards';
+  }
+
+  @override
+  String get launch2_launch2SigningS => 'Curve contract';
+
+  @override
+  String launch2_launch2SigningS2(Object? launch2BpsLabel) {
+    return 'Tax $launch2BpsLabel';
+  }
+
+  @override
+  String launch2_launch2SigningS3(Object? meme) {
+    return 'Buy $meme';
+  }
+
+  @override
+  String launch2_launch2SigningS4(Object? meme) {
+    return 'Sell $meme';
+  }
+
+  @override
+  String launch2_launch2SigningS5(Object? launch2PoolFailureText) {
+    return 'couldn\'t get a new quote ($launch2PoolFailureText)';
+  }
+
+  @override
+  String launch2_launch2SigningSetState(Object? noun, Object? noun2) {
+    return 'Approval broadcast, but the $noun wasn\'t signed and no $noun2 transaction was submitted. Close and start again.';
+  }
+
+  @override
+  String get launch2_launch2SigningShowLaunch2NftConfirmSheet =>
+      'Addresses holding the NFT join the snapshot allowlist and can take part in the 1-hour priority buy.';
+
+  @override
+  String get launch2_launch2SigningSwitch => 'Rewards contract';
+
+  @override
+  String get launch2_launch2SigningSwitch10 =>
+      'The wallet the server built this transaction for doesn\'t match the current wallet. Signing refused; nothing was submitted.';
+
+  @override
+  String get launch2_launch2SigningSwitch11 =>
+      'Signing isn\'t allowed on this chain. Nothing was submitted.';
+
+  @override
+  String get launch2_launch2SigningSwitch12 =>
+      'The wallet can\'t sign on this chain right now. Nothing was submitted.';
+
+  @override
+  String get launch2_launch2SigningSwitch13 =>
+      'The signed-in wallet isn\'t this transaction\'s wallet. Nothing was submitted.';
+
+  @override
+  String get launch2_launch2SigningSwitch14 =>
+      'The wallet didn\'t finish signing. Nothing was submitted.';
+
+  @override
+  String get launch2_launch2SigningSwitch15 =>
+      'approval is still confirming on-chain';
+
+  @override
+  String get launch2_launch2SigningSwitch16 =>
+      'the latest quote was outside the range you confirmed';
+
+  @override
+  String get launch2_launch2SigningSwitch17 => 'couldn\'t get a new quote';
+
+  @override
+  String get launch2_launch2SigningSwitch18 =>
+      'the new transaction didn\'t pass the check';
+
+  @override
+  String launch2_launch2SigningSwitch19(
+    Object? noun,
+    Object? noun2,
+    Object? why,
+  ) {
+    return 'Approval broadcast. The old quote was about to expire and on refresh $why, so the $noun wasn\'t signed and no $noun2 transaction was submitted. Start again later; with enough approval you only sign once.';
+  }
+
+  @override
+  String get launch2_launch2SigningSwitch2 => 'NFT contract';
+
+  @override
+  String launch2_launch2SigningSwitch20(Object? noun) {
+    return 'Approval broadcast, but the $noun wasn\'t signed. You can start again.';
+  }
+
+  @override
+  String launch2_launch2SigningSwitch3(Object? spenderNoun) {
+    return 'Approved for: $spenderNoun';
+  }
+
+  @override
+  String get launch2_launch2SigningSwitch4 => 'Cancelled. Nothing changed.';
+
+  @override
+  String get launch2_launch2SigningSwitch5 =>
+      'Verification failed. Nothing changed.';
+
+  @override
+  String get launch2_launch2SigningSwitch6 =>
+      'This transaction expired and nothing was submitted. Start again.';
+
+  @override
+  String get launch2_launch2SigningSwitch7 =>
+      'The simulation failed; this transaction would be rejected on-chain. Nothing was submitted.';
+
+  @override
+  String get launch2_launch2SigningSwitch8 =>
+      'The transaction doesn\'t match what you confirmed. Signing refused; nothing was submitted.';
+
+  @override
+  String get launch2_launch2SigningSwitch9 =>
+      'The wallet directory doesn\'t have this transaction\'s wallet. Nothing was submitted.';
+
+  @override
+  String get launch2_launch2SigningTitle => 'Approve';
+
+  @override
+  String get launch2_launch2SigningUnknown => 'Result unknown';
+
+  @override
+  String get launch2_launch2SigningValue => '1 per address, ever';
+
+  @override
+  String get launch2_launch2Switch => 'until mint';
+
+  @override
+  String get launch2_launch2TradePanelBuild =>
+      'Priority buy is for allowlisted holders; buying opens with the public pool';
+
+  @override
+  String get launch2_launch2TradePanelBuild2 => 'Total quota';
+
+  @override
+  String launch2_launch2TradePanelIf(Object? launch2Usd1Label) {
+    return 'Fill $launch2Usd1Label';
+  }
+
+  @override
+  String get launch2_launch2TradePanelLabel => 'Refund';
+
+  @override
+  String launch2_launch2TradePanelLaunch2CurveMinOutNote(
+    Object? launch2BpsLabel,
+  ) {
+    return 'Based on the current curve price with $launch2BpsLabel slippage protection; the on-chain fill is final';
+  }
+
+  @override
+  String get launch2_launch2TradePanelLaunch2EligibilityBadge => 'Listed';
+
+  @override
+  String get launch2_launch2TradePanelLaunch2EligibilityBadge2 => 'Not listed';
+
+  @override
+  String launch2_launch2TradePanelLaunch2TradeExceeds(
+    Object? launch2LimitedByText,
+    Object? side,
+  ) {
+    return 'Over the $side limit ($launch2LimitedByText)';
+  }
+
+  @override
+  String get launch2_launch2TradePanelLaunch2TradeMaxLabel =>
+      'Fill max buyable';
+
+  @override
+  String get launch2_launch2TradePanelLaunch2TradeQuoteEmpty =>
+      'Getting a quote…';
+
+  @override
+  String launch2_launch2TradePanelLaunch2TradeQuoteFailedMessage(
+    Object? failureText,
+  ) {
+    return 'Couldn\'t get a quote · $failureText';
+  }
+
+  @override
+  String launch2_launch2TradePanelLaunch2TradeQuoteProvenanceDetail(
+    Object? basisBlockNumber,
+    Object? launch2BpsLabel,
+  ) {
+    return 'Quoted on the curve at block $basisBlockNumber, incl. the 10% tax; slippage $launch2BpsLabel; re-quotes automatically when it expires.';
+  }
+
+  @override
+  String launch2_launch2TradePanelLaunch2TradeTax(Object? launch2BpsLabel) {
+    return 'Tax $launch2BpsLabel';
+  }
+
+  @override
+  String get launch2_launch2TradePanelLoopProvenanceLine => 'On-chain curve';
+
+  @override
+  String launch2_launch2TradePanelS(Object? launch2MemeLabel) {
+    return 'Fill $launch2MemeLabel';
+  }
+
+  @override
+  String get launch2_launch2TradePanelSemanticLabel =>
+      'Couldn\'t load total quota';
+
+  @override
+  String launch2_launch2TradePanelSemanticLabel2(
+    Object? launch2CurveCapSentence,
+    Object? launch2MemeFigure,
+    Object? tickerLabel,
+  ) {
+    return 'Total quota used $launch2MemeFigure $tickerLabel, $launch2CurveCapSentence';
+  }
+
+  @override
+  String get launch2_launch2WalletRowsLaunch2WalletChainLabel => 'Launch chain';
+
+  @override
+  String get launch2_launch2WalletRowsLaunch2WalletUnavailableMessage =>
+      'Couldn\'t load MEME v2 holdings';
+
+  @override
+  String launch2_launch2WalletRowsSubtitle(Object? launch2WalletChainLabel) {
+    return '$launch2WalletChainLabel · bonding pool holdings';
+  }
+
+  @override
+  String get launch2_launchpadSomeoneWho => 'Someone ';
+
+  @override
+  String launch2_nftRiskBody(Object? sentence) {
+    return '$sentence.';
+  }
+
+  @override
+  String launch2_nftSaleLeft(Object? left) {
+    return ', $left left';
+  }
+
+  @override
+  String get launch2_poolTradesRateLimited =>
+      'Too many requests. Try again later';
+
+  @override
+  String launch2_provenanceBuyFeeFromUsd1(Object? bps) {
+    return '$bps base tax taken from the USD1 paid';
+  }
+
+  @override
+  String launch2_provenancePoolTax(Object? bps) {
+    return 'after the $bps DEX pool tax';
+  }
+
+  @override
+  String get launch2_provenanceSellPostSwap =>
+      'after base and dynamic tax (simulated on the post-trade drop)';
+
+  @override
+  String get launch2_provenanceSellPreSwap =>
+      'after base and dynamic tax (simulated on the pre-trade drop)';
+
+  @override
+  String get launch2_sideBuy => 'buy';
+
+  @override
+  String get launch2_sideSell => 'sell';
+
+  @override
+  String get launch2_tickerSeparator => '; ';
+
+  @override
   String get notifications_applicationNoReason =>
       'No reason was given. Edit the community profile and submit again.';
 

@@ -1,0 +1,1512 @@
+{
+  "launch2Creator_figureWithNote": {
+    "en": "{figure} ({note})",
+    "placeholders": {
+      "figure": {
+        "example": "figure",
+        "type": "Object"
+      },
+      "note": {
+        "example": "note",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:256",
+    "zh": "{figure}（{note}）"
+  },
+  "launch2Creator_launch2AwaitingExecutor": {
+    "en": "Queued",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:136",
+    "zh": "排队中"
+  },
+  "launch2Creator_launch2BootstrapRequired": {
+    "en": "Your account is still being set up. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:85",
+    "zh": "账号还在初始化，稍后再试。"
+  },
+  "launch2Creator_launch2Build": {
+    "en": "Bonding pool for sale",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:191",
+    "zh": "内盘可售"
+  },
+  "launch2Creator_launch2Build10": {
+    "en": "Fixed by the platform template; can't be changed.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:241",
+    "zh": "由平台模板固定，不能修改。"
+  },
+  "launch2Creator_launch2Build11": {
+    "en": "The platform hasn't set a buyback recipient address yet, so you can't submit right now.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:340",
+    "zh": "平台还没有配置回购收币地址，暂时不能提交。"
+  },
+  "launch2Creator_launch2Build2": {
+    "en": "Graduation reserve",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:192",
+    "zh": "毕业储备"
+  },
+  "launch2Creator_launch2Build3": {
+    "en": "Bonding pool trade tax",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:193",
+    "zh": "内盘买卖税"
+  },
+  "launch2Creator_launch2Build4": {
+    "en": "DEX pool trade tax",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:194",
+    "zh": "外盘买卖税"
+  },
+  "launch2Creator_launch2Build5": {
+    "en": "DEX pool buy tax",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:198",
+    "zh": "外盘买入税"
+  },
+  "launch2Creator_launch2Build6": {
+    "en": "Per-address cap",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:203",
+    "zh": "单地址上限"
+  },
+  "launch2Creator_launch2Build7": {
+    "en": "Mint price",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:206",
+    "zh": "铸造价格"
+  },
+  "launch2Creator_launch2Build8": {
+    "en": "Mint period",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:208",
+    "zh": "铸造期"
+  },
+  "launch2Creator_launch2Build9": {
+    "en": "Set by the instance",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:211",
+    "zh": "由实例决定"
+  },
+  "launch2Creator_launch2CapFigure": {
+    "en": "{launch2CurveCapFigure} tokens",
+    "placeholders": {
+      "launch2CurveCapFigure": {
+        "example": "launch2CurveCapFigure(launch2Units(economics.curveCapRaw))",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:187",
+    "zh": "{launch2CurveCapFigure} 枚"
+  },
+  "launch2Creator_launch2Claimed": {
+    "en": "Preparing to deploy",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:137",
+    "zh": "准备部署"
+  },
+  "launch2Creator_launch2Confirmed": {
+    "en": "Verifying",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:140",
+    "zh": "核验中"
+  },
+  "launch2Creator_launch2CreateBody": {
+    "en": "What you've entered won't be saved.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:320",
+    "zh": "已填写的内容不会保存。"
+  },
+  "launch2Creator_launch2CreateCancelLabel": {
+    "en": "Keep editing",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:322",
+    "zh": "继续编辑"
+  },
+  "launch2Creator_launch2CreateConfig": {
+    "en": "Saving configuration…",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:614",
+    "zh": "正在保存配置…"
+  },
+  "launch2Creator_launch2CreateConfirmLabel": {
+    "en": "Discard",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:321",
+    "zh": "放弃"
+  },
+  "launch2Creator_launch2CreateEmptyMessage": {
+    "en": "Couldn't find this project",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:589, lib/features/launch2/creator/launch2_project_screen.dart:55, lib/features/launch2/creator/launch2_project_screen.dart:93, lib/features/launch2/creator/launch2_sign_screen.dart:124",
+    "zh": "找不到这个项目"
+  },
+  "launch2Creator_launch2CreateFailed": {
+    "en": "Image upload failed: {memeFailureText}",
+    "placeholders": {
+      "memeFailureText": {
+        "example": "memeFailureText(failure)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:435",
+    "zh": "图片没有上传成功：{memeFailureText}"
+  },
+  "launch2Creator_launch2CreateFor": {
+    "en": "X (optional)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:973",
+    "zh": "X（可不填）"
+  },
+  "launch2Creator_launch2CreateFor2": {
+    "en": "Telegram (optional)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:974",
+    "zh": "Telegram（可不填）"
+  },
+  "launch2Creator_launch2CreateFor3": {
+    "en": "Website (optional)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:975",
+    "zh": "官网（可不填）"
+  },
+  "launch2Creator_launch2CreateFor4": {
+    "en": "Discord (optional)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:976",
+    "zh": "Discord（可不填）"
+  },
+  "launch2Creator_launch2CreateGroupTitle": {
+    "en": "Images",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:803",
+    "zh": "图片资料"
+  },
+  "launch2Creator_launch2CreateGroupTitle2": {
+    "en": "Basic info",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:893",
+    "zh": "基础信息"
+  },
+  "launch2Creator_launch2CreateHint": {
+    "en": "Enter project name",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:902",
+    "zh": "输入项目名称"
+  },
+  "launch2Creator_launch2CreateHint2": {
+    "en": "Enter ticker",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:909",
+    "zh": "输入代币代码"
+  },
+  "launch2Creator_launch2CreateHint3": {
+    "en": "Describe your project",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:925",
+    "zh": "介绍一下你的项目"
+  },
+  "launch2Creator_launch2CreateIf": {
+    "en": "Only links starting with https:// are supported",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:107",
+    "zh": "只支持 https:// 开头的链接"
+  },
+  "launch2Creator_launch2CreateLabel": {
+    "en": "Retry submission",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:617",
+    "zh": "重试提交"
+  },
+  "launch2Creator_launch2CreateLabel2": {
+    "en": "Submit for review",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:617",
+    "zh": "提交审核"
+  },
+  "launch2Creator_launch2CreateLabel3": {
+    "en": "Ticker",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:908, lib/features/launch2/creator/launch2_sign_screen.dart:287",
+    "zh": "代码"
+  },
+  "launch2Creator_launch2CreateLabel4": {
+    "en": "Description (optional)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:924",
+    "zh": "简介（可不填）"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateLinksCommunityHint": {
+    "en": "To bind a community, the community owner does it under Community management → Bind token.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:45",
+    "zh": "要绑定社区，请由社区群主在社区侧「社区管理 → 绑定代币」里操作。"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateLinksHeading": {
+    "en": "External links",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:41",
+    "zh": "外部链接"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateLinksLine": {
+    "en": "The project's X / Telegram / website / Discord, all optional; reviewers and users will see them.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:43",
+    "zh": "项目的 X / Telegram / 官网 / Discord，都可不填；审核与用户都会看到。"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateLogoMissing": {
+    "en": "Avatar",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:810, lib/features/launch2/creator/launch2_create_screen.dart:825",
+    "zh": "头像"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateLogoMissing2": {
+    "en": "A launch needs a square avatar",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:813",
+    "zh": "发射需要一张方形头像"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateNftMissing": {
+    "en": "NFT image",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:858, lib/features/launch2/creator/launch2_create_screen.dart:875, lib/features/launch2/creator/launch2_creator_widgets.dart:744, lib/features/launch2/creator/launch2_project_screen.dart:165",
+    "zh": "NFT 图"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateNftMissing2": {
+    "en": "NFT image (optional)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:858",
+    "zh": "NFT 图（可不传）"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateNftMissing3": {
+    "en": "A launch needs an NFT image",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:861",
+    "zh": "发射需要一张 NFT 图"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateRejectionTitle": {
+    "en": "Review notes",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:695, lib/features/launch2/creator/launch2_project_screen.dart:287",
+    "zh": "审核意见"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateSaleStartLabel": {
+    "en": "Choose mint start time",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:1016",
+    "zh": "选择铸造开始时间"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateSaleStartMissingBody": {
+    "en": "Choose a mint start time first.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:1028",
+    "zh": "请先选择铸造开始时间。"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateSaleTooEarlyBody": {
+    "en": "The mint start time is too early: the platform needs at least {leadLabel} of lead time, earliest {localTimestampLabel}. Choose again.",
+    "placeholders": {
+      "leadLabel": {
+        "example": "_leadLabel(save.minSaleLead ?? Duration.zero)",
+        "type": "Object"
+      },
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(earliest)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:1044",
+    "zh": "铸造开始时间太早：平台要求至少提前 {leadLabel}，最早 {localTimestampLabel}，请重新选择。"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateScreenTitle": {
+    "en": "Edit details",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:582, lib/features/launch2/creator/launch2_create_screen.dart:600, lib/features/launch2/creator/launch2_project_screen.dart:315, lib/features/launch2/creator/launch2_sign_screen.dart:239",
+    "zh": "修改资料"
+  },
+  "launch2Creator_launch2CreateLaunch2CreateScreenTitle2": {
+    "en": "Start a v2 launch",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:600",
+    "zh": "发起 v2 发射"
+  },
+  "launch2Creator_launch2CreateLaunch2NameInvisibleMessage": {
+    "en": "Name must contain visible characters",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:57",
+    "zh": "名称需包含可见字符"
+  },
+  "launch2Creator_launch2CreateLaunch2SaleStartHint": {
+    "en": "The platform sets the earliest time; too early gets sent back.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:502",
+    "zh": "最早可选时间由平台决定，太早会被退回。"
+  },
+  "launch2Creator_launch2CreateLaunch2SaleStartHint2": {
+    "en": "Minting must start at least {leadLabel} from now, earliest {localTimestampLabel}.",
+    "placeholders": {
+      "leadLabel": {
+        "example": "_leadLabel(lead)",
+        "type": "Object"
+      },
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(earliest)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:503",
+    "zh": "平台要求至少提前 {leadLabel}开始铸造，最早 {localTimestampLabel}。"
+  },
+  "launch2Creator_launch2CreateLaunch2TickerInvisibleMessage": {
+    "en": "Ticker must contain visible characters",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:58",
+    "zh": "代码需包含可见字符"
+  },
+  "launch2Creator_launch2CreateLeadLabel": {
+    "en": "{minutes}h",
+    "placeholders": {
+      "minutes": {
+        "example": "minutes ~/ 60",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:463",
+    "zh": "{minutes} 小时"
+  },
+  "launch2Creator_launch2CreateLeadLabel2": {
+    "en": "{minutes} min",
+    "placeholders": {
+      "minutes": {
+        "example": "minutes",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:464",
+    "zh": "{minutes} 分钟"
+  },
+  "launch2Creator_launch2CreateLoopButton": {
+    "en": "Submitting for review…",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:615",
+    "zh": "正在提交审核…"
+  },
+  "launch2Creator_launch2CreateLoopLabel": {
+    "en": "Buyback recipient address",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:1030, lib/features/launch2/creator/launch2_project_screen.dart:204, lib/features/launch2/creator/launch2_sign_screen.dart:293",
+    "zh": "回购收币地址"
+  },
+  "launch2Creator_launch2CreateLoopLabel2": {
+    "en": "Launch template",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:1033",
+    "zh": "发射模板"
+  },
+  "launch2Creator_launch2CreateLoopSheetHeading": {
+    "en": "Mint start time",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:483, lib/features/launch2/creator/launch2_create_screen.dart:1005",
+    "zh": "铸造开始时间"
+  },
+  "launch2Creator_launch2CreateNote": {
+    "en": "Square image; crop before upload",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:819",
+    "zh": "方形图片，上传前可裁剪"
+  },
+  "launch2Creator_launch2CreateProject": {
+    "en": "Saving details…",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:613",
+    "zh": "正在保存资料…"
+  },
+  "launch2Creator_launch2CreateText": {
+    "en": "Launch",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:38, lib/features/launch2/creator/launch2_creator_entry.dart:248",
+    "zh": "发射"
+  },
+  "launch2Creator_launch2CreateTitle": {
+    "en": "Discard this launch?",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_create_screen.dart:319",
+    "zh": "放弃发起？"
+  },
+  "launch2Creator_launch2DeploymentAction": {
+    "en": "View project page",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:151, lib/features/launch2/creator/launch2_project_screen.dart:386",
+    "zh": "查看项目页"
+  },
+  "launch2Creator_launch2DeploymentAction2": {
+    "en": "Sign again",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:162, lib/features/launch2/creator/launch2_deployment_screen.dart:183, lib/features/launch2/creator/launch2_project_screen.dart:371",
+    "zh": "重新签名"
+  },
+  "launch2Creator_launch2DeploymentBuild": {
+    "en": "Confirmations: {confirmations}",
+    "placeholders": {
+      "confirmations": {
+        "example": "event.confirmations",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:232",
+    "zh": "{confirmations} 确认"
+  },
+  "launch2Creator_launch2DeploymentBuild2": {
+    "en": "Block {blockNumber}",
+    "placeholders": {
+      "blockNumber": {
+        "example": "event.blockNumber",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:233",
+    "zh": "区块 {blockNumber}"
+  },
+  "launch2Creator_launch2DeploymentLabel": {
+    "en": "Deploy transaction",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:198",
+    "zh": "部署交易"
+  },
+  "launch2Creator_launch2DeploymentLabel2": {
+    "en": "Activation transaction",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:200",
+    "zh": "激活交易"
+  },
+  "launch2Creator_launch2DeploymentLabel3": {
+    "en": "Copy BscScan link",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:306",
+    "zh": "复制 BscScan 链接"
+  },
+  "launch2Creator_launch2DeploymentLaunch2DeploymentActivatedBody": {
+    "en": "Activated. Creating the project page…",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:146",
+    "zh": "已激活，项目页生成中…"
+  },
+  "launch2Creator_launch2DeploymentLaunch2DeploymentActivatedBody2": {
+    "en": "Activated. You're this project's owner.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:146, lib/features/launch2/creator/launch2_project_screen.dart:381",
+    "zh": "已激活，你是这个项目的项目方。"
+  },
+  "launch2Creator_launch2DeploymentLaunch2DeploymentCancelledBody": {
+    "en": "This deployment was cancelled.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:158",
+    "zh": "这次部署已取消。"
+  },
+  "launch2Creator_launch2DeploymentLaunch2DeploymentMissingMessage": {
+    "en": "The link has no valid project or job ID.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:57",
+    "zh": "链接里没有有效的项目或任务编号。"
+  },
+  "launch2Creator_launch2DeploymentLaunch2DeploymentMissingTitle": {
+    "en": "Couldn't find this deployment",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:56, lib/features/launch2/creator/launch2_deployment_screen.dart:92",
+    "zh": "找不到这次部署"
+  },
+  "launch2Creator_launch2DeploymentLaunch2DeploymentQueuedBody": {
+    "en": "Signature verified and recorded; waiting for the platform executor to deploy. Nothing is on-chain yet.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:190",
+    "zh": "已验签登记，等待平台执行器部署。这一步还没有上链。"
+  },
+  "launch2Creator_launch2DeploymentLaunch2DeploymentScreenTitle": {
+    "en": "Deployment progress",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:52, lib/features/launch2/creator/launch2_deployment_screen.dart:80",
+    "zh": "部署进度"
+  },
+  "launch2Creator_launch2DeploymentLaunch2DeploymentStaleBody": {
+    "en": "Couldn't load the latest progress. Showing the last status; retrying automatically.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:102",
+    "zh": "最新进度没有读到，下面是上一次读到的状态，会自动重试。"
+  },
+  "launch2Creator_launch2DeploymentLoopLabel": {
+    "en": "Progress",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:192",
+    "zh": "进度"
+  },
+  "launch2Creator_launch2DeploymentMessage": {
+    "en": "BscScan link copied",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_deployment_screen.dart:308",
+    "zh": "BscScan 链接已复制"
+  },
+  "launch2Creator_launch2EntryLaunch2CreateChooserClassicSubtitle": {
+    "en": "Bonding curve token; moves to PancakeSwap when it fills",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_entry.dart:133",
+    "zh": "联合曲线发币，打满自动上 PancakeSwap"
+  },
+  "launch2Creator_launch2EntryLaunch2CreateChooserClassicTitle": {
+    "en": "Classic launch",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_entry.dart:132",
+    "zh": "经典发射"
+  },
+  "launch2Creator_launch2EntryLaunch2CreateChooserV2Subtitle": {
+    "en": "NFT presale + priority buy + public pool, graduates to the official DEX pool",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_entry.dart:123",
+    "zh": "NFT 预售 + 提前购 + 公开内盘，毕业进官方外盘"
+  },
+  "launch2Creator_launch2EntryLaunch2CreateChooserV2Title": {
+    "en": "v2 launch",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_entry.dart:122",
+    "zh": "v2 发射"
+  },
+  "launch2Creator_launch2EntryLaunch2CreatorEntryLabel": {
+    "en": "v2 launch (NFT presale + official DEX pool)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_entry.dart:41",
+    "zh": "v2 发射（NFT 预售 + 官方外盘）"
+  },
+  "launch2Creator_launch2EntryLaunch2MyProjectsEntryLabel": {
+    "en": "My projects",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_entry.dart:59, lib/features/launch2/creator/launch2_creator_entry.dart:160, lib/features/launch2/creator/launch2_projects_screen.dart:122",
+    "zh": "我的项目"
+  },
+  "launch2Creator_launch2IdempotencyConflict": {
+    "en": "This submission differs from the last one. Sign again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:82",
+    "zh": "这次提交和上一次内容不同，请重新签名。"
+  },
+  "launch2Creator_launch2InvalidData": {
+    "en": "The server didn't accept these details. Most often the mint start time is too early and leaves no time to deploy and activate. Move it later and submit again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:79",
+    "zh": "服务端没有接受这份资料。最常见的原因是铸造开始时间太早，需要给部署和激活留出时间，往后调整后再提交。"
+  },
+  "launch2Creator_launch2Label": {
+    "en": "Step {current} of {labels}, {labels2}",
+    "placeholders": {
+      "current": {
+        "example": "current + 1",
+        "type": "Object"
+      },
+      "labels": {
+        "example": "labels.length",
+        "type": "Object"
+      },
+      "labels2": {
+        "example": "labels[current]",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:456",
+    "zh": "第 {current} 步，共 {labels} 步，{labels2}"
+  },
+  "launch2Creator_launch2Label2": {
+    "en": "Upload {semanticLabel}",
+    "placeholders": {
+      "semanticLabel": {
+        "example": "semanticLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:579",
+    "zh": "上传{semanticLabel}"
+  },
+  "launch2Creator_launch2Label3": {
+    "en": "{semanticLabel}, replace",
+    "placeholders": {
+      "semanticLabel": {
+        "example": "semanticLabel",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:579",
+    "zh": "{semanticLabel}，换一张"
+  },
+  "launch2Creator_launch2Launch2ConfigVersionUsedCode": {
+    "en": "Another project in your wallet already used this configuration version. Edit the details and save a new version.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:73",
+    "zh": "这一版配置的版本号已被你钱包的另一个项目用过，请修改资料重新保存一版。"
+  },
+  "launch2Creator_launch2Launch2DurationLabel": {
+    "en": "{seconds}d",
+    "placeholders": {
+      "seconds": {
+        "example": "seconds ~/ 86400",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:49",
+    "zh": "{seconds} 天"
+  },
+  "launch2Creator_launch2Launch2DurationLabel2": {
+    "en": "{seconds}h",
+    "placeholders": {
+      "seconds": {
+        "example": "seconds ~/ 3600",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:50",
+    "zh": "{seconds} 小时"
+  },
+  "launch2Creator_launch2Launch2DurationLabel3": {
+    "en": "{seconds} min",
+    "placeholders": {
+      "seconds": {
+        "example": "seconds ~/ 60",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:51",
+    "zh": "{seconds} 分钟"
+  },
+  "launch2Creator_launch2Launch2FixedRecipientAddress": {
+    "en": "Not configured yet",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:321",
+    "zh": "暂未配置"
+  },
+  "launch2Creator_launch2Launch2FixedRecipientAddressLabel": {
+    "en": "Buyback recipient address not configured yet",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:305",
+    "zh": "回购收币地址暂未配置"
+  },
+  "launch2Creator_launch2Launch2FixedRecipientAddressLabel2": {
+    "en": "Buyback recipient address {value}, fixed by the platform, can't be changed",
+    "placeholders": {
+      "value": {
+        "example": "value",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:305",
+    "zh": "回购收币地址 {value}，平台固定，不可修改"
+  },
+  "launch2Creator_launch2Launch2NftImageHelp": {
+    "en": "Shown in wallets as the project NFT image",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:433",
+    "zh": "将作为项目 NFT 图片显示在钱包里"
+  },
+  "launch2Creator_launch2Launch2RecipientFixedCode": {
+    "en": "The buyback recipient address must be the platform's fixed address. This version uses another one. Edit the details and save a new version (needs review again).",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:70",
+    "zh": "回购收币地址必须是平台固定地址。这一版配置用的是其他地址，请修改资料重新保存一版（需要重新审核）。"
+  },
+  "launch2Creator_launch2Launch2RecipientUnavailableCode": {
+    "en": "The platform's buyback recipient address isn't configured, so you can't save or sign right now. Try again later.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:75",
+    "zh": "平台回购收币地址暂未配置，暂时不能保存或签名，稍后再试。"
+  },
+  "launch2Creator_launch2Launch2RejectedRowText": {
+    "en": "Rejected · {label}",
+    "placeholders": {
+      "label": {
+        "example": "rejection.reason.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:385",
+    "zh": "已拒绝 · {label}"
+  },
+  "launch2Creator_launch2Launch2RejectionTitle": {
+    "en": "Review rejected: {label}",
+    "placeholders": {
+      "label": {
+        "example": "rejection.reason.label",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:389",
+    "zh": "审核未通过：{label}"
+  },
+  "launch2Creator_launch2Launch2SaleStartLabel": {
+    "en": "{local} (in {inDays}d)",
+    "placeholders": {
+      "inDays": {
+        "example": "delta.inDays",
+        "type": "Object"
+      },
+      "local": {
+        "example": "local",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:280",
+    "zh": "{local}（{inDays} 天后）"
+  },
+  "launch2Creator_launch2Launch2SaleStartLabel2": {
+    "en": "{local} (in {inHours}h)",
+    "placeholders": {
+      "inHours": {
+        "example": "delta.inHours",
+        "type": "Object"
+      },
+      "local": {
+        "example": "local",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:281",
+    "zh": "{local}（{inHours} 小时后）"
+  },
+  "launch2Creator_launch2Launch2SaleStartLabel3": {
+    "en": "{local} (in {inMinutes} min)",
+    "placeholders": {
+      "inMinutes": {
+        "example": "delta.inMinutes",
+        "type": "Object"
+      },
+      "local": {
+        "example": "local",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:282",
+    "zh": "{local}（{inMinutes} 分钟后）"
+  },
+  "launch2Creator_launch2Launch2SupplyLabel": {
+    "en": "{formatDecimal}",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal((units / yi).toDecimal())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:34",
+    "zh": "{formatDecimal} 亿"
+  },
+  "launch2Creator_launch2Launch2SupplyLabel2": {
+    "en": "{formatDecimal}",
+    "placeholders": {
+      "formatDecimal": {
+        "example": "loopFormatDecimal((units / wan).toDecimal())",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:37",
+    "zh": "{formatDecimal} 万"
+  },
+  "launch2Creator_launch2LoopBadge": {
+    "en": "Fixed by platform",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:333",
+    "zh": "平台固定"
+  },
+  "launch2Creator_launch2LoopNotice": {
+    "en": "Review notes: {note}",
+    "placeholders": {
+      "note": {
+        "example": "note",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:374",
+    "zh": "审核意见：{note}"
+  },
+  "launch2Creator_launch2LoopNotice2": {
+    "en": "{configuration} didn't pass review ({localTimestampLabel}). Edit it and submit again.",
+    "placeholders": {
+      "configuration": {
+        "example": "configuration ? '发射配置' : '项目资料'",
+        "type": "Object"
+      },
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(rejection.at)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:375",
+    "zh": "{localTimestampLabel} {configuration}未通过审核，修改后可以重新提交。"
+  },
+  "launch2Creator_launch2ModelsActive": {
+    "en": "Activated",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:31, lib/features/launch2/creator/launch2_creator_widgets.dart:142, lib/features/launch2/creator/launch2_creator_widgets.dart:159",
+    "zh": "已激活"
+  },
+  "launch2Creator_launch2ModelsDeployFailed": {
+    "en": "Deployment failed",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:33, lib/features/launch2/creator/launch2_creator_widgets.dart:143, lib/features/launch2/creator/launch2_creator_widgets.dart:161",
+    "zh": "部署失败"
+  },
+  "launch2Creator_launch2ModelsDeployed": {
+    "en": "On-chain",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:29",
+    "zh": "已上链"
+  },
+  "launch2Creator_launch2ModelsDeploying": {
+    "en": "Deploying",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:28",
+    "zh": "部署中"
+  },
+  "launch2Creator_launch2ModelsIsFailure": {
+    "en": "Review",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:61",
+    "zh": "审核"
+  },
+  "launch2Creator_launch2ModelsIsFailure2": {
+    "en": "Deploy",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:63",
+    "zh": "部署"
+  },
+  "launch2Creator_launch2ModelsIsFailure3": {
+    "en": "Activate",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:64",
+    "zh": "激活"
+  },
+  "launch2Creator_launch2ModelsSigning": {
+    "en": "Signing",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:27",
+    "zh": "签名中"
+  },
+  "launch2Creator_launch2ModelsVerified": {
+    "en": "Activating",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_models.dart:30, lib/features/launch2/creator/launch2_creator_widgets.dart:141",
+    "zh": "激活中"
+  },
+  "launch2Creator_launch2NotFound": {
+    "en": "Couldn't find this project. It may not belong to this account.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:84",
+    "zh": "找不到这个项目，它可能不属于当前账号。"
+  },
+  "launch2Creator_launch2PermissionDenied": {
+    "en": "This account can't do this step.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:83",
+    "zh": "当前账号不能执行这一步。"
+  },
+  "launch2Creator_launch2ProjectAction": {
+    "en": "Continue",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:247",
+    "zh": "继续填写"
+  },
+  "launch2Creator_launch2ProjectAction2": {
+    "en": "Edit and resubmit",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:293",
+    "zh": "修改后重新提交"
+  },
+  "launch2Creator_launch2ProjectAction3": {
+    "en": "Sign to deploy",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:332",
+    "zh": "去签名部署"
+  },
+  "launch2Creator_launch2ProjectAction4": {
+    "en": "View deployment progress",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:348",
+    "zh": "查看部署进度"
+  },
+  "launch2Creator_launch2ProjectLabel": {
+    "en": "Configuration version",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:207",
+    "zh": "配置版本"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectMissingMessage": {
+    "en": "The link has no valid project ID.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:56, lib/features/launch2/creator/launch2_sign_screen.dart:125",
+    "zh": "链接里没有有效的项目编号。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextActiveBody": {
+    "en": "Activated. Creating the project page; pull down to refresh.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:381",
+    "zh": "已激活，项目页生成中，下拉可刷新。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextDeployingBody": {
+    "en": "Deployment in progress.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:343",
+    "zh": "部署进行中。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextDraftBody": {
+    "en": "Details saved; the launch configuration is still missing.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:243",
+    "zh": "资料已保存，还差发射配置。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextDraftBody2": {
+    "en": "Not submitted for review yet.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:243",
+    "zh": "还没有提交审核。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextFailedBody": {
+    "en": "The deployment didn't finish.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:360",
+    "zh": "部署没有完成。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextRecipientOutdatedBody": {
+    "en": "This version's buyback recipient address isn't the platform's fixed address, so it can't be signed and deployed. Saving a new version needs review again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:310",
+    "zh": "这一版配置的回购收币地址不是平台固定地址，不能签名部署。修改资料重新保存一版后需要重新审核。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextRecipientOutdatedTitle": {
+    "en": "Buyback recipient address needs updating",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:308, lib/features/launch2/creator/launch2_projects_screen.dart:143",
+    "zh": "回购收币地址需要更新"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextRejectedBody": {
+    "en": "This review didn't pass. Edit and submit again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:289",
+    "zh": "这次审核没有通过，修改后可以重新提交。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextReviewBody": {
+    "en": "The platform is reviewing the launch configuration. The result shows here; pull down to refresh.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:261",
+    "zh": "平台审核发射配置，结果会显示在这里，下拉可刷新。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextReviewBody2": {
+    "en": "Submitted {localTimestampLabel}. The result shows here; pull down to refresh.",
+    "placeholders": {
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(submitted)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:262",
+    "zh": "{localTimestampLabel} 提交，结果会显示在这里，下拉可刷新。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextSignBody": {
+    "en": "Sign with your wallet and the platform will deploy and activate.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:326",
+    "zh": "用钱包签名后，平台会部署并激活。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextSignBody2": {
+    "en": "Approved {localTimestampLabel}. Sign with your wallet and the platform will deploy and activate.",
+    "placeholders": {
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(approvedAt)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:327",
+    "zh": "{localTimestampLabel} 批准。用钱包签名后，平台会部署并激活。"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectNextSignTitle": {
+    "en": "Approved",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:324",
+    "zh": "已批准"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectSaleStartLabel": {
+    "en": "Mint starts",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:199, lib/features/launch2/creator/launch2_sign_screen.dart:289",
+    "zh": "铸造开始"
+  },
+  "launch2Creator_launch2ProjectLaunch2ProjectScreenTitle": {
+    "en": "Project",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:51, lib/features/launch2/creator/launch2_project_screen.dart:81",
+    "zh": "项目"
+  },
+  "launch2Creator_launch2ProjectLoopLabel": {
+    "en": "Launch configuration",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:193",
+    "zh": "发射配置"
+  },
+  "launch2Creator_launch2ProjectSemanticLabel": {
+    "en": "Progress: {launch2CreatorMilestones}, {label}",
+    "placeholders": {
+      "label": {
+        "example": "status.label",
+        "type": "Object"
+      },
+      "launch2CreatorMilestones": {
+        "example": "launch2CreatorMilestones[status.milestone]",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_project_screen.dart:189",
+    "zh": "进度：{launch2CreatorMilestones}，{label}"
+  },
+  "launch2Creator_launch2ProjectsLaunch2ProjectsEmptyMessage": {
+    "en": "NFT presale + official DEX pool, in one launch.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_projects_screen.dart:64",
+    "zh": "NFT 预售 + 官方外盘，一次发起。"
+  },
+  "launch2Creator_launch2ProjectsLaunch2ProjectsEmptyTitle": {
+    "en": "No projects yet",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_projects_screen.dart:63",
+    "zh": "还没有发起项目"
+  },
+  "launch2Creator_launch2ProjectsSemanticLabel": {
+    "en": "{name}, launch configuration unavailable",
+    "placeholders": {
+      "name": {
+        "example": "project.name",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_projects_screen.dart:182",
+    "zh": "{name}，发射配置暂时读不到"
+  },
+  "launch2Creator_launch2ProjectsSubtitle": {
+    "en": "Couldn't load the launch configuration. Pull to refresh or tap to retry",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_projects_screen.dart:181",
+    "zh": "发射配置暂时读不到，下拉刷新或点开重试"
+  },
+  "launch2Creator_launch2ProjectsSwitch": {
+    "en": "Rejected",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_projects_screen.dart:140",
+    "zh": "已拒绝"
+  },
+  "launch2Creator_launch2ProjectsSwitch2": {
+    "en": "No launch configuration yet",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_projects_screen.dart:144",
+    "zh": "还没有发射配置"
+  },
+  "launch2Creator_launch2ProjectsSwitch3": {
+    "en": "Mint starts {localTimestampLabel}",
+    "placeholders": {
+      "localTimestampLabel": {
+        "example": "loopLocalTimestampLabel(draft.nftSaleStart)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_projects_screen.dart:146",
+    "zh": "{localTimestampLabel} 开始铸造"
+  },
+  "launch2Creator_launch2Reorged": {
+    "en": "Chain reorg, reconfirming",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:144",
+    "zh": "链上重组，重新确认中"
+  },
+  "launch2Creator_launch2S": {
+    "en": "v2 launch isn't open yet. You can continue here once it opens.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:62",
+    "zh": "v2 发射暂未开放，开放后这里可以继续。"
+  },
+  "launch2Creator_launch2S2": {
+    "en": "The launch factory isn't available (or is computing addresses). Try again later.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:64",
+    "zh": "发射工厂暂时不可用（或正在计算地址），稍后再试。"
+  },
+  "launch2Creator_launch2S3": {
+    "en": "The configuration is waiting for platform approval. Sign after it's approved.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:66",
+    "zh": "配置还在等平台审批，审批通过后再签名。"
+  },
+  "launch2Creator_launch2S4": {
+    "en": "The signing request expired. Renew it and sign again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:68",
+    "zh": "签名请求已过期，续期后重新签名。"
+  },
+  "launch2Creator_launch2S5": {
+    "en": "On-chain, confirmations: {confirmations}",
+    "placeholders": {
+      "confirmations": {
+        "example": "job.confirmations",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:139",
+    "zh": "已上链，{confirmations} 确认"
+  },
+  "launch2Creator_launch2S6": {
+    "en": "Tokens bought back go to this address. The platform fixes it; it can't be changed.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:341",
+    "zh": "回购买到的代币转入这个地址。地址由平台固定，不能修改。"
+  },
+  "launch2Creator_launch2S7": {
+    "en": "Upload",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:536",
+    "zh": "上传"
+  },
+  "launch2Creator_launch2S8": {
+    "en": "Replace",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:568",
+    "zh": "换一张"
+  },
+  "launch2Creator_launch2SignIf": {
+    "en": "Preparing the signing request; the server may take a few seconds to compute addresses.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:204",
+    "zh": "正在准备签名请求，服务端计算地址可能要几秒。"
+  },
+  "launch2Creator_launch2SignLabel": {
+    "en": "Token address {address}",
+    "placeholders": {
+      "address": {
+        "example": "address",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:366",
+    "zh": "代币地址 {address}"
+  },
+  "launch2Creator_launch2SignLabel2": {
+    "en": "Signature valid for",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:437",
+    "zh": "签名有效期"
+  },
+  "launch2Creator_launch2SignLaunch2SignExpiredBody": {
+    "en": "The signing request expired. Renewing gets a new request that you need to sign again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:311",
+    "zh": "签名请求已过期。续期后会拿到新的请求，需要重新签名。"
+  },
+  "launch2Creator_launch2SignLaunch2SignNoWalletBody": {
+    "en": "Loading wallet…",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:178",
+    "zh": "正在读取钱包…"
+  },
+  "launch2Creator_launch2SignLaunch2SignNoWalletBody2": {
+    "en": "No wallet available. Create or activate one in Wallet first.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:178",
+    "zh": "还没有可用的钱包，先在钱包里创建或激活一个。"
+  },
+  "launch2Creator_launch2SignLaunch2SignRefreshedBody": {
+    "en": "The configuration or nonce changed. The signing request was refreshed; sign again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:317",
+    "zh": "配置或 nonce 已变化，已刷新签名请求，请重新签名。"
+  },
+  "launch2Creator_launch2SignLaunch2SignRenewLabel": {
+    "en": "Renew signing request",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:143",
+    "zh": "续期签名请求"
+  },
+  "launch2Creator_launch2SignLaunch2SignScreenTitle": {
+    "en": "Sign deployment",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:120, lib/features/launch2/creator/launch2_sign_screen.dart:169",
+    "zh": "签名部署"
+  },
+  "launch2Creator_launch2SignLaunch2SignSheetTitle": {
+    "en": "Authorize deployment",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:509",
+    "zh": "授权部署"
+  },
+  "launch2Creator_launch2SignLoopButton": {
+    "en": "Sign and submit",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:156",
+    "zh": "签名并提交"
+  },
+  "launch2Creator_launch2SignLoopLabel": {
+    "en": "What you sign",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:285",
+    "zh": "签名内容"
+  },
+  "launch2Creator_launch2SignLoopSignFact": {
+    "en": "Authorize deploying {tickerLabel}",
+    "placeholders": {
+      "tickerLabel": {
+        "example": "loopTickerLabel(request.ticker)",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:517",
+    "zh": "授权部署 {tickerLabel}"
+  },
+  "launch2Creator_launch2SignLoopSignFact2": {
+    "en": "Signing wallet",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:519",
+    "zh": "签名钱包"
+  },
+  "launch2Creator_launch2SignLoopSignFact3": {
+    "en": "Cost",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:521",
+    "zh": "花费"
+  },
+  "launch2Creator_launch2SignLoopSignFact4": {
+    "en": "None (signature only, no transaction)",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:521",
+    "zh": "无（只签名，不发交易）"
+  },
+  "launch2Creator_launch2SignReady": {
+    "en": "Token address",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:262, lib/features/launch2/creator/launch2_sign_screen.dart:518",
+    "zh": "代币地址"
+  },
+  "launch2Creator_launch2SignSigning": {
+    "en": "Waiting for wallet signature…",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:154",
+    "zh": "等待钱包签名…"
+  },
+  "launch2Creator_launch2SignSubmitting": {
+    "en": "Submitting…",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:155",
+    "zh": "正在提交…"
+  },
+  "launch2Creator_launch2SignSwitch": {
+    "en": "You cancelled the signature in your wallet. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:30",
+    "zh": "你在钱包里取消了签名，没有提交任何内容。"
+  },
+  "launch2Creator_launch2SignSwitch2": {
+    "en": "This signing request belongs to another wallet. Switch to the project owner's wallet.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:31",
+    "zh": "签名请求属于另一个钱包，请切换到项目方钱包。"
+  },
+  "launch2Creator_launch2SignSwitch3": {
+    "en": "The signing request is for the wrong network. Nothing was signed.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:32",
+    "zh": "签名请求的网络不对，没有签名。"
+  },
+  "launch2Creator_launch2SignSwitch4": {
+    "en": "The embedded wallet isn't available. Sign in again and retry.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:33",
+    "zh": "内嵌钱包不可用，请重新登录后再试。"
+  },
+  "launch2Creator_launch2SignSwitch5": {
+    "en": "The wallet didn't finish signing. Nothing was submitted.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:34",
+    "zh": "钱包没有完成签名，没有提交任何内容。"
+  },
+  "launch2Creator_launch2SignText": {
+    "en": "This is an authorization signature and spends nothing. The platform deploys and activates once it receives it; progress is on the next page.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:346",
+    "zh": "这是一次授权签名，不花费资产；平台收到后部署并激活，进度在下一页。"
+  },
+  "launch2Creator_launch2SignValue": {
+    "en": "Expires in {minutes}:{seconds}",
+    "placeholders": {
+      "minutes": {
+        "example": "minutes.toString().padLeft(2, '0')",
+        "type": "Object"
+      },
+      "seconds": {
+        "example": "seconds.toString().padLeft(2, '0')",
+        "type": "Object"
+      }
+    },
+    "where": "lib/features/launch2/creator/launch2_sign_screen.dart:440",
+    "zh": "{minutes}:{seconds} 后过期"
+  },
+  "launch2Creator_launch2Switch": {
+    "en": "The signature expired. Sign and submit again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:93",
+    "zh": "签名已过期，请重新签名提交。"
+  },
+  "launch2Creator_launch2Switch10": {
+    "en": "The platform is processing and will retry automatically.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:108",
+    "zh": "平台处理中，会自动重试。"
+  },
+  "launch2Creator_launch2Switch11": {
+    "en": "The deployment didn't finish. Contact the platform.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:109",
+    "zh": "部署没有完成，请联系平台。"
+  },
+  "launch2Creator_launch2Switch12": {
+    "en": "Edit name or ticker",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:130",
+    "zh": "修改名称或代码"
+  },
+  "launch2Creator_launch2Switch13": {
+    "en": "Edit mint start time",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:131",
+    "zh": "修改铸造开始时间"
+  },
+  "launch2Creator_launch2Switch14": {
+    "en": "On-chain, awaiting confirmation",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:139",
+    "zh": "已上链，等待确认"
+  },
+  "launch2Creator_launch2Switch15": {
+    "en": "Retrying",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:143",
+    "zh": "重试中"
+  },
+  "launch2Creator_launch2Switch16": {
+    "en": "Signature verified and recorded",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:151",
+    "zh": "已验签登记"
+  },
+  "launch2Creator_launch2Switch17": {
+    "en": "Claimed by executor",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:152",
+    "zh": "执行器已认领"
+  },
+  "launch2Creator_launch2Switch18": {
+    "en": "Deploy transaction broadcast",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:153",
+    "zh": "部署交易已广播"
+  },
+  "launch2Creator_launch2Switch19": {
+    "en": "Transaction included",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:154",
+    "zh": "交易已打包"
+  },
+  "launch2Creator_launch2Switch2": {
+    "en": "The configuration was updated. Sign again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:94",
+    "zh": "配置已更新，请重新签名。"
+  },
+  "launch2Creator_launch2Switch20": {
+    "en": "Deployment confirmed",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:155",
+    "zh": "部署已确认"
+  },
+  "launch2Creator_launch2Switch21": {
+    "en": "Module check passed",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:156",
+    "zh": "模块核验通过"
+  },
+  "launch2Creator_launch2Switch22": {
+    "en": "Activation transaction broadcast",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:157",
+    "zh": "激活交易已广播"
+  },
+  "launch2Creator_launch2Switch23": {
+    "en": "Activation transaction included",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:158",
+    "zh": "激活交易已打包"
+  },
+  "launch2Creator_launch2Switch24": {
+    "en": "Chain reorg, reconfirming",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:160",
+    "zh": "链上重组，重新确认"
+  },
+  "launch2Creator_launch2Switch25": {
+    "en": "Status update",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:163",
+    "zh": "状态更新"
+  },
+  "launch2Creator_launch2Switch3": {
+    "en": "The configuration approval lapsed. Sign again after the platform approves.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:95",
+    "zh": "配置审批已失效，等待平台审批后重新签名。"
+  },
+  "launch2Creator_launch2Switch4": {
+    "en": "Invalid signature. Sign again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:96",
+    "zh": "签名无效，请重新签名。"
+  },
+  "launch2Creator_launch2Switch5": {
+    "en": "The wallet nonce changed. Sign again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:97",
+    "zh": "钱包 nonce 已变化，请重新签名。"
+  },
+  "launch2Creator_launch2Switch6": {
+    "en": "This version is already deployed on-chain. Contact the platform.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:98",
+    "zh": "该版本已在链上部署，请联系平台。"
+  },
+  "launch2Creator_launch2Switch7": {
+    "en": "Too close to the mint start to activate. Change the mint start time and submit again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:99",
+    "zh": "距铸造开始太近无法激活，修改铸造开始时间后重新提交。"
+  },
+  "launch2Creator_launch2Switch8": {
+    "en": "The name or ticker isn't allowed. Edit and submit again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:103",
+    "zh": "名称 / 代码不合规，请修改后重新提交。"
+  },
+  "launch2Creator_launch2Switch9": {
+    "en": "The deployment check didn't match, so the project wasn't activated. Contact the platform.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:104",
+    "zh": "部署核验不一致，项目未激活，请联系平台。"
+  },
+  "launch2Creator_launch2VersionConflict": {
+    "en": "The details were changed elsewhere and have been reloaded. Check them and submit again.",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:81",
+    "zh": "资料在别处被改过，已重新读取，请确认后再提交。"
+  },
+  "launch2Creator_projectDetails": {
+    "en": "Project details",
+    "placeholders": {},
+    "where": "lib/features/launch2/creator/launch2_creator_widgets.dart:373",
+    "zh": "项目资料"
+  }
+}

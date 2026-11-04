@@ -215,7 +215,10 @@ void main() {
 
   group('B · leftover wording (decision 0208)', () {
     test('名单核验中 and a neutral Launch contract sentence', () {
-      expect(launch2ReasonText('LAUNCH2_SNAPSHOT_UNVERIFIED'), '名单核验中，提前购暂不可用');
+      expect(
+        launch2ReasonText('LAUNCH2_SNAPSHOT_UNVERIFIED'),
+        'Checking the allowlist; priority buy is unavailable',
+      );
       final text = launchReasonCodeText('LAUNCH_CONTRACT_VERIFICATION_PENDING');
       expect(text, isNot(contains('还在核对')));
       expect(text, contains('Launch 合约'));
@@ -301,8 +304,8 @@ void main() {
       final sheet = launch2IntentFields(
         prepared.intent,
         ticker: 'S227W',
-      ).firstWhere((field) => field.label.contains('税'));
-      expect(panel.label, '基础税 2%（从付出的 USD1 扣）');
+      ).firstWhere((field) => field.label.contains('tax'));
+      expect(panel.label, 'Base tax 2% (taken from the USD1 you pay)');
       expect(sheet.label, panel.label);
       expect(sheet.value, panel.value);
       expect(sheet.value, '0.1 USD1');
@@ -326,8 +329,8 @@ void main() {
       final field = launch2IntentFields(
         plain.intent,
         ticker: 'FROG',
-      ).firstWhere((field) => field.label.contains('税'));
-      expect(field.label, '外盘税 2%');
+      ).firstWhere((field) => field.label.contains('tax'));
+      expect(field.label, 'DEX pool tax 2%');
       expect(field.value, isNot(contains('USD1')));
     });
   });

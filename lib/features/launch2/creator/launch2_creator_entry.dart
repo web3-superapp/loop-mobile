@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -38,7 +39,7 @@ class Launch2CreatorEntry extends ConsumerWidget {
     if (!launch2CreatorEntryVisible(ref)) return const SizedBox.shrink();
     return LoopButton(
       key: const ValueKey<String>('launch2-creator-entry'),
-      label: 'v2 发射（NFT 预售 + 官方外盘）',
+      label: context.l10n.launch2Creator_launch2EntryLaunch2CreatorEntryLabel,
       icon: 'launch',
       onPressed: () => onNavigate(Launch2CreatorRoute.createPath),
     );
@@ -56,7 +57,8 @@ class Launch2MyProjectsEntry extends ConsumerWidget {
     if (!launch2CreatorEntryVisible(ref)) return const SizedBox.shrink();
     return LoopButton(
       key: const ValueKey<String>('launch2-my-projects-entry'),
-      label: '我的项目',
+      label:
+          context.l10n.launch2Creator_launch2EntryLaunch2MyProjectsEntryLabel,
       onPressed: () => onNavigate(Launch2CreatorRoute.minePath),
     );
   }
@@ -119,8 +121,12 @@ class Launch2CreatorActions extends ConsumerWidget {
           LoopRecordRow(
             key: const ValueKey<String>('launch2-create-chooser-v2'),
             leading: const LoopRowIcon(icon: 'launch'),
-            title: 'v2 发射',
-            subtitle: 'NFT 预售 + 提前购 + 公开内盘，毕业进官方外盘',
+            title: context
+                .l10n
+                .launch2Creator_launch2EntryLaunch2CreateChooserV2Title,
+            subtitle: context
+                .l10n
+                .launch2Creator_launch2EntryLaunch2CreateChooserV2Subtitle,
             subtitleMaxLines: 2,
             position: LoopRowPosition.first,
             onTap: () =>
@@ -129,8 +135,12 @@ class Launch2CreatorActions extends ConsumerWidget {
           LoopRecordRow(
             key: const ValueKey<String>('launch2-create-chooser-classic'),
             leading: const LoopRowIcon(icon: 'chart'),
-            title: '经典发射',
-            subtitle: '联合曲线发币，打满自动上 PancakeSwap',
+            title: context
+                .l10n
+                .launch2Creator_launch2EntryLaunch2CreateChooserClassicTitle,
+            subtitle: context
+                .l10n
+                .launch2Creator_launch2EntryLaunch2CreateChooserClassicSubtitle,
             subtitleMaxLines: 2,
             position: LoopRowPosition.last,
             onTap: () => Navigator.of(sheetContext).pop(classicCreatePath),
@@ -157,7 +167,8 @@ class Launch2MyProjectsAction extends ConsumerWidget {
     return Launch2BoldIconButton(
       key: const ValueKey<String>('launch2-my-projects-action'),
       icon: 'user',
-      label: '我的项目',
+      label:
+          context.l10n.launch2Creator_launch2EntryLaunch2MyProjectsEntryLabel,
       onPressed: onPressed,
     );
   }
@@ -245,7 +256,7 @@ class Launch2LaunchCapsule extends StatelessWidget {
 
   final VoidCallback onPressed;
 
-  static const String label = '发射';
+  static String get label => LoopL10n.current.launch2Creator_launch2CreateText;
 
   @override
   Widget build(BuildContext context) => Semantics(

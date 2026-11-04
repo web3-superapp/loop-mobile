@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 
 // ---------------------------------------------------------------------------
 // 外盘交易 · the panel's view model (client decision 0145)
@@ -25,7 +26,8 @@ const int launch2PoolDefaultSlippageBps = 100;
 const int launch2PoolFallbackTaxBps = 200;
 
 /// The line a moved or expired price leaves in the panel.
-const String launch2PoolPriceMovedText = '价格已变化，已刷新';
+String get launch2PoolPriceMovedText =>
+    LoopL10n.current.launch2_launch2FormatSwitch31;
 
 /// One label / value line under the amount field.
 @immutable
@@ -111,24 +113,40 @@ final class Launch2PoolTradeView {
 /// Decision 0159 · zh-CN for every LoopDynamic `reasonCode`, exactly the
 /// server's `launch2DynamicReasonMessagesZh` (`frontend-v2-launch2-api.md`
 /// §3.12.6). `null` for any other code.
-const Map<String, String> launch2DynamicReasonMessagesZh = <String, String>{
-  'LAUNCH2_DYNAMIC_ROUTER_NOT_CONFIGURED': '外盘路由未配置，暂不可交易',
-  'LAUNCH2_DYNAMIC_ROUTER_CODE_MISMATCH': '外盘路由校验未通过，暂不可交易',
-  'LAUNCH2_DYNAMIC_ROUTER_MANAGER_MISMATCH': '外盘路由与池子不匹配，暂不可交易',
-  'LAUNCH2_DYNAMIC_HOOK_NOT_INDEXED': '外盘池子正在同步，请稍后再试',
-  'LAUNCH2_DYNAMIC_HOOK_MISMATCH': '外盘池子校验未通过，暂不可交易',
-  'LAUNCH2_DYNAMIC_HOOK_NOT_INITIALIZED': '外盘池子尚未初始化',
-  'LAUNCH2_EXACT_OUT_UNSUPPORTED': '该池子只支持按支付金额交易',
-  'LAUNCH2_DYNAMIC_POOL_NOT_APPLICABLE': '该项目的外盘没有奖励轮次',
-  'LAUNCH2_DYNAMIC_ROUND_INVALID': '轮次编号无效',
-  'LAUNCH2_DYNAMIC_ROUTER_UNAUTHORIZED': '池子拒绝了这个交易入口',
-  'LAUNCH2_DYNAMIC_SWAP_UNSUPPORTED': '池子不支持这种交易方式',
-  'LAUNCH2_DYNAMIC_HOOK_BUSY': '池子正忙，请稍后重试',
-  'LAUNCH2_DYNAMIC_ROUND_NOT_CLOSED': '本轮还没有结束，结束后才能领取',
-  'LAUNCH2_DYNAMIC_ALREADY_CLAIMED': '本轮奖励已经领取过',
-  'LAUNCH2_DYNAMIC_CLAIM_TRANSACTION_CONFLICT': '这次领取已经记录了另一笔交易',
-  'LAUNCH2_DYNAMIC_NOTHING_TO_CLAIM': '本轮没有可领取的奖励',
-  'LAUNCH2_DYNAMIC_CLAIM_INTENT_NOT_FOUND': '找不到这次领取请求',
+Map<String, String> launch2DynamicReasonMessagesZh = <String, String>{
+  'LAUNCH2_DYNAMIC_ROUTER_NOT_CONFIGURED':
+      LoopL10n.current.launch2_launch2PoolViewModelS,
+  'LAUNCH2_DYNAMIC_ROUTER_CODE_MISMATCH':
+      LoopL10n.current.launch2_launch2PoolViewModelS2,
+  'LAUNCH2_DYNAMIC_ROUTER_MANAGER_MISMATCH':
+      LoopL10n.current.launch2_launch2PoolViewModelS3,
+  'LAUNCH2_DYNAMIC_HOOK_NOT_INDEXED':
+      LoopL10n.current.launch2_launch2DynamicRewardsReason,
+  'LAUNCH2_DYNAMIC_HOOK_MISMATCH':
+      LoopL10n.current.launch2_launch2PoolViewModelS4,
+  'LAUNCH2_DYNAMIC_HOOK_NOT_INITIALIZED':
+      LoopL10n.current.launch2_launch2PoolViewModelS5,
+  'LAUNCH2_EXACT_OUT_UNSUPPORTED':
+      LoopL10n.current.launch2_launch2PoolViewModelS6,
+  'LAUNCH2_DYNAMIC_POOL_NOT_APPLICABLE':
+      LoopL10n.current.launch2_launch2PoolViewModelS7,
+  'LAUNCH2_DYNAMIC_ROUND_INVALID':
+      LoopL10n.current.launch2_launch2PoolViewModelS8,
+  'LAUNCH2_DYNAMIC_ROUTER_UNAUTHORIZED':
+      LoopL10n.current.launch2_launch2PoolViewModelS9,
+  'LAUNCH2_DYNAMIC_SWAP_UNSUPPORTED':
+      LoopL10n.current.launch2_launch2PoolViewModelS10,
+  'LAUNCH2_DYNAMIC_HOOK_BUSY': LoopL10n.current.launch2_launch2PoolViewModelS11,
+  'LAUNCH2_DYNAMIC_ROUND_NOT_CLOSED':
+      LoopL10n.current.launch2_launch2PoolViewModelS12,
+  'LAUNCH2_DYNAMIC_ALREADY_CLAIMED':
+      LoopL10n.current.launch2_launch2PoolViewModelS13,
+  'LAUNCH2_DYNAMIC_CLAIM_TRANSACTION_CONFLICT':
+      LoopL10n.current.launch2_launch2PoolViewModelS14,
+  'LAUNCH2_DYNAMIC_NOTHING_TO_CLAIM':
+      LoopL10n.current.launch2_launch2DynamicRewardsLaunch2DynamicNoRewardText,
+  'LAUNCH2_DYNAMIC_CLAIM_INTENT_NOT_FOUND':
+      LoopL10n.current.launch2_launch2PoolViewModelS15,
 };
 
 String? launch2DynamicReasonText(String? reasonCode) =>
@@ -140,17 +158,21 @@ String launch2PoolReasonText(String? reasonCode) =>
     launch2DynamicReasonText(reasonCode) ?? _poolReasonText(reasonCode);
 
 String _poolReasonText(String? reasonCode) => switch (reasonCode) {
-  'POOL_QUOTE_UNAVAILABLE' => '官方池试算没有通过，换个金额再试',
-  'POOL_NOT_GRADUATED' => '项目还没有毕业，官方池尚未开放',
-  'POOL_INSUFFICIENT_LIQUIDITY' => '官方池流动性不足，换个小一点的金额试试',
-  'POOL_QUOTE_ZERO' => '这个金额太小，换算后为 0',
+  'POOL_QUOTE_UNAVAILABLE' =>
+    LoopL10n.current.launch2_launch2PoolViewModelSwitch,
+  'POOL_NOT_GRADUATED' => LoopL10n.current.launch2_launch2PoolViewModelSwitch2,
+  'POOL_INSUFFICIENT_LIQUIDITY' =>
+    LoopL10n.current.launch2_launch2PoolViewModelSwitch3,
+  'POOL_QUOTE_ZERO' => LoopL10n.current.launch2_launch2PoolViewModelSwitch4,
   'POOL_ROUTER_NOT_CONFIGURED' ||
   'POOL_ROUTER_CODE_MISMATCH' ||
   'POOL_ROUTER_MANAGER_MISMATCH' ||
-  'POOL_KEY_MISMATCH' => '外盘交易暂时关闭，平台正在核对官方池',
-  'LAUNCH2_AMOUNT_INVALID' => '金额不正确',
-  'LAUNCH2_USD1_BALANCE_INSUFFICIENT' => 'USD1 余额不足，没有发起任何交易',
-  'LAUNCH2_MEME_BALANCE_INSUFFICIENT' => '卖出数量超过持有，没有发起任何交易',
+  'POOL_KEY_MISMATCH' => LoopL10n.current.launch2_launch2PoolViewModelSwitch5,
+  'LAUNCH2_AMOUNT_INVALID' => LoopL10n.current.launch2_launch2FormatSwitch36,
+  'LAUNCH2_USD1_BALANCE_INSUFFICIENT' =>
+    LoopL10n.current.launch2_launch2PoolViewModelSwitch6,
+  'LAUNCH2_MEME_BALANCE_INSUFFICIENT' =>
+    LoopL10n.current.launch2_launch2PoolViewModelSwitch7,
   _ => launch2ReasonText(reasonCode),
 };
 
@@ -166,21 +188,35 @@ String launch2PoolFailureText(LoopChainException failure) {
   Launch2PoolMode mode,
   String ticker,
 ) => switch ((side, mode)) {
-  (Launch2Side.buy, Launch2PoolMode.exactIn) => ('支付（含税）', 'USD1'),
+  (Launch2Side.buy, Launch2PoolMode.exactIn) => (
+    LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolFailureText,
+    'USD1',
+  ),
   (Launch2Side.buy, Launch2PoolMode.exactOut) => (
-    '想买入',
+    LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolFailureText2,
     loopTickerLabel(ticker),
   ),
   (Launch2Side.sell, Launch2PoolMode.exactIn) => (
-    '卖出',
+    LoopL10n.current.common_sell,
     loopTickerLabel(ticker),
   ),
-  (Launch2Side.sell, Launch2PoolMode.exactOut) => ('想到手', 'USD1'),
+  (Launch2Side.sell, Launch2PoolMode.exactOut) => (
+    LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolFailureText3,
+    'USD1',
+  ),
 };
 
 /// The two labels the mode toggle offers for a side.
 (String exactIn, String exactOut) launch2PoolModeLabels(Launch2Side side) =>
-    side == Launch2Side.buy ? ('按支付', '按买入数量') : ('按卖出数量', '按到手金额');
+    side == Launch2Side.buy
+    ? (
+        LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolFailureText4,
+        LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolFailureText5,
+      )
+    : (
+        LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolFailureText6,
+        LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolFailureText7,
+      );
 
 String _usd1(Decimal value) => launch2Usd1Label(value, maxFractionDigits: 4);
 
@@ -203,23 +239,53 @@ List<Launch2PoolLine> launch2PoolQuoteLines(
     if (quote.mode == Launch2PoolMode.exactIn) ...<Launch2PoolLine>[
       Launch2PoolLine(
         'expected',
-        buy ? '预计获得' : '预计到手',
+        buy
+            ? LoopL10n.current.common_estimatedReceive
+            : LoopL10n.current.launch2_launch2PoolViewModelS16,
         out(quote.expectedOut),
       ),
-      Launch2PoolLine('min', buy ? '最少获得' : '最少到手', out(quote.minOut)),
+      Launch2PoolLine(
+        'min',
+        buy
+            ? LoopL10n.current.common_minimumReceive
+            : LoopL10n.current.launch2_launch2PoolViewModelS17,
+        out(quote.minOut),
+      ),
     ] else ...<Launch2PoolLine>[
-      Launch2PoolLine('expected', buy ? '预计支付' : '预计卖出', into(quote.amountIn)),
-      Launch2PoolLine('max', buy ? '最多支付' : '最多卖出', into(quote.maxIn)),
+      Launch2PoolLine(
+        'expected',
+        buy
+            ? LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine
+            : LoopL10n.current.launch2_launch2PoolViewModelS18,
+        into(quote.amountIn),
+      ),
+      Launch2PoolLine(
+        'max',
+        buy
+            ? LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine2
+            : LoopL10n.current.launch2_launch2PoolViewModelS19,
+        into(quote.maxIn),
+      ),
     ],
     Launch2PoolLine(
       'tax',
-      '外盘税 ${launch2BpsLabel(quote.taxBps)}',
+      LoopL10n.current.launch2_launch2InstanceLaunch2PoolTaxTitle(
+        launch2BpsLabel(quote.taxBps),
+      ),
       quote.taxToken == Launch2PoolTaxToken.meme
           ? launch2MemeLabel(quote.taxAmount, ticker)
           : _usd1(quote.taxAmount),
     ),
-    Launch2PoolLine('price', '成交均价', launch2PriceLabel(quote.averagePriceUsd1)),
-    Launch2PoolLine('slippage', '滑点上限', launch2BpsLabel(quote.slippageBps)),
+    Launch2PoolLine(
+      'price',
+      LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine3,
+      launch2PriceLabel(quote.averagePriceUsd1),
+    ),
+    Launch2PoolLine(
+      'slippage',
+      LoopL10n.current.common_slippageLimit,
+      launch2BpsLabel(quote.slippageBps),
+    ),
   ];
 }
 
@@ -235,12 +301,18 @@ Launch2PoolLine launch2DynamicBuyTaxLine(
   return loopDynamic.buyFeeFromUsd1
       ? Launch2PoolLine(
           'tax',
-          '基础税 $rate（${launch2BuyFeeSideText(fromUsd1: true)}）',
+          LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine4(
+            launch2BuyFeeSideText(fromUsd1: true),
+            rate,
+          ),
           _usd1(quote.taxUsd1),
         )
       : Launch2PoolLine(
           'tax',
-          '基础税 $rate（${launch2BuyFeeSideText(fromUsd1: false)}）',
+          LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine4(
+            launch2BuyFeeSideText(fromUsd1: false),
+            rate,
+          ),
           launch2MemeLabel(quote.taxAmount, ticker),
         );
 }
@@ -257,10 +329,24 @@ List<Launch2PoolLine> launch2DynamicQuoteLines(
   final buy = quote.side == Launch2Side.buy;
   String out(Decimal value) =>
       buy ? launch2MemeLabel(value, ticker) : _usd1(value);
-  final base = '基础税 ${launch2BpsLabel(loopDynamic.baseTaxBps)}';
+  final base = LoopL10n.current.launch2_launch2PoolViewModelBase(
+    launch2BpsLabel(loopDynamic.baseTaxBps),
+  );
   return <Launch2PoolLine>[
-    Launch2PoolLine('expected', buy ? '预计获得' : '预计到手', out(quote.expectedOut)),
-    Launch2PoolLine('min', buy ? '最少获得' : '最少到手', out(quote.minOut)),
+    Launch2PoolLine(
+      'expected',
+      buy
+          ? LoopL10n.current.common_estimatedReceive
+          : LoopL10n.current.launch2_launch2PoolViewModelS16,
+      out(quote.expectedOut),
+    ),
+    Launch2PoolLine(
+      'min',
+      buy
+          ? LoopL10n.current.common_minimumReceive
+          : LoopL10n.current.launch2_launch2PoolViewModelS17,
+      out(quote.minOut),
+    ),
     if (buy) ...<Launch2PoolLine>[
       // Decision 0197: an S209 Hook keeps the 2% out of the USD1 paid in
       // (the MEME out is untaxed); an older one takes it from the MEME
@@ -269,24 +355,39 @@ List<Launch2PoolLine> launch2DynamicQuoteLines(
       loopDynamic.armed
           ? Launch2PoolLine(
               'reward-weight',
-              '本笔计入奖励权重',
+              LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine5,
               _usd1(loopDynamic.rewardWeight),
             )
-          : const Launch2PoolLine('reward-weight', '奖励权重', '当前未激活，不计奖励'),
+          : Launch2PoolLine(
+              'reward-weight',
+              LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine6,
+              LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine7,
+            ),
     ] else ...<Launch2PoolLine>[
       Launch2PoolLine(
         'tax',
-        '$base + 当前动态税 ${launch2BpsLabel(loopDynamic.dynamicTaxBps)}（扣 USD1）',
+        LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine8(
+          base,
+          launch2BpsLabel(loopDynamic.dynamicTaxBps),
+        ),
         _usd1(quote.taxAmount),
       ),
       Launch2PoolLine(
         'tax-split',
-        '其中动态税',
+        LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine9,
         _usd1(loopDynamic.dynamicTaxAmount),
       ),
     ],
-    Launch2PoolLine('price', '成交均价', launch2PriceLabel(quote.averagePriceUsd1)),
-    Launch2PoolLine('slippage', '滑点上限', launch2BpsLabel(quote.slippageBps)),
+    Launch2PoolLine(
+      'price',
+      LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolLine3,
+      launch2PriceLabel(quote.averagePriceUsd1),
+    ),
+    Launch2PoolLine(
+      'slippage',
+      LoopL10n.current.common_slippageLimit,
+      launch2BpsLabel(quote.slippageBps),
+    ),
   ];
 }
 
@@ -335,13 +436,13 @@ Launch2PoolTradeView launch2PoolTradeView({
   final graduated = detail.stage == Launch2Stage.graduated;
   final pool = detail.pool;
   final String? blocked = !graduated
-      ? '项目还没有毕业，官方池尚未开放'
+      ? LoopL10n.current.launch2_launch2PoolViewModelSwitch2
       : detail.graduation == null
-      ? '官方池信息还在同步，暂时不能交易'
+      ? LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolTradeView
       : pool != null && pool.router == null
-      ? '外盘交易暂未开放（路由未配置）'
+      ? LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolTradeView2
       : walletId == null
-      ? '还没有可用的钱包，激活钱包后可交易'
+      ? LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolTradeView3
       : null;
   final sellAll = holding?.sellableOrBalance;
   final String? overHolding =
@@ -350,24 +451,39 @@ Launch2PoolTradeView launch2PoolTradeView({
           amount != null &&
           sellAll != null &&
           amount > sellAll
-      ? '卖出数量超过可卖 ${launch2MemeLabel(sellAll, ticker)}'
+      ? LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolTradeView4(
+          launch2MemeLabel(sellAll, ticker),
+        )
       : null;
   final String? overBalance = quote != null && quote.exceedsBalance
       ? side == Launch2Side.buy
-            ? 'USD1 余额不足：最多需要 ${_usd1(quote.maxIn)}，'
-                  '钱包有 ${_usd1(quote.balanceUsd1)}'
-            : '${loopTickerLabel(ticker)} 余额不足：最多需要 ${launch2MemeLabel(quote.maxIn, ticker)}，'
-                  '钱包有 ${launch2MemeLabel(quote.balanceMeme, ticker)}'
+            ? LoopL10n.current
+                  .launch2_launch2PoolViewModelLaunch2PoolTradeView5(
+                    _usd1(quote.maxIn),
+                    _usd1(quote.balanceUsd1),
+                  )
+            : LoopL10n.current.launch2_launch2PoolViewModelS20(
+                launch2MemeLabel(quote.maxIn, ticker),
+                launch2MemeLabel(quote.balanceMeme, ticker),
+                loopTickerLabel(ticker),
+              )
       : null;
   final failureLine = quoteFailure == null
       ? null
-      : '没有取到报价 · ${launch2PoolFailureText(quoteFailure)}';
+      : LoopL10n.current.launch2_launch2PoolViewModelNull(
+          launch2PoolFailureText(quoteFailure),
+        );
   final lines = quote == null
       ? const <Launch2PoolLine>[]
       : launch2PoolQuoteLines(quote, ticker);
   final String? placeholder = quote != null || failureLine != null
       ? null
-      : overHolding ?? (quoting ? '正在向官方池报价…' : '输入金额后显示报价');
+      : overHolding ??
+            (quoting
+                ? LoopL10n
+                      .current
+                      .launch2_launch2PoolViewModelLaunch2PoolTradeView6
+                : LoopL10n.current.launch2_launch2PoolViewModelS21);
   final canConfirm =
       blocked == null &&
       !locked &&
@@ -391,31 +507,42 @@ Launch2PoolTradeView launch2PoolTradeView({
   // held, once, without repeating the long ticker twice.
   final String? holdingLine = holding != null
       ? side == Launch2Side.buy
-            ? '持有 ${launch2MemeLabel(holding.balance, ticker)}'
-            : '持有 ${launch2MemeLabel(holding.balance, ticker)} · '
-                  '可卖 ${launch2MemeLabel(holding.sellableOrBalance, ticker)}'
+            ? LoopL10n.current
+                  .launch2_launch2PoolViewModelLaunch2PoolTradeView7(
+                    launch2MemeLabel(holding.balance, ticker),
+                  )
+            : LoopL10n.current.launch2_launch2PoolViewModelS22(
+                launch2MemeLabel(holding.balance, ticker),
+                launch2MemeLabel(holding.sellableOrBalance, ticker),
+              )
       : server != null && server.status == Launch2BalanceStatus.unavailable
-      ? '钱包余额暂时读不到 · 报价后显示'
+      ? LoopL10n.current.launch2_launch2PoolViewModelText
       : curveNet != null && curveNet > Decimal.zero
-      ? '内盘净买入 ${launch2MemeLabel(curveNet, ticker)} · 钱包余额报价后显示'
+      ? LoopL10n.current.launch2_launch2PoolViewModelText2(
+          launch2MemeLabel(curveNet, ticker),
+        )
       : null;
   return Launch2PoolTradeView(
     fieldLabel: label,
     fieldSuffix: suffix,
     taxLabel: dynamicPool == null
-        ? '外盘税 ${launch2BpsLabel(taxBps)}'
-        : '外盘税 ${launch2BpsLabel(taxBps)} + 卖出动态税',
+        ? LoopL10n.current.launch2_launch2InstanceLaunch2PoolTaxTitle(
+            launch2BpsLabel(taxBps),
+          )
+        : LoopL10n.current.launch2_launch2PoolViewModelTaxLabel(
+            launch2BpsLabel(taxBps),
+          ),
     lines: lines,
     quotePlaceholder: placeholder,
     overHolding: overHolding != null,
     balanceLine: overBalance,
     confirmLabel: preparing
-        ? '正在准备…'
+        ? LoopL10n.current.launch2_launch2DynamicRewardsLabel
         : locked
-        ? '上一笔确认中…'
+        ? LoopL10n.current.launch2_launch2PoolViewModelConfirmLabel
         : side == Launch2Side.buy
-        ? '确认买入'
-        : '确认卖出',
+        ? LoopL10n.current.launch2_launch2PoolViewModelConfirmLabel2
+        : LoopL10n.current.launch2_launch2PoolViewModelConfirmLabel3,
     canConfirm: canConfirm,
     showMax:
         side == Launch2Side.sell &&
@@ -428,11 +555,24 @@ Launch2PoolTradeView launch2PoolTradeView({
     provenance: quote == null
         ? null
         : quote.loopDynamic != null
-        ? '按区块 ${quote.quotedAtBlock} 的官方池计算，'
-              '${quote.side == Launch2Side.buy ? (quote.loopDynamic!.buyFeeFromUsd1 ? '已从付出的 USD1 扣 ${launch2BpsLabel(quote.taxBps)} 基础税' : '已扣 ${launch2BpsLabel(quote.taxBps)} 外盘税') : '已扣基础税与动态税（按成交${quote.loopDynamic!.priceTiming == Launch2PriceTiming.postSwap ? '后' : '前'}跌幅模拟）'}'
-              '；到期自动重新报价。'
-        : '按区块 ${quote.quotedAtBlock} 的官方池计算，已扣 '
-              '${launch2BpsLabel(quote.taxBps)} 外盘税；到期自动重新报价。',
+        ? LoopL10n.current.launch2_launch2PoolViewModelProvenance(
+            quote.side == Launch2Side.buy
+                ? (quote.loopDynamic!.buyFeeFromUsd1
+                      ? LoopL10n.current.launch2_provenanceBuyFeeFromUsd1(
+                          launch2BpsLabel(quote.taxBps),
+                        )
+                      : LoopL10n.current.launch2_provenancePoolTax(
+                          launch2BpsLabel(quote.taxBps),
+                        ))
+                : (quote.loopDynamic!.priceTiming == Launch2PriceTiming.postSwap
+                      ? LoopL10n.current.launch2_provenanceSellPostSwap
+                      : LoopL10n.current.launch2_provenanceSellPreSwap),
+            quote.quotedAtBlock,
+          )
+        : LoopL10n.current.launch2_launch2PoolViewModelProvenance2(
+            launch2BpsLabel(quote.taxBps),
+            quote.quotedAtBlock,
+          ),
   );
 }
 
@@ -452,7 +592,11 @@ int? launch2PoolSlippageFromInput(String text) {
 /// out for what went in, both net of the 2% pool tax.
 String launch2PoolTradeFigure(Launch2PoolTrade trade, String ticker) =>
     trade.side == Launch2Side.buy
-    ? '${launch2MemeLabel(trade.amountOut, ticker)} · '
-          '付 ${_usd1(trade.amountIn)}'
-    : '${launch2MemeLabel(trade.amountIn, ticker)} · '
-          '得 ${_usd1(trade.amountOut)}';
+    ? LoopL10n.current.launch2_launch2PoolViewModelLaunch2PoolSlippageFromInput(
+        launch2MemeLabel(trade.amountOut, ticker),
+        _usd1(trade.amountIn),
+      )
+    : LoopL10n.current.launch2_launch2PoolViewModelS23(
+        launch2MemeLabel(trade.amountIn, ticker),
+        _usd1(trade.amountOut),
+      );

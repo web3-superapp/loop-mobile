@@ -25,8 +25,14 @@ void main() {
         );
       }
       // Without an approval nothing changed, as before.
-      expect(launch2SignReasonText(loopStepUpCancelledCode), '已取消，没有发生任何变化。');
-      expect(launch2SignReasonText(loopStepUpFailedCode), '身份验证没有通过，没有发生任何变化。');
+      expect(
+        launch2SignReasonText(loopStepUpCancelledCode),
+        'Cancelled. Nothing changed.',
+      );
+      expect(
+        launch2SignReasonText(loopStepUpFailedCode),
+        'Verification failed. Nothing changed.',
+      );
       // Other refusals keep their own sentence.
       expect(
         launch2SignReasonText('INTENT_EXPIRED', approvalSent: true),

@@ -38,8 +38,10 @@ import 'support/s7_page_harness.dart';
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
 
 const String _since = '2027-01-20T06:30:00.000Z';
-const String _pausedText = 'USD1 已被发行方暂停，买卖和领取暂不可用';
-const String _frozenText = '本项目合约地址被 USD1 发行方限制，买卖和领取暂不可用';
+const String _pausedText =
+    'The USD1 issuer has paused USD1; trading and claims are unavailable';
+const String _frozenText =
+    'The USD1 issuer has restricted this project\'s contract address; trading and claims are unavailable';
 
 Map<String, Object?> _fixture(String dir, String name) =>
     (jsonDecode(File('test/fixtures/$dir/$name.json').readAsStringSync())
@@ -370,11 +372,11 @@ void main() {
       final since = DateTime(2027, 1, 20, 14, 5);
       expect(
         launch2TradingHoldSinceText(since, now: DateTime(2027, 1, 20, 18)),
-        '自 14:05 起',
+        'Since 14:05',
       );
       expect(
         launch2TradingHoldSinceText(since, now: DateTime(2027, 1, 21, 9)),
-        '自 2027-01-20 14:05 起',
+        'Since 2027-01-20 14:05',
       );
     });
   });

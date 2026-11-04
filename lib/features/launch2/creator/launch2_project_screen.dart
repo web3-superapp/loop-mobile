@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dar
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart'
     show Launch2CountdownBuilder;
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -48,12 +49,15 @@ class Launch2ProjectScreen extends ConsumerWidget {
       return LoopFocusPage(
         key: const ValueKey<String>('launch2-project-screen'),
         archetype: LoopPageArchetype.record,
-        title: '项目',
+        title:
+            context.l10n.launch2Creator_launch2ProjectLaunch2ProjectScreenTitle,
         onBack: onBack,
-        block: const LoopPageBlock(
+        block: LoopPageBlock(
           key: ValueKey<String>('launch2-project-missing'),
-          title: '找不到这个项目',
-          message: '链接里没有有效的项目编号。',
+          title: context.l10n.launch2Creator_launch2CreateEmptyMessage,
+          message: context
+              .l10n
+              .launch2Creator_launch2ProjectLaunch2ProjectMissingMessage,
         ),
         body: const <Widget>[],
       );
@@ -78,7 +82,9 @@ class Launch2ProjectScreen extends ConsumerWidget {
       child: LoopStreamPage(
         key: const ValueKey<String>('launch2-project-screen'),
         archetype: LoopPageArchetype.record,
-        title: value?.project.name ?? '项目',
+        title:
+            value?.project.name ??
+            context.l10n.launch2Creator_launch2ProjectLaunch2ProjectScreenTitle,
         onBack: onBack,
         updating: state.refreshing,
         onRefresh: ref.read(provider.notifier).reload,
@@ -90,7 +96,8 @@ class Launch2ProjectScreen extends ConsumerWidget {
                     keyPrefix: 'launch2-project',
                     phase: state.phase,
                     failureKind: state.failureKind,
-                    emptyMessage: '找不到这个项目',
+                    emptyMessage:
+                        context.l10n.launch2Creator_launch2CreateEmptyMessage,
                     onRetry: () =>
                         unawaited(ref.read(provider.notifier).reload()),
                   ),
@@ -162,7 +169,9 @@ class Launch2ProjectScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'NFT 图',
+                      LoopL10n
+                          .current
+                          .launch2Creator_launch2CreateLaunch2CreateNftMissing,
                       style: LoopType.label.copyWith(color: LoopColors.chalk),
                     ),
                     const SizedBox(height: 4),
@@ -185,26 +194,34 @@ class Launch2ProjectScreen extends ConsumerWidget {
         current: status.milestone,
         reachedCurrent: status == Launch2CreatorStatus.active,
         failed: status.isFailure,
-        semanticLabel:
-            '进度：${launch2CreatorMilestones[status.milestone]}，${status.label}',
+        semanticLabel: LoopL10n.current
+            .launch2Creator_launch2ProjectSemanticLabel(
+              status.label,
+              launch2CreatorMilestones[status.milestone],
+            ),
       ),
       ..._next(value, status),
       if (draft != null) ...<Widget>[
-        const LoopLabel('发射配置'),
+        LoopLabel(LoopL10n.current.launch2Creator_launch2ProjectLoopLabel),
         // Decision 0200: 「（N 小时后）」 follows the clock, not the build.
         Launch2CountdownBuilder(
           target: draft.nftSaleStart,
           builder: (context, _) => LoopKeyValue(
             key: const ValueKey<String>('launch2-project-sale-start'),
-            label: '铸造开始',
+            label: context
+                .l10n
+                .launch2Creator_launch2ProjectLaunch2ProjectSaleStartLabel,
             value: launch2SaleStartLabel(draft.nftSaleStart, clock()),
           ),
         ),
         LoopKeyValue(
-          label: '回购收币地址',
+          label: LoopL10n.current.launch2Creator_launch2CreateLoopLabel,
           value: loopTruncatedAddress(draft.buybackRecipient),
         ),
-        LoopKeyValue(label: '配置版本', value: 'v${draft.version}'),
+        LoopKeyValue(
+          label: LoopL10n.current.launch2Creator_launch2ProjectLabel,
+          value: 'v${draft.version}',
+        ),
         const SizedBox(height: 8),
         Launch2TemplateCard(economics: draft.economics, fromServer: true),
       ],
@@ -240,11 +257,17 @@ class Launch2ProjectScreen extends ConsumerWidget {
           LoopNotice(
             key: const ValueKey<String>('launch2-project-next-draft'),
             icon: 'info',
-            body: value.draft == null ? '资料已保存，还差发射配置。' : '还没有提交审核。',
+            body: value.draft == null
+                ? LoopL10n
+                      .current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextDraftBody
+                : LoopL10n
+                      .current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextDraftBody2,
           ),
           _action(
             'launch2-project-continue',
-            '继续填写',
+            LoopL10n.current.launch2Creator_launch2ProjectAction,
             () => _go(Launch2CreatorRoute.edit(id)),
           ),
         ];
@@ -256,11 +279,15 @@ class Launch2ProjectScreen extends ConsumerWidget {
           LoopNotice(
             key: const ValueKey<String>('launch2-project-next-review'),
             icon: 'clock',
-            title: '审核中',
+            title: LoopL10n.current.common_inReview,
             body: submitted == null
-                ? '平台审核发射配置，结果会显示在这里，下拉可刷新。'
-                : '${loopLocalTimestampLabel(submitted)} 提交，'
-                      '结果会显示在这里，下拉可刷新。',
+                ? LoopL10n
+                      .current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextReviewBody
+                : LoopL10n.current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextReviewBody2(
+                        loopLocalTimestampLabel(submitted),
+                      ),
           ),
         ];
       case Launch2CreatorStatus.rejected:
@@ -284,13 +311,19 @@ class Launch2ProjectScreen extends ConsumerWidget {
               key: const ValueKey<String>('launch2-project-next-rejected'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '审核意见',
+              title: LoopL10n
+                  .current
+                  .launch2Creator_launch2CreateLaunch2CreateRejectionTitle,
               // The server's own sentence, rendered verbatim (decision 0041).
-              body: project.reviewReasonText ?? '这次审核没有通过，修改后可以重新提交。',
+              body:
+                  project.reviewReasonText ??
+                  LoopL10n
+                      .current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextRejectedBody,
             ),
           _action(
             'launch2-project-resubmit',
-            '修改后重新提交',
+            LoopL10n.current.launch2Creator_launch2ProjectAction2,
             () => _go(Launch2CreatorRoute.edit(id)),
           ),
         ];
@@ -301,18 +334,22 @@ class Launch2ProjectScreen extends ConsumerWidget {
           // An approved version with another recipient can never be signed
           // (loop-api decision 0122, ruling 2): save a new version.
           return <Widget>[
-            const LoopNotice(
+            LoopNotice(
               key: ValueKey<String>('launch2-project-next-recipient-outdated'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '回购收币地址需要更新',
-              body:
-                  '这一版配置的回购收币地址不是平台固定地址，不能签名部署。'
-                  '修改资料重新保存一版后需要重新审核。',
+              title: LoopL10n
+                  .current
+                  .launch2Creator_launch2ProjectLaunch2ProjectNextRecipientOutdatedTitle,
+              body: LoopL10n
+                  .current
+                  .launch2Creator_launch2ProjectLaunch2ProjectNextRecipientOutdatedBody,
             ),
             _action(
               'launch2-project-update-recipient',
-              '修改资料',
+              LoopL10n
+                  .current
+                  .launch2Creator_launch2CreateLaunch2CreateScreenTitle,
               () => _go(Launch2CreatorRoute.edit(id)),
             ),
           ];
@@ -321,15 +358,21 @@ class Launch2ProjectScreen extends ConsumerWidget {
           LoopNotice(
             key: const ValueKey<String>('launch2-project-next-sign'),
             icon: 'check',
-            title: '已批准',
+            title: LoopL10n
+                .current
+                .launch2Creator_launch2ProjectLaunch2ProjectNextSignTitle,
             body: approvedAt == null
-                ? '用钱包签名后，平台会部署并激活。'
-                : '${loopLocalTimestampLabel(approvedAt)} 批准。'
-                      '用钱包签名后，平台会部署并激活。',
+                ? LoopL10n
+                      .current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextSignBody
+                : LoopL10n.current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextSignBody2(
+                        loopLocalTimestampLabel(approvedAt),
+                      ),
           ),
           _action(
             'launch2-project-sign',
-            '去签名部署',
+            LoopL10n.current.launch2Creator_launch2ProjectAction3,
             () => _go(Launch2CreatorRoute.sign(id)),
           ),
         ];
@@ -340,12 +383,16 @@ class Launch2ProjectScreen extends ConsumerWidget {
           LoopNotice(
             key: const ValueKey<String>('launch2-project-next-deploying'),
             icon: 'clock',
-            body: job == null ? '部署进行中。' : launch2JobStatusText(job),
+            body: job == null
+                ? LoopL10n
+                      .current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextDeployingBody
+                : launch2JobStatusText(job),
           ),
           if (job != null)
             _action(
               'launch2-project-progress',
-              '查看部署进度',
+              LoopL10n.current.launch2Creator_launch2ProjectAction4,
               () => _go(Launch2CreatorRoute.deployment(id, job.jobId)),
             ),
         ];
@@ -357,7 +404,11 @@ class Launch2ProjectScreen extends ConsumerWidget {
             key: const ValueKey<String>('launch2-project-next-failed'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
-            body: code == null ? '部署没有完成。' : launch2JobFailureText(code),
+            body: code == null
+                ? LoopL10n
+                      .current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextFailedBody
+                : launch2JobFailureText(code),
           ),
           if (edit)
             _action(
@@ -368,7 +419,7 @@ class Launch2ProjectScreen extends ConsumerWidget {
           else
             _action(
               'launch2-project-resign',
-              '重新签名',
+              LoopL10n.current.launch2Creator_launch2DeploymentAction2,
               () => _go(Launch2CreatorRoute.sign(id)),
             ),
         ];
@@ -378,12 +429,18 @@ class Launch2ProjectScreen extends ConsumerWidget {
           LoopNotice(
             key: const ValueKey<String>('launch2-project-next-active'),
             icon: 'check',
-            body: instance == null ? '已激活，项目页生成中，下拉可刷新。' : '已激活，你是这个项目的项目方。',
+            body: instance == null
+                ? LoopL10n
+                      .current
+                      .launch2Creator_launch2ProjectLaunch2ProjectNextActiveBody
+                : LoopL10n
+                      .current
+                      .launch2Creator_launch2DeploymentLaunch2DeploymentActivatedBody2,
           ),
           if (instance != null)
             _action(
               'launch2-project-open-instance',
-              '查看项目页',
+              LoopL10n.current.launch2Creator_launch2DeploymentAction,
               () => onOpenInstance?.call(instance.instanceId),
             ),
         ];

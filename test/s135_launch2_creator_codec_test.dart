@@ -854,7 +854,10 @@ void main() {
       expect(caught!.kind, LoopChainFailureKind.validationFailed);
       expect(caught.reasonCode, launch2ConfigVersionUsedCode);
       expect(script.sent.single.path, endsWith('/signing-request'));
-      expect(launch2FailureText(caught), '这一版配置的版本号已被你钱包的另一个项目用过，请修改资料重新保存一版。');
+      expect(
+        launch2FailureText(caught),
+        'Another project in your wallet already used this configuration version. Edit the details and save a new version.',
+      );
       expect(launch2FailureNeedsResave(launch2ConfigVersionUsedCode), isTrue);
       expect(launch2FailureNeedsResave(launch2RecipientFixedCode), isTrue);
       expect(launch2FailureNeedsResave('HOOKS_SIGNATURE_EXPIRED'), isFalse);
@@ -865,7 +868,7 @@ void main() {
             reasonCode: 'HOOKS_LAUNCH_FACTORY_UNAVAILABLE',
           ),
         ),
-        '发射工厂暂时不可用（或正在计算地址），稍后再试。',
+        'The launch factory isn\'t available (or is computing addresses). Try again later.',
       );
     });
   });

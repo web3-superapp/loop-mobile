@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -221,8 +222,13 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
     _drive(moving);
     final now = ref.read(launch2ClockProvider)();
     final spoken = items.isEmpty
-        ? '实时成交，暂无成交'
-        : '实时成交，${items.map(launch2ActivityText).take(3).join('；')}';
+        ? context.l10n.launch2_launch2AtmosphereIf
+        : context.l10n.launch2_launch2AtmosphereS(
+            items
+                .map(launch2ActivityText)
+                .take(3)
+                .join(LoopL10n.current.launch2_tickerSeparator),
+          );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
       child: SizedBox(
@@ -258,7 +264,9 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
                                   child: Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      '暂无成交',
+                                      context
+                                          .l10n
+                                          .launch2_launch2AtmosphereLaunch2TickerEmpty,
                                       key: const ValueKey<String>(
                                         'launch2-ticker-empty',
                                       ),
@@ -284,7 +292,9 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
                 bottom: 0,
                 child: Semantics(
                   button: true,
-                  label: '全部实时成交',
+                  label: context
+                      .l10n
+                      .launch2_launch2AtmosphereLaunch2TickerAllLabel,
                   excludeSemantics: true,
                   child: LoopPressable(
                     key: const ValueKey<String>('launch2-ticker-all'),
@@ -409,7 +419,7 @@ class _LiveLabel extends StatelessWidget {
         ),
         const SizedBox(width: 5),
         Text(
-          '实时',
+          context.l10n.launch2_launch2AtmosphereText,
           style: LoopTypography.withWeight(
             LoopType.captionSm,
             FontWeight.w600,
@@ -436,12 +446,12 @@ class _TickerItem extends StatelessWidget {
     ).copyWith(color: LoopColors.text2);
     final verb = switch (item.kind) {
       Launch2ActivityKind.curveBuy => (
-        '买入',
+        context.l10n.common_buy,
         LoopColors.rise,
         LoopColors.riseSoft,
       ),
       Launch2ActivityKind.curveSell => (
-        '卖出',
+        context.l10n.common_sell,
         LoopColors.fall,
         LoopColors.fallSoft,
       ),
@@ -936,7 +946,12 @@ class Launch2BoardRow extends ConsumerWidget {
       FontWeight.w600,
     ).copyWith(color: LoopColors.text2);
     Widget countdown(String prefix) => next == null
-        ? Text('$prefix待定', style: words)
+        ? Text(
+            context.l10n.launch2_launch2AtmosphereBuild(prefix),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: words,
+          )
         : Launch2Countdown(
             target: next,
             prefix: prefix,
@@ -965,14 +980,41 @@ class Launch2BoardRow extends ConsumerWidget {
           style: pct,
         ),
       ],
-      Launch2Stage.upcoming => <Widget>[Flexible(child: countdown('距铸造 '))],
+      Launch2Stage.upcoming => <Widget>[
+        Flexible(
+          child: countdown(context.l10n.launch2_launch2AtmosphereCountdown),
+        ),
+      ],
       Launch2Stage.nftSale => <Widget>[
-        Text('已铸 ${row.nftSale.soldCount}', style: pct),
-        Flexible(child: countdown('剩 ')),
+        Flexible(
+          child: Text(
+            context.l10n.launch2_launch2AtmosphereSwitch(row.nftSale.soldCount),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: pct,
+          ),
+        ),
+        Flexible(
+          child: countdown(context.l10n.launch2_launch2AtmosphereCountdown2),
+        ),
       ],
       Launch2Stage.snapshotPending => <Widget>[
-        Text('已铸 ${row.nftSale.soldCount}', style: pct),
-        Flexible(child: Text('名单生成中', style: words)),
+        Flexible(
+          child: Text(
+            context.l10n.launch2_launch2AtmosphereSwitch(row.nftSale.soldCount),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: pct,
+          ),
+        ),
+        Flexible(
+          child: Text(
+            context.l10n.launch2_launch2AtmosphereSwitch2,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: words,
+          ),
+        ),
       ],
       Launch2Stage.closedNoHolders => <Widget>[
         Flexible(
@@ -986,7 +1028,14 @@ class Launch2BoardRow extends ConsumerWidget {
         ),
       ],
       Launch2Stage.paused => <Widget>[
-        Flexible(child: Text('平台核对中', style: words)),
+        Flexible(
+          child: Text(
+            context.l10n.launch2_launch2AtmosphereSwitch3,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: words,
+          ),
+        ),
       ],
     };
     final showTicker = row.ticker.trim().isNotEmpty && row.ticker != row.name;
@@ -1131,9 +1180,9 @@ class Launch2UpcomingEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LoopAtmoEmpty(
     // S350b · decision 0275: the fact alone; 我要发射 is the invitation.
-    message: '还没有排队中的项目',
+    message: context.l10n.launch2_launch2AtmosphereMessage,
     crownKey: const ValueKey<String>('launch2-upcoming-empty-crown'),
-    actionLabel: '我要发射',
+    actionLabel: context.l10n.launch2_launch2AtmosphereActionLabel,
     actionKey: const ValueKey<String>('launch2-upcoming-empty-launch'),
     onAction: onLaunch,
   );

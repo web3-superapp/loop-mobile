@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -202,18 +203,28 @@ String launch2RowSpokenLabel(Launch2InstanceRow row, DateTime now) {
     '${row.name} ${loopTickerLabel(row.ticker)}',
     launch2StageLabel(row.stage),
     switch (row.stage) {
-      Launch2Stage.upcoming => left == null ? '铸造时间待定' : '距铸造 $left',
-      Launch2Stage.nftSale =>
-        '已铸 ${row.nftSale.soldCount}${left == null ? '' : '，剩余 $left'}',
-      Launch2Stage.snapshotPending => '已铸 ${row.nftSale.soldCount}',
+      Launch2Stage.upcoming =>
+        left == null
+            ? LoopL10n.current.launch2_launch2HeroSwitch2
+            : LoopL10n.current.launch2_launch2HeroS(left),
+      Launch2Stage.nftSale => LoopL10n.current.launch2_launch2NftSale(
+        left == null ? '' : LoopL10n.current.launch2_nftSaleLeft(left),
+        row.nftSale.soldCount,
+      ),
+      Launch2Stage.snapshotPending =>
+        LoopL10n.current.launch2_launch2AtmosphereSwitch(row.nftSale.soldCount),
       Launch2Stage.closedNoHolders => launch2ClosedNoHoldersText,
-      Launch2Stage.priority || Launch2Stage.public =>
-        '内盘进度 ${launch2BpsLabel(row.curve.soldBps)}，'
-            '当前价 ${launch2PriceLabel(row.curve.priceUsd1)}',
-      Launch2Stage.graduated => '毕业价 ${launch2PriceLabel(row.curve.priceUsd1)}',
+      Launch2Stage.priority ||
+      Launch2Stage.public => LoopL10n.current.launch2_launch2Public(
+        launch2BpsLabel(row.curve.soldBps),
+        launch2PriceLabel(row.curve.priceUsd1),
+      ),
+      Launch2Stage.graduated => LoopL10n.current.launch2_launch2Graduated(
+        launch2PriceLabel(row.curve.priceUsd1),
+      ),
       Launch2Stage.paused => launch2HoldReasonText(row.holdReason),
     },
-  ].join('，');
+  ].join(LoopL10n.current.common_listSeparator);
 }
 
 /// Eight ticker characters at the quote row's 18 px Sora title (decision 0146;
@@ -245,8 +256,23 @@ class Launch2SectionLabel extends StatelessWidget {
     final info = this.info;
     final trailing = this.trailing;
     if (info == null && trailing == null) return LoopLabel(title);
+    final trailingBox = trailing == null
+        ? null
+        : Padding(
+            padding: EdgeInsets.only(
+              right: info == null ? LoopSpacing.page : 0,
+              bottom: info == null ? LoopSpacing.sectionBottom + 2 : 15,
+            ),
+            child: trailing,
+          );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
+      // S355a: without an (i) the trailing may take up to two thirds of the
+      // line and gives way beyond it (longer English); the leftover keeps
+      // it at the end.
+      mainAxisAlignment: info == null
+          ? MainAxisAlignment.spaceBetween
+          : MainAxisAlignment.start,
       children: <Widget>[
         Expanded(
           child: info == null
@@ -256,14 +282,8 @@ class Launch2SectionLabel extends StatelessWidget {
                   child: LoopLabel(title),
                 ),
         ),
-        if (trailing != null)
-          Padding(
-            padding: EdgeInsets.only(
-              right: info == null ? LoopSpacing.page : 0,
-              bottom: info == null ? LoopSpacing.sectionBottom + 2 : 15,
-            ),
-            child: trailing,
-          ),
+        if (trailingBox != null)
+          info == null ? Flexible(flex: 2, child: trailingBox) : trailingBox,
         if (info != null)
           // The 44 dp control in a box of at least 48 dp that answers for
           // it, so the label's (i) meets the Android tap-target size.
@@ -343,7 +363,10 @@ class Launch2InstanceTile extends ConsumerWidget {
     final figure = LoopType.figureMd.copyWith(color: LoopGround.inkOf(context));
     final words = LoopType.caption.copyWith(color: LoopColors.text2);
     Widget countdown(String prefix) => next == null
-        ? Text('$prefix待定', style: words)
+        ? Text(
+            context.l10n.launch2_launch2AtmosphereBuild(prefix),
+            style: words,
+          )
         : Launch2Countdown(
             target: next,
             prefix: prefix,
@@ -354,7 +377,7 @@ class Launch2InstanceTile extends ConsumerWidget {
       Launch2Stage.upcoming => (
         null,
         next == null
-            ? countdown('铸造 ')
+            ? countdown(context.l10n.launch2_launch2Countdown)
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -365,14 +388,17 @@ class Launch2InstanceTile extends ConsumerWidget {
                     style: figure,
                   ),
                   const SizedBox(height: 2),
-                  Text('后开始铸造', style: words),
+                  Text(context.l10n.launch2_launch2Switch, style: words),
                 ],
               ),
       ),
-      Launch2Stage.nftSale => ('已铸 ${row.nftSale.soldCount}', countdown('剩 ')),
+      Launch2Stage.nftSale => (
+        context.l10n.launch2_launch2AtmosphereSwitch(row.nftSale.soldCount),
+        countdown(context.l10n.launch2_launch2AtmosphereCountdown2),
+      ),
       Launch2Stage.snapshotPending => (
-        '已铸 ${row.nftSale.soldCount}',
-        Text('名单生成中', style: words),
+        context.l10n.launch2_launch2AtmosphereSwitch(row.nftSale.soldCount),
+        Text(context.l10n.launch2_launch2AtmosphereSwitch2, style: words),
       ),
       // Grey like every waiting stage; no figure, nothing counts down.
       Launch2Stage.closedNoHolders => (
@@ -397,12 +423,15 @@ class Launch2InstanceTile extends ConsumerWidget {
       Launch2Stage.graduated => (
         launch2PriceLabel(row.curve.priceUsd1),
         Text(
-          '毕业价',
+          context.l10n.launch2_launch2InstanceLabel8,
           key: const ValueKey<String>('launch2-row-price'),
           style: words,
         ),
       ),
-      Launch2Stage.paused => ('已暂停', Text('平台核对中', style: words)),
+      Launch2Stage.paused => (
+        context.l10n.common_paused,
+        Text(context.l10n.launch2_launch2AtmosphereSwitch3, style: words),
+      ),
     };
     return LoopQuoteRow(
       tapKey: ValueKey<String>('launch2-row-${row.instanceId}'),
@@ -559,11 +588,15 @@ class Launch2ActionFailureLine extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 23),
                 child: Wrap(
                   children: <Widget>[
-                    _FailureLink(key: topUpKey, label: '去充值', onTap: topUp),
+                    _FailureLink(
+                      key: topUpKey,
+                      label: context.l10n.launch2_launch2Label,
+                      onTap: topUp,
+                    ),
                     if (faucet != null)
                       _FailureLink(
                         key: faucetKey,
-                        label: '获取资金',
+                        label: context.l10n.launch2_launch2Label2,
                         onTap: faucet,
                       ),
                   ],
@@ -680,7 +713,7 @@ class Launch2SnapshotPublishedBlock extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        const LoopLabel('NFT名单公布'),
+        LoopLabel(context.l10n.launch2_launch2FormatSwitch62),
         LoopRecordCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -690,34 +723,40 @@ class Launch2SnapshotPublishedBlock extends ConsumerWidget {
                 LoopKeyValue(
                   key: const ValueKey<String>('launch2-snapshot-members'),
                   padding: _kvPadding,
-                  label: '名单人数',
-                  value: '$members 人',
+                  label:
+                      context.l10n.launch2_launch2Launch2SnapshotMembersLabel,
+                  value: context.l10n
+                      .launch2_launch2Launch2SnapshotMembersValue(members),
                 ),
               if (at != null)
                 LoopKeyValue(
                   key: const ValueKey<String>('launch2-snapshot-published-at'),
                   padding: _kvPadding,
-                  label: '发布时间',
+                  label: context
+                      .l10n
+                      .launch2_launch2Launch2SnapshotPublishedAtLabel,
                   value: loopDateTimeLabel(at),
                 ),
               if (verification != null)
                 LoopKeyValue(
                   key: const ValueKey<String>('launch2-snapshot-verification'),
                   padding: _kvPadding,
-                  label: '核验',
+                  label: context
+                      .l10n
+                      .launch2_launch2Launch2SnapshotVerificationLabel,
                   value: verification,
                 ),
               if (hash != null)
                 LoopKeyValue(
                   key: const ValueKey<String>('launch2-snapshot-tx'),
                   padding: _kvPadding,
-                  label: '发布交易',
+                  label: context.l10n.launch2_launch2Launch2SnapshotTxLabel,
                   value: launch2ShortAddress(hash),
                 ),
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  '名单地址不在 App 内列出，可在发布交易里核对。',
+                  context.l10n.launch2_launch2Build,
                   style: LoopType.caption.copyWith(color: LoopColors.text2),
                 ),
               ),
@@ -734,7 +773,7 @@ class Launch2SnapshotPublishedBlock extends ConsumerWidget {
             ),
             child: LoopButton(
               key: const ValueKey<String>('launch2-snapshot-explorer'),
-              label: '在 BscScan 查看发布交易',
+              label: context.l10n.launch2_launch2Launch2SnapshotExplorerLabel,
               icon: 'link',
               block: true,
               onPressed: () => unawaited(

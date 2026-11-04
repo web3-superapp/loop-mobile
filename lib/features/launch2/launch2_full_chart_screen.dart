@@ -16,6 +16,7 @@ import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/shell/loop_orientation.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -69,14 +70,19 @@ class _Launch2FullChartScreenState
       return LoopFocusPage(
         key: const ValueKey<String>('launch2-chart-full-invalid'),
         archetype: LoopPageArchetype.record,
-        title: '无法打开这张图表',
+        title:
+            context.l10n.launch2_launch2FullChartLaunch2ChartFullInvalidTitle,
         onBack: widget.onBack,
-        body: const <Widget>[
+        body: <Widget>[
           LoopEmptyState(
             key: ValueKey<String>('launch2-chart-full-invalid-identity'),
             illustration: LoopIllustration.launchpad,
-            title: '路由中没有可用的项目标识',
-            message: '没有请求任何数据，也没有回退到其他项目。',
+            title: context
+                .l10n
+                .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityTitle,
+            message: context
+                .l10n
+                .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityMessage,
             compact: true,
           ),
         ],
@@ -91,11 +97,14 @@ class _Launch2FullChartScreenState
       return LoopFocusPage(
         key: const ValueKey<String>('launch2-chart-full-blocked'),
         archetype: LoopPageArchetype.record,
-        title: '全屏图表',
+        title:
+            context.l10n.launch2_launch2FullChartLaunch2ChartFullBlockedTitle,
         onBack: widget.onBack,
         block: LoopPageBlock(
           key: const ValueKey<String>('launch2-chart-full-capability-block'),
-          title: 'MEME v2 暂时不可用',
+          title: context
+              .l10n
+              .launch2_launch2DynamicRewardsLaunch2DynRewardsBlockedTitle,
           message: launch2CapabilityText(capability),
         ),
         body: const <Widget>[],
@@ -118,7 +127,9 @@ class _Launch2FullChartScreenState
     return LoopFocusPage(
       key: ValueKey<String>('launch2-chart-full-$instanceId'),
       archetype: LoopPageArchetype.record,
-      title: detail == null ? '全屏图表' : loopTickerLabel(detail.row.ticker),
+      title: detail == null
+          ? context.l10n.launch2_launch2FullChartLaunch2ChartFullBlockedTitle
+          : loopTickerLabel(detail.row.ticker),
       subtitle: price == null ? null : '${launch2PriceLabel(price)} USD1',
       onBack: widget.onBack,
       body: <Widget>[
@@ -128,7 +139,7 @@ class _Launch2FullChartScreenState
             phase: state.phase,
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.chart,
-            emptyMessage: '项目不存在',
+            emptyMessage: context.l10n.launch2_launch2FormatSwitch24,
             onRetry: () => unawaited(ref.read(provider.notifier).reload()),
           )
         else

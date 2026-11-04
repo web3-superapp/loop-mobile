@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/market/loop_chart_toolbar.dart';
 import 'package:loop_mobile/features/market/loop_market_chart.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 
@@ -50,10 +51,12 @@ Launch2CandleInterval launch2DefaultCandleInterval(Launch2Stage stage) =>
     : Launch2CandleInterval.fiveMinutes;
 
 /// The empty state's line.
-const String launch2CandlesEmptyText = '还没有成交，第一笔成交后出现 K 线';
+String get launch2CandlesEmptyText =>
+    LoopL10n.current.launch2_launch2CandleChartLaunch2CandlesEmptyText;
 
 /// The failure line; the whole block is the retry.
-const String launch2CandlesFailedText = 'K 线暂时读不到，点按重试';
+String get launch2CandlesFailedText =>
+    LoopL10n.current.launch2_launch2CandleChartLaunch2CandlesFailedText;
 
 /// Whether a failure means "no K line here" rather than "try again".
 bool launch2CandlesHiddenFor(LoopChainFailureKind kind) =>
@@ -377,7 +380,9 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
               : LoopIconButton(
                   key: const ValueKey<String>('launch2-candles-expand'),
                   icon: 'expand',
-                  label: '打开全屏图表',
+                  label: context
+                      .l10n
+                      .launch2_launch2CandleChartLaunch2CandlesExpandLabel,
                   onPressed: onExpand,
                 ),
         ),
@@ -452,15 +457,19 @@ class _Launch2CandleCardState extends ConsumerState<Launch2CandleCard> {
         if (mark != null)
           LoopChartMarker(
             at: mark,
-            label: '毕业',
+            label: LoopL10n.current.common_graduate,
             color: LoopColors.purple,
             keyName: 'launch2-candles-graduation',
           ),
       ],
-      semanticLabel:
-          '${candles.length} 根${interval.label}'
-          '${line ? '收盘价折线' : 'K 线'}，单位 USD1'
-          '${mark == null ? '' : '，含毕业时刻'}',
+      semanticLabel: LoopL10n.current.launch2_launch2CandleChartSemanticLabel(
+        candles.length,
+        interval.label,
+        line
+            ? LoopL10n.current.launch2_candlesLine
+            : LoopL10n.current.launch2_candlesCandles,
+        mark == null ? '' : LoopL10n.current.launch2_candlesGraduationMark,
+      ),
     );
   }
 }

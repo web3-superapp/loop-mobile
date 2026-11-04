@@ -231,7 +231,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Launch 链 · 内盘持仓'), findsOneWidget);
+      expect(find.text('Launch chain · bonding pool holdings'), findsOneWidget);
       expect(_key('launch2-wallet-nft-$l2InstanceA'), findsNothing);
     });
   });
@@ -252,7 +252,7 @@ void main() {
       // 「×n · stage」 under the name.
       expect(_key('launch2-nft-grid'), findsOneWidget);
       expect(find.text('#1'), findsOneWidget);
-      expect(find.text('×1 · 提前购'), findsOneWidget);
+      expect(find.text('×1 · Priority buy'), findsOneWidget);
       expect(_key('launch2-wallet-meme-$l2InstanceA'), findsNothing);
       expect(_key('wallet-nft-provenance'), findsOneWidget);
       await tester.ensureVisible(_key('launch2-wallet-nft-$l2InstanceA'));

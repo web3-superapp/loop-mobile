@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_recent_trades.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
@@ -41,7 +42,9 @@ bool launch2InstanceHeadingLit(Launch2Stage stage) => switch (stage) {
 
 /// The words before the stage capsule's countdown (decision 0166).
 String launch2InstanceStampPrefix(Launch2Stage stage) =>
-    stage == Launch2Stage.upcoming ? '距铸造 ' : '剩 ';
+    stage == Launch2Stage.upcoming
+    ? LoopL10n.current.launch2_launch2AtmosphereCountdown
+    : LoopL10n.current.launch2_launch2AtmosphereCountdown2;
 
 /// The project page's head (decision 0240, was decision 0166's folio card):
 /// one line and a half — the logo, the ticker and the name, the token
@@ -141,7 +144,9 @@ class Launch2InstanceHead extends StatelessWidget {
                           child: LoopIconButton(
                             key: const ValueKey<String>('launch2-copy-address'),
                             icon: 'copy',
-                            label: '复制代币地址',
+                            label: context
+                                .l10n
+                                .launch2_launch2InstancePartsLaunch2CopyAddressLabel,
                             color: LoopColors.text2,
                             onPressed: onCopy,
                           ),
@@ -236,13 +241,15 @@ class Launch2PriceHeader extends StatelessWidget {
     required this.priceKey,
     super.key,
     this.aside,
-    this.emptyText = '暂无成交价',
+    this.emptyText,
   });
 
   final Decimal? price;
   final String priceKey;
   final String? aside;
-  final String emptyText;
+
+  /// `null` reads 「暂无成交价」.
+  final String? emptyText;
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +267,7 @@ class Launch2PriceHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
-            '当前价（USD1）',
+            context.l10n.launch2_launch2InstancePartsBuild,
             style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
           const SizedBox(height: 2),
@@ -270,7 +277,10 @@ class Launch2PriceHeader extends StatelessWidget {
             children: <Widget>[
               Flexible(
                 child: Text(
-                  figure == null ? emptyText : launch2PriceLabel(figure),
+                  figure == null
+                      ? (emptyText ??
+                            context.l10n.launch2_launch2InstancePartsEmptyText)
+                      : launch2PriceLabel(figure),
                   key: ValueKey<String>(priceKey),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -368,46 +378,56 @@ class Launch2HoldingStrip extends StatelessWidget {
     final showInfo = pnlText != null && (partial || realized != null);
     final cells = <Widget>[
       _HoldingCell(
-        label: '持仓',
+        label: context.l10n.common_holdings,
         value: launch2MemeLabel(quantity, ticker),
         valueKey: quantityKey,
       ),
       if (valueUsd1 case final Decimal value)
         _HoldingCell(
-          label: '估值',
+          label: context.l10n.launch2_launch2InstancePartsLabel,
           value: launch2Usd1Label(value),
           valueKey: 'launch2-holding-value',
         ),
       if (avg != null)
         _HoldingCell(
-          label: '成本价',
+          label: context.l10n.launch2_launch2InstancePartsLabel2,
           value: launch2PriceLabel(avg),
           valueKey: 'launch2-holding-avg-cost',
         ),
       if (pnlText != null)
         _HoldingCell(
-          label: '盈亏',
+          label: context
+              .l10n
+              .launch2_launch2InstancePartsLaunch2HoldingPnlInfoLabel,
           value: pnlText,
           valueKey: 'launch2-holding-pnl',
           color: pnlSign == null ? null : launch2SignedColor(pnlSign),
           info: showInfo
               ? LoopInfoButton(
                   key: const ValueKey<String>('launch2-holding-pnl-info'),
-                  title: '持仓盈亏',
+                  title: context
+                      .l10n
+                      .launch2_launch2InstancePartsLaunch2HoldingPnlInfoTitle,
                   sheetKey: 'launch2-holding-pnl-sheet',
                   notes: <LoopInfoNote>[
                     if (partial)
-                      const LoopInfoNote(
+                      LoopInfoNote(
                         key: ValueKey<String>('launch2-holding-partial-note'),
-                        title: '部分持仓无成本记录',
-                        body: '部分持仓为链上转入，无成本记录；成本价与盈亏只按有成本记录的部分计算。',
+                        title: context
+                            .l10n
+                            .launch2_launch2InstancePartsLaunch2HoldingPartialNoteTitle,
+                        body: context
+                            .l10n
+                            .launch2_launch2InstancePartsLaunch2HoldingPartialNoteBody,
                       ),
                     if (realized != null)
                       LoopInfoNote(
                         key: const ValueKey<String>(
                           'launch2-holding-realized-note',
                         ),
-                        title: '已实现盈亏',
+                        title: context
+                            .l10n
+                            .launch2_launch2InstancePartsLaunch2HoldingRealizedNoteTitle,
                         body: '${launch2SignedFigure(realized)} USD1',
                       ),
                   ],
@@ -422,7 +442,7 @@ class Launch2HoldingStrip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
-            '我的持仓',
+            context.l10n.launch2_launch2InstancePartsBuild2,
             style: LoopType.caption.copyWith(color: LoopColors.text2),
           ),
           const SizedBox(height: 6),
@@ -510,11 +530,15 @@ class Launch2DynamicStatusStrip extends StatelessWidget {
   final DateTime? observedAt;
 
   String get _line {
-    final pot = '奖金池 ${launch2Usd1Label(state.potUsd1, maxFractionDigits: 4)}';
+    final pot = LoopL10n.current.launch2_launch2InstancePartsPot(
+      launch2Usd1Label(state.potUsd1, maxFractionDigits: 4),
+    );
     if (!state.armed) return pot;
     final drop = state.rollPending
-        ? 'K 线已结束，待结算'
-        : '跌幅 ${launch2BpsLabel(state.currentDropBps)}';
+        ? LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicRoundRows3
+        : LoopL10n.current.launch2_launch2InstancePartsS(
+            launch2BpsLabel(state.currentDropBps),
+          );
     return '$drop · $pot';
   }
 
@@ -540,7 +564,12 @@ class Launch2DynamicStatusStrip extends StatelessWidget {
     ),
     child: Semantics(
       button: true,
-      label: '本轮状态，${state.armed ? '已激活' : '未激活'}，$_line',
+      label: context.l10n.launch2_launch2InstancePartsLaunch2DynStripLineLabel(
+        _line,
+        state.armed
+            ? context.l10n.launch2_launch2DynamicPoolLoopBadge
+            : context.l10n.launch2_launch2DynamicPoolS,
+      ),
       excludeSemantics: true,
       child: LoopPressable(
         onTap: () => unawaited(_open(context)),
@@ -554,12 +583,14 @@ class Launch2DynamicStatusStrip extends StatelessWidget {
           child: Row(
             children: <Widget>[
               Text(
-                '本轮状态',
+                context.l10n.launch2_launch2DynamicPoolLaunch2DynRewardsLink,
                 style: LoopType.caption.copyWith(color: LoopColors.text2),
               ),
               const SizedBox(width: 8),
               LoopBadge(
-                state.armed ? '已激活' : '未激活',
+                state.armed
+                    ? context.l10n.launch2Creator_launch2ModelsActive
+                    : context.l10n.launch2_launch2DynamicPoolS,
                 key: ValueKey<String>(
                   state.armed
                       ? 'launch2-dyn-strip-armed'
@@ -590,13 +621,22 @@ class Launch2DynamicStatusStrip extends StatelessWidget {
 
 /// The tabs under the price area (decision 0240).
 enum Launch2InstanceTab {
-  trades('成交'),
-  info('信息'),
-  buyback('回购');
+  trades(),
+  info(),
+  buyback();
 
-  const Launch2InstanceTab(this.title);
+  const Launch2InstanceTab();
 
-  final String title;
+  String get title => switch (this) {
+    Launch2InstanceTab.trades =>
+      LoopL10n.current.launch2_launch2InstancePartsTrades,
+
+    Launch2InstanceTab.info =>
+      LoopL10n.current.launch2_launch2InstancePartsInfo,
+
+    Launch2InstanceTab.buyback =>
+      LoopL10n.current.launch2_launch2InstancePartsBuyback,
+  };
 }
 
 /// The page's tab bar: S279's pill bar (decision 0237) without the index
@@ -734,7 +774,9 @@ class Launch2PublicTradeRow extends StatelessWidget {
                   TextSpan(
                     children: <InlineSpan>[
                       TextSpan(
-                        text: buy ? '买入' : '卖出',
+                        text: buy
+                            ? context.l10n.common_buy
+                            : context.l10n.common_sell,
                         style:
                             LoopTypography.withWeight(
                               LoopType.body2,
@@ -745,7 +787,9 @@ class Launch2PublicTradeRow extends StatelessWidget {
                       ),
                       const TextSpan(text: '  '),
                       TextSpan(
-                        text: trade.wallet ?? '匿名',
+                        text:
+                            trade.wallet ??
+                            context.l10n.launch2_launch2InstancePartsText,
                         style:
                             (trade.wallet == null
                                     ? LoopType.body2
@@ -759,8 +803,10 @@ class Launch2PublicTradeRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${launch2TradeTimeLabel(trade.at)} · '
-                  '价格 ${launch2PriceLabel(trade.priceUsd1)}',
+                  context.l10n.launch2_launch2InstancePartsBuild3(
+                    launch2PriceLabel(trade.priceUsd1),
+                    launch2TradeTimeLabel(trade.at),
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: LoopType.caption.copyWith(color: LoopColors.text3),
@@ -819,7 +865,7 @@ class Launch2MineOnlyToggle extends StatelessWidget {
         Semantics(
           button: true,
           toggled: value,
-          label: '只看我的',
+          label: context.l10n.launch2_launch2InstancePartsLabel3,
           excludeSemantics: true,
           child: LoopPressable(
             onTap: () => onChanged(!value),
@@ -849,7 +895,7 @@ class Launch2MineOnlyToggle extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '只看我的',
+                    context.l10n.launch2_launch2InstancePartsLabel3,
                     style: LoopType.label.copyWith(
                       color: value ? LoopColors.chalk : LoopColors.text2,
                     ),
@@ -883,7 +929,7 @@ class Launch2TradeKeys extends StatelessWidget {
       Expanded(
         child: LoopButton(
           key: const ValueKey<String>('launch2-bar-buy'),
-          label: '买入',
+          label: context.l10n.common_buy,
           primary: true,
           block: true,
           onPressed: onBuy,
@@ -893,7 +939,7 @@ class Launch2TradeKeys extends StatelessWidget {
       Expanded(
         child: LoopButton(
           key: const ValueKey<String>('launch2-bar-sell'),
-          label: '卖出',
+          label: context.l10n.common_sell,
           block: true,
           onPressed: onSell,
         ),

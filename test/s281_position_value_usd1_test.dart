@@ -214,15 +214,18 @@ void main() {
       expect(_key('launch2-wallet-meme-$l2InstanceA'), findsOneWidget);
       expect(find.text('1,125,000.5'), findsOneWidget);
       expect(_caption(tester, l2InstanceA), '≈ 1,234.56 USD1');
-      expect(find.text('Launch 链 · 内盘持仓 · 公开内盘'), findsOneWidget);
-      expect(find.text('Launch 链 · 内盘持仓'), findsNothing);
+      expect(
+        find.text('Launch chain · bonding pool holdings · Public pool'),
+        findsOneWidget,
+      );
+      expect(find.text('Launch chain · bonding pool holdings'), findsNothing);
     });
 
     testWidgets('unvalued: the stage stays the grey figure', (tester) async {
       await _pumpWallet(tester, l2Positions(stage: 'public'));
       expect(find.text('1,125,000.5'), findsOneWidget);
-      expect(_caption(tester, l2InstanceA), '公开内盘');
-      expect(find.text('Launch 链 · 内盘持仓'), findsOneWidget);
+      expect(_caption(tester, l2InstanceA), 'Public pool');
+      expect(find.text('Launch chain · bonding pool holdings'), findsOneWidget);
       expect(find.textContaining(' USD1'), findsNothing);
     });
 
@@ -243,7 +246,7 @@ void main() {
       );
       expect(find.text('7,333.18'), findsOneWidget);
       expect(_caption(tester, l2InstanceA), '≈ 146.66 USD1');
-      expect(find.text('Launch 链 · 已毕业'), findsOneWidget);
+      expect(find.text('Launch chain · Graduated'), findsOneWidget);
     });
 
     testWidgets('hidden amounts hide the value too', (tester) async {

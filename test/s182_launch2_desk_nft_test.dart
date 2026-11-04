@@ -13,6 +13,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/loop_shots.dart';
+
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/features/meme/meme_design.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -450,6 +453,15 @@ bool _tabSelected(WidgetTester tester, String id) =>
         .selected ??
     false;
 
+// S355a (decision 0281): 360×800 English self-review renders of the launch2
+// pages. Not checks: they run only with `--dart-define=LOOP_SHOTS=true` and
+// write to `LOOP_SHOTS_DIR`; a plain `flutter test` skips them.
+const bool _s355aShots = bool.fromEnvironment('LOOP_SHOTS');
+const String _s355aDir = String.fromEnvironment(
+  'LOOP_SHOTS_DIR',
+  defaultValue: 'build/s355a-shots',
+);
+
 void main() {
   // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
   loopShowTestHints();
@@ -520,7 +532,7 @@ void main() {
       ];
       await _pump(tester, _list(opened), _listGateway(rows));
       final folio = _desk(tester, 'launch2-desk');
-      expect(folio.heading, '暂无进行中的发射');
+      expect(folio.heading, 'No launches in progress');
       // S350b · decision 0275: the fact alone, no sentence under it.
       expect(folio.caption, isNull);
       expect(folio.stamp, isNull);
@@ -575,53 +587,56 @@ void main() {
 
     test('nft_sale: 共识勋章铸造中, minted, price and the list rule', () {
       final row = at(2);
-      expect(launch2DeskStatus(row), '共识勋章铸造中');
+      expect(launch2DeskStatus(row), 'Consensus medal minting');
       expect(
         launch2DeskCaption(row),
-        '已铸 2 枚 · 100 USD1 / 枚。持有即进快照名单，名单发布后 1 小时提前购。',
+        '2 minted · 100 USD1 each. Holders join the snapshot allowlist; a 1-hour priority buy follows its publication.',
       );
-      expect(launch2DeskStampPrefix(row.stage), '剩 ');
+      expect(launch2DeskStampPrefix(row.stage), 'Ends in ');
       expect(launch2HeroLocation(row), Launch2Route.nft(_id(2)));
     });
 
     test('priority: 提前购进行中, minted, sold share and price', () {
       final row = at(4);
-      expect(launch2DeskStatus(row), '提前购进行中');
-      expect(launch2DeskCaption(row), '已铸 2 枚 · 内盘已售 35% · 0.0₄4167 USD1');
-      expect(launch2DeskStampPrefix(row.stage), '剩 ');
+      expect(launch2DeskStatus(row), 'Priority buy live');
+      expect(
+        launch2DeskCaption(row),
+        '2 minted · bonding pool 35% sold · 0.0₄4167 USD1',
+      );
+      expect(launch2DeskStampPrefix(row.stage), 'Ends in ');
       expect(launch2HeroLocation(row), Launch2Route.instance(_id(4)));
     });
 
     test('public ≥ 70 %: 内盘冲刺 80%, price and 卖满 8 亿自动毕业', () {
       final row = at(5);
-      expect(launch2DeskStatus(row), '内盘冲刺 80%');
-      expect(launch2DeskCaption(row), '0.0₄4167 USD1 · 卖满 8 亿自动毕业');
+      expect(launch2DeskStatus(row), 'Bonding pool sprint 80%');
+      expect(launch2DeskCaption(row), '0.0₄4167 USD1 · graduates at 800M sold');
       expect(launch2HeroLocation(row), Launch2Route.instance(_id(5)));
     });
 
     test('upcoming: 开售倒计时, the start, price and duration', () {
       final row = at(1);
-      expect(launch2DeskStatus(row), '铸造倒计时');
+      expect(launch2DeskStatus(row), 'Mint countdown');
       expect(
         launch2DeskCaption(row),
-        '${launch2ShortDateTime(row.nftSale.startAt)} 开始铸造 · '
-        '100 USD1 / 枚 · 铸造期 7 天',
+        'Mint starts ${launch2ShortDateTime(row.nftSale.startAt)} · '
+        '100 USD1 each · mint period 7d',
       );
-      expect(launch2DeskStampPrefix(row.stage), '距铸造 ');
+      expect(launch2DeskStampPrefix(row.stage), 'Mint in ');
       expect(launch2HeroLocation(row), Launch2Route.nft(_id(1)));
     });
 
     test('the kicker names the chain; the spoken sentence the event', () {
-      expect(launch2DeskKicker('eip155:97'), '发射台 · BSC TESTNET');
-      expect(launch2DeskKicker('eip155:56'), '发射台 · BSC');
+      expect(launch2DeskKicker('eip155:97'), 'Launchpad · BSC TESTNET');
+      expect(launch2DeskKicker('eip155:56'), 'Launchpad · BSC');
       expect(
         launch2HeroSpokenLabel(at(2), l2Now),
-        'FROG，共识勋章铸造中，剩 2 天 3 小时，已铸 2 枚',
+        'FROG, Consensus medal minting, Ends in 2d 3h, 2 minted',
       );
       expect(launch2HeroTicker('ABCDEFGHIJ'), 'ABCDEFGH…');
       expect(
         launch2ShortDateTime(DateTime(2026, 10, 18, 17, 32)),
-        '10-18 17:32',
+        'Oct 18, 17:32',
       );
     });
 
@@ -646,9 +661,9 @@ void main() {
       final folio = _desk(tester, 'launch2-desk');
       // Decision 0223: the banner art, the ticker in Chalk over the brush,
       // the stage line in light Purple, the countdown on the Ink capsule.
-      expect(folio.kicker, '发射台 · BSC TESTNET');
-      expect(folio.heading, 'FROG\n共识勋章铸造中');
-      expect(folio.stamp, '剩 00:03');
+      expect(folio.kicker, 'Launchpad · BSC TESTNET');
+      expect(folio.heading, 'FROG\nConsensus medal minting');
+      expect(folio.stamp, 'Ends in 00:03');
       expect(
         find.byWidgetPredicate(
           (widget) =>
@@ -671,11 +686,11 @@ void main() {
           matching: _key('launch2-desk-event-status'),
         ),
       );
-      expect(status.data, '共识勋章铸造中');
+      expect(status.data, 'Consensus medal minting');
       expect(status.style?.color, LoopColors.purpleInk);
       now = l2Now.add(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
-      expect(_desk(tester, 'launch2-desk').stamp, '剩 00:02');
+      expect(_desk(tester, 'launch2-desk').stamp, 'Ends in 00:02');
       final reads = gateway.listReads;
       now = l2Now.add(const Duration(seconds: 3));
       await tester.pump(const Duration(seconds: 2));
@@ -699,7 +714,7 @@ void main() {
         ]),
       );
       final folio = _desk(tester, 'launch2-desk');
-      expect(folio.heading, 'FROG\n内盘冲刺 91%');
+      expect(folio.heading, 'FROG\nBonding pool sprint 91%');
       expect(folio.stamp, isNull);
       await tester.tap(_key('launch2-desk'));
       await tester.pump();
@@ -756,7 +771,7 @@ void main() {
       expect(dot(1), active);
       expect(
         _desk(tester, 'launch2-desk-page-${_id(2)}').heading,
-        'FROG\n提前购进行中',
+        'FROG\nPriority buy live',
       );
       await tester.tap(_key('launch2-desk-page-${_id(2)}'));
       await tester.pump();
@@ -767,7 +782,7 @@ void main() {
       expect(dot(2), active);
       expect(
         _desk(tester, 'launch2-desk-page-${_id(3)}').stamp,
-        startsWith('距铸造 '),
+        startsWith('Mint in '),
       );
       await _drain(tester);
     });
@@ -862,9 +877,9 @@ void main() {
       await _pump(tester, _list(<String>[]), _listGateway(json));
       expect(_key('launch2-desk-tabs'), findsOneWidget);
       for (final (tab, title, value) in <(String, String, String)>[
-        ('live', '内盘', '3'),
-        ('upcoming', '预告', '0'),
-        ('graduated', '已毕业', '2'),
+        ('live', 'Bonding pool', '3'),
+        ('upcoming', 'Upcoming', '0'),
+        ('graduated', 'Graduated', '2'),
       ]) {
         final key = _key('launch2-desk-tab-$tab');
         expect(
@@ -1009,18 +1024,18 @@ void main() {
       final row = _rows(<Map<String, Object?>>[_rowJson(1, 'nft_sale')]).single;
       expect(
         tester.widget<Text>(_key('launch2-desk-record-sub-$id')).data,
-        'Frog Launch · 铸造期 7 天 · '
-        '截止 ${launch2ShortDateTime(row.nftSale.endAt)}',
+        'Frog Launch · Mint period 7d · '
+        'ends ${launch2ShortDateTime(row.nftSale.endAt)}',
       );
       expect(
         find.descendant(
           of: _key('launch2-desk-record-figure-$id'),
-          matching: find.text('2天 03:00:00'),
+          matching: find.text('2d 03:00:00'),
         ),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: card, matching: find.text('铸造剩余')),
+        find.descendant(of: card, matching: find.text('Mint ends in')),
         findsOneWidget,
       );
       // The sale runs 01-16 → 01-23; the clock is 01-20: 4 of 7 days.
@@ -1030,7 +1045,7 @@ void main() {
       );
       expect(
         tester.widget<Text>(_key('launch2-desk-record-foot-$id')).data,
-        '铸造期已过 57% · 已铸 2 枚 · 100 USD1 / 枚',
+        '57% of mint period passed · 2 minted · 100 USD1 each',
       );
       // Not drawn twice: no board under it, no row.
       expect(_key('launch2-board-live'), findsNothing);
@@ -1068,7 +1083,7 @@ void main() {
       );
       expect(
         tester.widget<Text>(_key('launch2-desk-record-foot-${_id(2)}')).data,
-        '0.0₄4167 USD1 · 卖满自动毕业',
+        '0.0₄4167 USD1 · graduates when sold out',
       );
       expect(_key('launch2-tile-${_id(2)}'), findsNothing);
       expect(_key('launch2-desk-record-${_id(3)}'), findsNothing);
@@ -1092,7 +1107,7 @@ void main() {
       expect(_key('launch2-desk-bar-${_id(1)}'), findsNothing);
       expect(
         tester.widget<Text>(_key('launch2-desk-record-foot-${_id(1)}')).data,
-        '100 USD1 / 枚 · 铸造期 7 天',
+        '100 USD1 each · mint period 7d',
       );
       await _drain(tester);
     });
@@ -1125,7 +1140,7 @@ void main() {
       );
       expect(_key('launch2-ticker'), findsOneWidget);
       expect(_key('launch2-ticker-live'), findsOneWidget);
-      expect(find.text('实时'), findsOneWidget);
+      expect(find.text('Live'), findsOneWidget);
       // The three still lines are gone.
       expect(_key('launch2-tape'), findsNothing);
       // S326 · decision 0256: the band is the quiet card ground, not Purple.
@@ -1133,12 +1148,12 @@ void main() {
       expect((band.decoration as BoxDecoration).color, LoopColors.card);
       expect(tester.getSize(_key('launch2-ticker-band')).height, 36);
       // 买入 sits on its own soft rise ground, in rise; 「实时」 is Purple.
-      final verb = tester.widget<Text>(find.text('买入').first);
+      final verb = tester.widget<Text>(find.text('Buy').first);
       expect(verb.style?.color, LoopColors.rise);
       final verbGround = tester.widget<Container>(
         find
             .ancestor(
-              of: find.text('买入').first,
+              of: find.text('Buy').first,
               matching: find.byType(Container),
             )
             .first,
@@ -1148,7 +1163,7 @@ void main() {
         LoopColors.riseSoft,
       );
       expect(
-        tester.widget<Text>(find.text('实时')).style?.color,
+        tester.widget<Text>(find.text('Live')).style?.color,
         isNot(LoopColors.rise),
       );
       // 「全部」 is the chevron alone.
@@ -1167,7 +1182,7 @@ void main() {
             )
             .first,
       );
-      expect(time.data, '刚刚');
+      expect(time.data, 'Just now');
       expect(time.style?.color, LoopColors.text3);
       await tester.tap(_key('launch2-tape-line-1'));
       await tester.pumpAndSettle();
@@ -1234,7 +1249,7 @@ void main() {
         _listGateway(rows),
         overview: overview,
       );
-      expect(find.textContaining('NEWT 毕业了'), findsNothing);
+      expect(find.textContaining('NEWT graduated'), findsNothing);
       // The list's own poll (1 h in this harness) refreshes the overview.
       await tester.pump(const Duration(hours: 1));
       await tester.pumpAndSettle();
@@ -1242,7 +1257,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch2-ticker'),
-          matching: find.text('NEWT 毕业了'),
+          matching: find.text('NEWT graduated'),
         ),
         findsWidgets,
       );
@@ -1388,12 +1403,12 @@ void main() {
       expect(_key('launch2-nft-screen'), findsOneWidget);
       expect(
         _statusText(tester),
-        '铸造倒计时 · 100 USD1 / 枚 · 铸造期 7 天 | 距铸造 2天 03:00:00',
+        'Mint countdown · 100 USD1 each · mint period 7d | Mint in 2d 03:00:00',
       );
-      expect(_button(tester).label, '开始后可铸造');
+      expect(_button(tester).label, 'Mint opens at start');
       expect(_button(tester).onPressed, isNull);
       expect(_medal(tester).lit, isFalse);
-      expect(_medal(tester).bottomLabel, '共识勋章');
+      expect(_medal(tester).bottomLabel, 'Consensus medal');
       await _drain(tester);
     });
 
@@ -1404,9 +1419,9 @@ void main() {
         const Launch2NftScreen(instanceId: l2InstanceA),
         _Fake(details: <Launch2InstanceDetail>[_detail(summary: '一只青蛙的共识实验')]),
       );
-      expect(_statusText(tester), '铸造中 · 已铸 2 枚 | 剩 2天 03:00:00');
+      expect(_statusText(tester), 'Minting · 2 minted | Ends in 2d 03:00:00');
       final folio = _folio(tester, 'launch2-nft-status');
-      expect(folio.kicker, '共识勋章');
+      expect(folio.kicker, 'Consensus medal');
       expect(folio.heading, 'FROG');
       expect(folio.variant, LoopFolioVariant.quiet);
       expect(folio.headingTone, LoopFolioHeadingTone.accent);
@@ -1419,7 +1434,7 @@ void main() {
       );
       expect(_key('launch2-nft-benefits'), findsOneWidget);
       expect(_key('launch2-nft-rules'), findsOneWidget);
-      expect(_button(tester).label, '铸造 1 枚 · 100 USD1');
+      expect(_button(tester).label, 'Mint 1 · 100 USD1');
       expect(_button(tester).onPressed, isNotNull);
       // S257 (decision 0212): the ordinary yellow primary, a Purple ring,
       // no Brass anywhere on the page.
@@ -1430,7 +1445,7 @@ void main() {
       expect(find.text('一只青蛙的共识实验'), findsOneWidget);
       expect(
         tester.getTopLeft(_key('launch2-nft-summary')).dy,
-        lessThan(tester.getTopLeft(find.text('这枚勋章能做什么')).dy),
+        lessThan(tester.getTopLeft(find.text('What this medal does')).dy),
       );
       expect(
         tester.widget<LoopKeyValue>(_key('launch2-nft-held')).value,
@@ -1463,17 +1478,17 @@ void main() {
         ),
         findsNothing,
       );
-      expect(_button(tester).label, '已持有 · 每地址 1 枚');
+      expect(_button(tester).label, 'Held · 1 per address');
       expect(_button(tester).onPressed, isNull);
       expect(
         tester.widget<LoopKeyValue>(_key('launch2-nft-held')).value,
-        '#128 · 已在候选名单',
+        '#128 · on the candidate list',
       );
       await _drain(tester);
     });
 
     testWidgets('snapshot_pending: holder waits for the list, others see '
-        '铸造已结束', (tester) async {
+        'Minting ended', (tester) async {
       await _pump(
         tester,
         const Launch2NftScreen(instanceId: l2InstanceA),
@@ -1483,8 +1498,11 @@ void main() {
           ],
         ),
       );
-      expect(_statusText(tester), '铸造已结束 · 名单生成中 · 已铸 2 枚');
-      expect(_button(tester).label, '等待名单发布');
+      expect(
+        _statusText(tester),
+        'Minting ended · Building allowlist · 2 minted',
+      );
+      expect(_button(tester).label, 'Waiting for allowlist');
       expect(_button(tester).onPressed, isNull);
       expect(_medal(tester).lit, isTrue);
       await _drain(tester);
@@ -1496,7 +1514,7 @@ void main() {
           details: <Launch2InstanceDetail>[_detail(stage: 'snapshot_pending')],
         ),
       );
-      expect(_button(tester).label, '铸造已结束');
+      expect(_button(tester).label, 'Minting ended');
       expect(_button(tester).onPressed, isNull);
       await _drain(tester);
     });
@@ -1505,9 +1523,13 @@ void main() {
       tester,
     ) async {
       for (final (stage, status, opened) in <(String, String, bool)>[
-        ('priority', '提前购进行中 · 已铸 2 枚 | 剩 2天 03:00:00', false),
-        ('public', '内盘已开放 · 已铸 2 枚', false),
-        ('graduated', '已毕业 · 已铸 2 枚', false),
+        (
+          'priority',
+          'Priority buy live · 2 minted | Ends in 2d 03:00:00',
+          false,
+        ),
+        ('public', 'Bonding pool open · 2 minted', false),
+        ('graduated', 'Graduated · 2 minted', false),
       ]) {
         final navigated = <String>[];
         await _pump(
@@ -1516,7 +1538,7 @@ void main() {
           _Fake(details: <Launch2InstanceDetail>[_detail(stage: stage)]),
         );
         expect(_statusText(tester), status, reason: stage);
-        expect(_button(tester).label, '去项目页交易', reason: stage);
+        expect(_button(tester).label, 'Trade on project page', reason: stage);
         expect(_medal(tester).lit, opened, reason: '$stage, not held');
         await tester.tap(_key('launch2-nft-mint'));
         await tester.pump();
@@ -1537,7 +1559,10 @@ void main() {
           ],
         ),
       );
-      expect(_statusText(tester), '铸造期内无人铸造，已直接进入公开轮 · 已铸 2 枚');
+      expect(
+        _statusText(tester),
+        'No one minted during the mint period; went straight to the public round · 2 minted',
+      );
       await _drain(tester);
     });
 
@@ -1551,12 +1576,15 @@ void main() {
           details: <Launch2InstanceDetail>[_detail(stage: 'closed_no_holders')],
         ),
       );
-      expect(_statusText(tester), '铸造期内无人铸造，项目已关闭');
+      expect(
+        _statusText(tester),
+        'No one minted during the mint period; the project is closed',
+      );
       expect(
         _folio(tester, 'launch2-nft-status').headingTone,
         LoopFolioHeadingTone.neutral,
       );
-      expect(_button(tester).label, '去项目页');
+      expect(_button(tester).label, 'Go to project page');
       expect(_button(tester).onPressed, isNotNull);
       expect(_medal(tester).lit, isFalse);
       await _drain(tester);
@@ -1569,11 +1597,11 @@ void main() {
         _Fake(details: <Launch2InstanceDetail>[_detail(noViewer: true)]),
         noWallet: true,
       );
-      expect(_button(tester).label, '激活钱包后可铸造');
+      expect(_button(tester).label, 'Activate a wallet to mint');
       expect(_button(tester).onPressed, isNull);
       expect(
         tester.widget<LoopKeyValue>(_key('launch2-nft-held')).value,
-        '未激活钱包',
+        'Wallet not activated',
       );
       await _drain(tester);
     });
@@ -1598,7 +1626,7 @@ void main() {
       );
       expect(_key('launch2-trading-hold'), findsOneWidget);
       expect(_key('launch2-nft-bar-hold'), findsOneWidget);
-      expect(_button(tester).label, '铸造 1 枚 · 100 USD1');
+      expect(_button(tester).label, 'Mint 1 · 100 USD1');
       expect(_button(tester).onPressed, isNull);
       await tester.tap(_key('launch2-nft-mint'), warnIfMissed: false);
       await tester.pumpAndSettle();
@@ -1644,7 +1672,7 @@ void main() {
         gateway,
         wallet: wallet,
       );
-      expect(_medal(tester).bottomLabel, '共识勋章');
+      expect(_medal(tester).bottomLabel, 'Consensus medal');
       await tester.tap(_key('launch2-nft-mint'));
       await tester.pumpAndSettle();
       expect(_key('launch2-nft-confirm'), findsOneWidget);
@@ -1664,7 +1692,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(gateway.detailReads, greaterThanOrEqualTo(2));
       expect(_medal(tester).bottomLabel, '#7');
-      expect(_button(tester).label, '已持有 · 每地址 1 枚');
+      expect(_button(tester).label, 'Held · 1 per address');
       expect(_button(tester).onPressed, isNull);
       expect(find.text(launch2NftMintedToast), findsOneWidget);
       await tester.pump(const Duration(seconds: 3));
@@ -1729,7 +1757,7 @@ void main() {
       expect(
         find.descendant(
           of: bar,
-          matching: find.text('USD1 余额不足：需要 100 USD1，当前 0 USD1'),
+          matching: find.text('Not enough USD1: need 100 USD1, have 0 USD1'),
         ),
         findsOneWidget,
       );
@@ -1854,7 +1882,10 @@ void main() {
         size: const Size(360, 800),
       );
       expect(tester.view.physicalSize, const Size(360, 800));
-      expect(_desk(tester, 'launch2-desk').heading, 'ABCDEFGH…\n共识勋章铸造中');
+      expect(
+        _desk(tester, 'launch2-desk').heading,
+        'ABCDEFGH…\nConsensus medal minting',
+      );
       expect(find.byType(Launch2DeskRecordCard), findsNWidgets(2));
       expect(_key('launch2-ticker'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -1928,7 +1959,7 @@ void main() {
       await tester.pumpAndSettle();
       final sheet = _key('launch2-sign-sheet');
       expect(sheet, findsOneWidget);
-      expect(find.text('确认$noun'), findsWidgets);
+      expect(find.text('Confirm $noun'), findsWidgets);
       // The two-step strip names the main step the same way.
       expect(find.textContaining(noun), findsWidgets);
       // Nothing on the sheet or its step strip names the other action.
@@ -1939,7 +1970,7 @@ void main() {
       expect(onSheet, findsNothing);
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
-      expect(wallet.handed.last.title, '确认$noun');
+      expect(wallet.handed.last.title, 'Confirm $noun');
       await _drain(tester);
     }
 
@@ -1948,9 +1979,9 @@ void main() {
         tester,
         page: const Launch2NftScreen(instanceId: l2InstanceA),
         startKey: 'launch2-nft-mint',
-        heading: '铸造 FROG 共识勋章',
-        confirm: '继续铸造',
-        noun: '铸造',
+        heading: 'Mint FROG consensus medal',
+        confirm: 'Continue to mint',
+        noun: 'mint',
         absent: '购买',
       );
     });
@@ -1962,9 +1993,9 @@ void main() {
         tester,
         page: const Launch2InstanceScreen(instanceId: l2InstanceA),
         startKey: 'launch2-buy-nft',
-        heading: '铸造 FROG 共识勋章',
-        confirm: '继续铸造',
-        noun: '铸造',
+        heading: 'Mint FROG consensus medal',
+        confirm: 'Continue to mint',
+        noun: 'mint',
         absent: '购买',
       );
     });
@@ -1989,48 +2020,48 @@ void main() {
     test('the seven kinds', () {
       expect(
         launch2ActivityLine(item(Launch2ActivityKind.curveBuy), l2Now),
-        '刚刚 0x1d2f…9b 买入 DOGE 20 USD1',
+        'Just now 0x1d2f…9b bought DOGE 20 USD1',
       );
       expect(
         launch2ActivityText(item(Launch2ActivityKind.curveSell, actor: null)),
-        '有人卖出 DOGE 20 USD1',
+        'Someone sold DOGE 20 USD1',
       );
       expect(
         launch2ActivityText(
           item(Launch2ActivityKind.nftMint, actor: null, amount: null),
         ),
-        '有人铸造 DOGE 勋章',
+        'Someone minted the DOGE medal',
       );
       expect(
         launch2ActivityText(item(Launch2ActivityKind.graduated, amount: null)),
-        'DOGE 毕业了',
+        'DOGE graduated',
       );
       expect(
         launch2ActivityText(
           item(Launch2ActivityKind.buyback, actor: null, amount: '100'),
         ),
-        '平台回购 DOGE 100 USD1',
+        'Platform bought back DOGE 100 USD1',
       );
       expect(
         launch2ActivityText(item(Launch2ActivityKind.roundActivated)),
-        'DOGE 外盘新一轮激活',
+        'New DOGE DEX pool round active',
       );
       expect(
         launch2ActivityText(
           item(Launch2ActivityKind.rewardClaimed, amount: '10.94'),
         ),
-        '0x1d2f…9b 领取 DOGE 奖励 10.94 USD1',
+        '0x1d2f…9b claimed DOGE rewards 10.94 USD1',
       );
     });
 
     test('relative time: 刚刚, N 分钟前, then HH:mm', () {
       expect(
         launch2RelativeTime(l2Now.subtract(const Duration(seconds: 59)), l2Now),
-        '刚刚',
+        'Just now',
       );
       expect(
         launch2RelativeTime(l2Now.subtract(const Duration(minutes: 5)), l2Now),
-        '5 分钟前',
+        '5m ago',
       );
       final earlier = l2Now.subtract(const Duration(hours: 2));
       expect(launch2RelativeTime(earlier, l2Now), loopLocalClockLabel(earlier));
@@ -2109,8 +2140,8 @@ void main() {
         tester.widget<Text>(_key('launch2-head-name')).data,
         'Frog Launch',
       );
-      expect(_inCapsule('铸造中'), findsOneWidget);
-      expect(_capsuleCountdown(tester), startsWith('剩 '));
+      expect(_inCapsule('Minting'), findsOneWidget);
+      expect(_capsuleCountdown(tester), startsWith('Ends in '));
       expect(_key('launch2-copy-address'), findsOneWidget);
       // The folio is above every stage block.
       expect(
@@ -2121,7 +2152,7 @@ void main() {
         find.descendant(
           of: _key('launch2-nft-sale'),
           matching: find.byWidgetPredicate(
-            (w) => w is LoopLabel && w.text == '项目 NFT',
+            (w) => w is LoopLabel && w.text == 'Project NFT',
           ),
         ),
         findsOneWidget,
@@ -2143,7 +2174,7 @@ void main() {
       final link = tester.widget<Text>(
         find.descendant(
           of: _key('launch2-nft-open'),
-          matching: find.text('铸造页'),
+          matching: find.text('Mint page'),
         ),
       );
       expect(link.style?.color, LoopColors.text2);
@@ -2157,7 +2188,7 @@ void main() {
         const Launch2InstanceScreen(instanceId: l2InstanceA),
         _Fake(details: <Launch2InstanceDetail>[detailOf('public')]),
       );
-      expect(_inCapsule('公开内盘'), findsOneWidget);
+      expect(_inCapsule('Public pool'), findsOneWidget);
       expect(_key('launch2-stage-countdown'), findsNothing);
       expect(_key('launch2-countdown'), findsNothing);
       expect(_key('launch2-curve-price'), findsOneWidget);
@@ -2174,7 +2205,7 @@ void main() {
         find.descendant(
           of: _key('launch2-trade-sheet'),
           matching: find.byWidgetPredicate(
-            (w) => w is LoopLabel && w.text == '公开内盘',
+            (w) => w is LoopLabel && w.text == 'Public pool',
           ),
         ),
         findsOneWidget,
@@ -2191,7 +2222,7 @@ void main() {
         _Fake(details: <Launch2InstanceDetail>[detailOf('upcoming')]),
       );
       expect(_headTicker(tester).style?.color, LoopColors.chalk);
-      expect(_capsuleCountdown(tester), startsWith('距铸造 '));
+      expect(_capsuleCountdown(tester), startsWith('Mint in '));
       await _drain(tester);
       await _pump(
         tester,
@@ -2202,7 +2233,7 @@ void main() {
           ],
         ),
       );
-      expect(_inCapsule('已暂停'), findsOneWidget);
+      expect(_inCapsule('Paused'), findsOneWidget);
       expect(_headTicker(tester).style?.color, LoopColors.chalk);
       await _drain(tester);
     });
@@ -2260,7 +2291,7 @@ void main() {
           ),
         ),
       );
-      final text = tester.widget<Text>(find.text('已暂停'));
+      final text = tester.widget<Text>(find.text('Paused'));
       expect(text.style?.color, LoopColors.text2);
     });
 
@@ -2307,15 +2338,18 @@ void main() {
     final priority = s233('instance_priority_published');
 
     test('a confirmed and synced publication is titled NFT名单公布 (0244)', () {
-      expect(launch2SnapshotPendingTitle(priority.snapshot), 'NFT名单公布');
+      expect(
+        launch2SnapshotPendingTitle(priority.snapshot),
+        'NFT allowlist published',
+      );
     });
 
     testWidgets('共识勋章 · snapshot_pending follows the publication: 名单生成中, '
         '名单发布中, 名单已上链，同步中', (tester) async {
       for (final (detail, title) in <(Launch2InstanceDetail, String)>[
-        (generating, '名单生成中'),
-        (broadcast, '名单发布中'),
-        (confirmed, '名单已上链，同步中'),
+        (generating, 'Building allowlist'),
+        (broadcast, 'Publishing allowlist'),
+        (confirmed, 'Allowlist on-chain, syncing'),
       ]) {
         await _pump(
           tester,
@@ -2323,7 +2357,7 @@ void main() {
           _Fake(details: <Launch2InstanceDetail>[detail]),
           clock: clock,
         );
-        expect(_statusText(tester), '铸造已结束 · $title · 已铸 3 枚');
+        expect(_statusText(tester), 'Minting ended · $title · 3 minted');
         expect(launch2SnapshotPendingTitle(detail.snapshot), title);
         expect(_key('launch2-snapshot-published'), findsNothing);
         await _drain(tester);
@@ -2345,15 +2379,21 @@ void main() {
       );
       await tester.pump();
       expect(gateway.detailReads, 1);
-      expect(_statusText(tester), '铸造已结束 · 名单生成中 · 已铸 3 枚');
+      expect(
+        _statusText(tester),
+        'Minting ended · Building allowlist · 3 minted',
+      );
       await tester.pump(const Duration(seconds: 3));
       await tester.pump();
       expect(gateway.detailReads, 2);
-      expect(_statusText(tester), '铸造已结束 · 名单发布中 · 已铸 3 枚');
+      expect(
+        _statusText(tester),
+        'Minting ended · Publishing allowlist · 3 minted',
+      );
       await tester.pump(const Duration(seconds: 3));
       await tester.pump();
       expect(gateway.detailReads, 3);
-      expect(_statusText(tester), startsWith('提前购进行中 · 已铸 3 枚'));
+      expect(_statusText(tester), startsWith('Priority buy live · 3 minted'));
       // 提前购 on this page waits the detail interval (15 s) again.
       await tester.pump(const Duration(seconds: 14));
       await tester.pump();
@@ -2383,11 +2423,11 @@ void main() {
         of: _key('launch2-snapshot-pending'),
         matching: find.text(text),
       );
-      expect(pendingTitle('名单生成中'), findsOneWidget);
+      expect(pendingTitle('Building allowlist'), findsOneWidget);
       await tester.pump(const Duration(seconds: 3));
       await tester.pump();
       expect(gateway.detailReads, 2);
-      expect(pendingTitle('名单发布中'), findsOneWidget);
+      expect(pendingTitle('Publishing allowlist'), findsOneWidget);
       await tester.pump(const Duration(seconds: 3));
       await tester.pump();
       expect(gateway.detailReads, 3);
@@ -2432,17 +2472,20 @@ void main() {
       expect(block, findsOneWidget);
       // S294 · decision 0244 (需求方 2026-10-23 第 07 条).
       expect(
-        find.descendant(of: block, matching: find.text('NFT名单公布')),
+        find.descendant(
+          of: block,
+          matching: find.text('NFT allowlist published'),
+        ),
         findsOneWidget,
       );
       expect(find.text('名单已发布'), findsNothing);
       String value(String key) => tester.widget<LoopKeyValue>(_key(key)).value;
-      expect(value('launch2-snapshot-members'), '3 人');
+      expect(value('launch2-snapshot-members'), '3');
       expect(
         value('launch2-snapshot-published-at'),
         loopDateTimeLabel(publishedAt),
       );
-      expect(value('launch2-snapshot-verification'), '已核验');
+      expect(value('launch2-snapshot-verification'), 'Verified');
       expect(value('launch2-snapshot-tx'), launch2ShortAddress(tx));
       // Decision 0118: the list's addresses are never on the page.
       expect(find.textContaining(signer), findsNothing);
@@ -2484,7 +2527,7 @@ void main() {
           ),
         ],
       );
-      expect(_statusText(tester), startsWith('提前购进行中 · 已铸 3 枚'));
+      expect(_statusText(tester), startsWith('Priority buy live · 3 minted'));
       await expectPublishedBlock(tester, opened);
       await _drain(tester);
     });
@@ -2520,10 +2563,13 @@ void main() {
       final row = _rows(<Map<String, Object?>>[
         _rowJson(1, 'priority', nextIn: const Duration(minutes: 30)),
       ]).single;
-      expect(launch2HeroHeadline(row.stage, sprint: false), '提前购进行中');
+      expect(
+        launch2HeroHeadline(row.stage, sprint: false),
+        'Priority buy live',
+      );
       expect(
         launch2RecordSubtitle(row),
-        startsWith('Frog Launch · 提前购进行中 · 截止 '),
+        startsWith('Frog Launch · Priority buy live · ends '),
       );
     });
   });
@@ -2578,18 +2624,18 @@ void main() {
         _Fake(details: <Launch2InstanceDetail>[broadcast]),
         clock: clock,
       );
-      expect(_inCapsule('名单发布中'), findsOneWidget);
+      expect(_inCapsule('Publishing allowlist'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('launch2-snapshot-pending'),
-          matching: find.text('名单发布中'),
+          matching: find.text('Publishing allowlist'),
         ),
         findsOneWidget,
       );
-      expect(find.text('名单生成中'), findsNothing);
-      expect(launch2InstanceStageLabel(broadcast), '名单发布中');
+      expect(find.text('Building allowlist'), findsNothing);
+      expect(launch2InstanceStageLabel(broadcast), 'Publishing allowlist');
       // Every other stage keeps its own label.
-      expect(launch2InstanceStageLabel(before), '铸造中');
+      expect(launch2InstanceStageLabel(before), 'Minting');
       await _drain(tester);
     });
 
@@ -2603,11 +2649,11 @@ void main() {
         clock: clock,
       );
       expect(tester.widget<Text>(_key('launch2-head-name')).data, 'S234 Walk');
-      expect(launch2InstanceFolioCaption(after), contains('已铸 2 枚'));
+      expect(launch2InstanceFolioCaption(after), contains('2 minted'));
       final stats = tester
           .widgetList<MemeStatFigures>(find.byType(MemeStatFigures))
           .expand((grid) => grid.stats);
-      expect(stats.map((stat) => stat.label), contains('已铸'));
+      expect(stats.map((stat) => stat.label), contains('Minted'));
       expect(stats.map((stat) => stat.label), isNot(contains('已售')));
       expect(find.text('已售'), findsNothing);
       await _drain(tester);
@@ -2647,7 +2693,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('loop-sign-sheet-complete'),
-          matching: find.text('已广播'),
+          matching: find.text('Broadcast'),
         ),
         findsOneWidget,
       );
@@ -2661,15 +2707,18 @@ void main() {
       await tester.pump();
       final sheet = _key('loop-sign-sheet-complete');
       expect(
-        find.descendant(of: sheet, matching: find.text('已确认')),
+        find.descendant(of: sheet, matching: find.text('Confirmed')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: sheet, matching: find.text('铸造已在链上确认。')),
+        find.descendant(
+          of: sheet,
+          matching: find.text('Your mint is confirmed on-chain.'),
+        ),
         findsOneWidget,
       );
       // The step strip says it too.
-      expect(find.text('已确认'), findsWidgets);
+      expect(find.text('Confirmed'), findsWidgets);
       // It closes itself without a tap.
       await tester.pump(launch2SignConfirmedCloseDelay);
       await tester.pumpAndSettle();
@@ -2687,7 +2736,7 @@ void main() {
       await expectConfirmedThenClosed(tester);
       expect(gateway.detailReads, greaterThanOrEqualTo(2));
       expect(_medal(tester).bottomLabel, '#2');
-      expect(_button(tester).label, '已持有 · 每地址 1 枚');
+      expect(_button(tester).label, 'Held · 1 per address');
       expect(find.text(launch2NftMintedToast), findsOneWidget);
       await tester.pump(const Duration(seconds: 3));
       await _drain(tester);
@@ -2703,7 +2752,10 @@ void main() {
         <Launch2InstanceDetail>[before, after],
       );
       await expectConfirmedThenClosed(tester);
-      expect(find.textContaining('铸造已在链上确认'), findsWidgets);
+      expect(
+        find.textContaining('Your mint is confirmed on-chain'),
+        findsWidgets,
+      );
       await _drain(tester);
     });
 
@@ -2721,10 +2773,10 @@ void main() {
       }
       final sheet = _key('loop-sign-sheet-complete');
       expect(
-        find.descendant(of: sheet, matching: find.text('已广播')),
+        find.descendant(of: sheet, matching: find.text('Broadcast')),
         findsOneWidget,
       );
-      expect(find.text('已确认'), findsNothing);
+      expect(find.text('Confirmed'), findsNothing);
       // One initial read plus at most the watch's own limit.
       expect(
         gateway.detailReads,
@@ -2803,12 +2855,12 @@ void main() {
       }
       final sheet = _key('loop-sign-sheet-complete');
       expect(
-        find.descendant(of: sheet, matching: find.text('已广播')),
+        find.descendant(of: sheet, matching: find.text('Broadcast')),
         findsOneWidget,
       );
       // The watch did read the second answer (soldCount 2).
       expect(gateway.detailReads, greaterThanOrEqualTo(2));
-      expect(find.text('已确认'), findsNothing);
+      expect(find.text('Confirmed'), findsNothing);
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
       await _drain(tester);
@@ -2845,7 +2897,7 @@ void main() {
       final sheet = _key('loop-sign-sheet-complete');
       expect(sheet, findsOneWidget);
       expect(
-        find.descendant(of: sheet, matching: find.text('已广播')),
+        find.descendant(of: sheet, matching: find.text('Broadcast')),
         findsOneWidget,
       );
       final reads = gateway.detailReads;
@@ -2854,11 +2906,30 @@ void main() {
         await tester.pump();
       }
       expect(gateway.detailReads, reads);
-      expect(find.text('已确认'), findsNothing);
+      expect(find.text('Confirmed'), findsNothing);
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
       await _drain(tester);
     });
+  });
+
+  group('S355a shots', () {
+    for (final stage in <String>['upcoming', 'nft_sale']) {
+      testWidgets('nft page · $stage', skip: !_s355aShots, (tester) async {
+        await _pump(
+          tester,
+          const Launch2NftScreen(instanceId: l2InstanceA),
+          _Fake(
+            details: <Launch2InstanceDetail>[
+              stage == 'nft_sale' ? _detail() : _detail(stage: stage),
+            ],
+          ),
+          size: const Size(360, 800),
+        );
+        await loopShot(tester, 's355a-nft-$stage', slice: 800, dir: _s355aDir);
+        await _drain(tester);
+      });
+    }
   });
 }
 

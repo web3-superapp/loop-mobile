@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/integrations/browser/system_external_browser.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/features/launch2/launch2_format.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 
 // ---------------------------------------------------------------------------
@@ -67,7 +69,8 @@ final class Launch2CampaignLink {
 }
 
 /// The card's button words when the console left them out.
-const String launch2CampaignDefaultCta = '查看';
+String get launch2CampaignDefaultCta =>
+    LoopL10n.current.launch2_launch2CampaignsLaunch2CampaignDefaultCta;
 
 /// An operations campaign the back office configures (decision 0165).
 @immutable
@@ -80,7 +83,7 @@ final class Launch2DeskCampaign {
     required this.link,
     this.subtitle,
     this.coverUrl,
-    this.ctaLabel = launch2CampaignDefaultCta,
+    this._ctaLabel,
     this.pinned = false,
     this.sortOrder = 0,
     this.state = Launch2CampaignState.live,
@@ -94,7 +97,10 @@ final class Launch2DeskCampaign {
   final String? coverUrl;
   final DateTime startsAt;
   final DateTime endsAt;
-  final String ctaLabel;
+  final String? _ctaLabel;
+
+  /// The console's words, else [launch2CampaignDefaultCta].
+  String get ctaLabel => _ctaLabel ?? launch2CampaignDefaultCta;
   final Launch2CampaignLink link;
   final bool pinned;
   final int sortOrder;
@@ -168,6 +174,8 @@ final launch2CampaignsControllerProvider =
 
 String _monthDay(DateTime at) {
   final local = at.toLocal();
+  // en (glossary §1.8): 「Oct 15」.
+  if (!launch2ChineseCopy) return launch2MonthDay(local);
   String two(int value) => value.toString().padLeft(2, '0');
   return '${two(local.month)}-${two(local.day)}';
 }
@@ -175,7 +183,10 @@ String _monthDay(DateTime at) {
 /// 「10-15 至 10-22」, on the reader's own calendar (decision 0212 retired
 /// the 「活动 · 10-15 → 10-22」 eyebrow).
 String launch2CampaignKicker(Launch2DeskCampaign campaign) =>
-    '${_monthDay(campaign.startsAt)} 至 ${_monthDay(campaign.endsAt)}';
+    LoopL10n.current.launch2_launch2CampaignsLaunch2CampaignKicker(
+      _monthDay(campaign.startsAt),
+      _monthDay(campaign.endsAt),
+    );
 
 /// The banner's foot line (docs/42 附C §5): 「10-19 至 10-26 · 剩 6 天」.
 String launch2CampaignFootLine(Launch2DeskCampaign campaign, DateTime now) =>
@@ -185,11 +196,17 @@ String launch2CampaignFootLine(Launch2DeskCampaign campaign, DateTime now) =>
 /// 「MM-dd 开始」 before it starts.
 String launch2CampaignStamp(Launch2DeskCampaign campaign, DateTime now) {
   if (now.isBefore(campaign.startsAt)) {
-    return '${_monthDay(campaign.startsAt)} 开始';
+    return LoopL10n.current.launch2_launch2CampaignsLaunch2CampaignStamp(
+      _monthDay(campaign.startsAt),
+    );
   }
   final left = campaign.endsAt.difference(now);
-  if (left < const Duration(days: 1)) return '今天结束';
-  return '剩 ${left.inDays} 天';
+  if (left < const Duration(days: 1)) {
+    return LoopL10n.current.launch2_launch2CampaignsLaunch2CampaignStamp2;
+  }
+  return LoopL10n.current.launch2_launch2CampaignsLaunch2CampaignStamp3(
+    left.inDays,
+  );
 }
 
 // ---- where a card leads -------------------------------------------------------
@@ -215,7 +232,11 @@ Future<void> launch2OpenExternalLink(
     opened = false;
   }
   if (opened || !context.mounted) return;
-  await LoopCopy.text(context, uri.toString(), message: '没能打开浏览器，链接已复制');
+  await LoopCopy.text(
+    context,
+    uri.toString(),
+    message: context.l10n.launch2_launch2CampaignsMessage,
+  );
 }
 
 final launch2ExternalLinkOpenerProvider = Provider<Launch2ExternalLinkOpener>((

@@ -511,7 +511,7 @@ void main() {
         switchOn: false,
       );
       expect(find.text('发射台'), findsWidgets);
-      expect(find.text('v2 发射'), findsNothing);
+      expect(find.text('v2 launch'), findsNothing);
       expect(launch2.listCalls, isEmpty);
       await _drain(tester);
     });
@@ -556,7 +556,7 @@ void main() {
         ],
       );
       expect(find.text('MEME'), findsWidgets);
-      expect(find.text('v2 发射'), findsNothing);
+      expect(find.text('v2 launch'), findsNothing);
       expect(find.text('经典'), findsNothing);
       expect(find.text('历史'), findsNothing);
       expect(_key('meme-segment-0'), findsNothing);
@@ -626,21 +626,21 @@ void main() {
         clock: clock,
       );
       expect(find.text('01:00:05'), findsOneWidget);
-      expect(find.text('后开始铸造'), findsOneWidget);
-      expect(find.text('已铸 42'), findsOneWidget);
-      expect(find.text('剩 2天 03:00:00'), findsOneWidget);
+      expect(find.text('until mint'), findsOneWidget);
+      expect(find.text('Minted 42'), findsOneWidget);
+      expect(find.text('Ends in 2d 03:00:00'), findsOneWidget);
       expect(find.text('33.27%'), findsOneWidget);
       // The priority row's price caption and, since decision 0146, the
       // graduated row's figure (over 毕业价) print the same curve price.
       expect(find.text('\$0.0₄4167'), findsNWidgets(2));
-      expect(find.text('已毕业'), findsWidgets);
-      expect(find.text('毕业价'), findsOneWidget);
+      expect(find.text('Graduated'), findsWidgets);
+      expect(find.text('Graduation price'), findsOneWidget);
       expect(_key('launch2-list-graduated-provenance'), findsOneWidget);
 
       clock.now = l2Now.add(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
       expect(find.text('01:00:04'), findsOneWidget);
-      expect(find.text('剩 2天 02:59:59'), findsOneWidget);
+      expect(find.text('Ends in 2d 02:59:59'), findsOneWidget);
 
       await tester.tap(_key('launch2-row-$l2InstanceB'));
       expect(opened.single, '/launch2/instance?id=$l2InstanceB');
@@ -770,14 +770,17 @@ void main() {
       await open(tester, l2Detail(stage: 'upcoming'));
       expect(_key('launch2-stage-upcoming'), findsOneWidget);
       expect(_key('launch2-instance-folio'), findsOneWidget);
-      expect(find.text('即将铸造'), findsOneWidget);
+      expect(find.text('Minting soon'), findsOneWidget);
       expect(_key('launch2-countdown'), findsOneWidget);
-      expect(find.text('铸造开始'), findsOneWidget);
+      expect(find.text('Mint starts'), findsOneWidget);
       expect(_key('launch2-template'), findsOneWidget);
       await tester.tap(_key('launch2-template-info'));
       await tester.pumpAndSettle();
-      expect(find.text('由平台模板固定'), findsOneWidget);
-      expect(find.textContaining(launch2NftRiskSentence), findsOneWidget);
+      expect(find.text('Fixed by the platform template'), findsOneWidget);
+      expect(
+        find.textContaining(launch2SentenceCase(launch2NftRiskSentence)),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -786,7 +789,7 @@ void main() {
       expect(_key('launch2-stage-nft_sale'), findsOneWidget);
       expect(find.text('100 USD1'), findsOneWidget);
       expect(find.text('0 / 1'), findsOneWidget);
-      expect(find.text('2 枚'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
       expect(_key('launch2-buy-nft'), findsOneWidget);
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await _drain(tester);
@@ -805,7 +808,12 @@ void main() {
         );
         expect(_key('launch2-snapshot-pending'), findsOneWidget);
         expect(_key('loop-empty-illustration-holders'), findsOneWidget);
-        expect(find.text('截止块 #1,234，名单发布后开始 1 小时提前购'), findsOneWidget);
+        expect(
+          find.text(
+            'Cutoff block #1,234; the 1-hour priority buy starts once the allowlist is published',
+          ),
+          findsOneWidget,
+        );
         expect(_key('launch2-countdown'), findsNothing);
         await _drain(tester);
       },
@@ -820,27 +828,36 @@ void main() {
       expect(launch2CurveCapFigure(null), '5,000,000');
       expect(
         launch2CurveCapSentence(Decimal.fromInt(3000000)),
-        '每个地址最多买 3,000,000 枚',
+        'Each address can buy up to 3,000,000 tokens',
       );
-      expect(launch2CurveCapSentence(null), '每个地址最多买 5,000,000 枚');
+      expect(
+        launch2CurveCapSentence(null),
+        'Each address can buy up to 5,000,000 tokens',
+      );
       expect(
         launch2LimitedByText(
           Launch2LimitedBy.quota,
           cap: Decimal.fromInt(3000000),
         ),
-        '单地址累计上限 3,000,000 枚',
+        'Per-address cap 3,000,000 tokens',
       );
       expect(
         launch2LimitedByText(Launch2LimitedBy.quota),
-        '单地址累计上限 5,000,000 枚',
+        'Per-address cap 5,000,000 tokens',
       );
       expect(
         launch2QuotaExhaustedText(Decimal.fromInt(3000000)),
-        '已用完单地址累计 3,000,000 枚额度',
+        'Used up the per-address cap of 3,000,000 tokens',
       );
-      expect(launch2QuotaExhaustedText(null), '已用完单地址累计 5,000,000 枚额度');
+      expect(
+        launch2QuotaExhaustedText(null),
+        'Used up the per-address cap of 5,000,000 tokens',
+      );
       // Without an instance the sentence names no figure.
-      expect(launch2ReasonText('LAUNCH2_QUOTA_EXHAUSTED'), '已用完单地址累计买入额度');
+      expect(
+        launch2ReasonText('LAUNCH2_QUOTA_EXHAUSTED'),
+        'Used up the per-address buy cap',
+      );
     });
 
     testWidgets('decision 0197: 发射规则 and the quota bar read the instance '
@@ -853,13 +870,13 @@ void main() {
           perAddressCapBps: 30,
         ),
       );
-      await _scrollTo(tester, find.text('3,000,000 枚（0.3%）'));
-      expect(find.text('3,000,000 枚（0.3%）'), findsOneWidget);
+      await _scrollTo(tester, find.text('3,000,000 tokens (0.3%)'));
+      expect(find.text('3,000,000 tokens (0.3%)'), findsOneWidget);
       await _drain(tester);
 
       await open(tester, l2Detail(stage: 'upcoming'));
-      await _scrollTo(tester, find.text('5,000,000 枚（0.5%）'));
-      expect(find.text('5,000,000 枚（0.5%）'), findsOneWidget);
+      await _scrollTo(tester, find.text('5,000,000 tokens (0.5%)'));
+      expect(find.text('5,000,000 tokens (0.5%)'), findsOneWidget);
       await _drain(tester);
 
       await open(
@@ -902,7 +919,7 @@ void main() {
         expect(_key('launch2-trade-panel'), findsOneWidget);
         expect(_key('launch2-trade-max'), findsOneWidget);
         expect(find.text('1,000 / 5,000,000'), findsOneWidget);
-        expect(find.text('税率 10%'), findsOneWidget);
+        expect(find.text('Tax 10%'), findsOneWidget);
         // Selling opens only in the public round.
         expect(_key('launch2-trade-side'), findsOneWidget);
         expect(_key('launch2-eligibility-badge'), findsNothing);
@@ -942,8 +959,13 @@ void main() {
       await l2OpenTab(tester, 'buyback');
       await _scrollTo(tester, _key('launch2-buyback-next'));
       expect(find.text('100 USD1'), findsWidgets);
-      expect(find.text('官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%'), findsOneWidget);
-      expect(find.textContaining('100 USD1 · 1 笔'), findsOneWidget);
+      expect(
+        find.text(
+          'Official pool principal protection: principal under 10,000 USD1 or one order over 1%',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('100 USD1 · orders: 1'), findsOneWidget);
       // S257: 「最近一笔」 stacks label over a full-width value, short date,
       // parts joined with 「，」 — no middle dots, one line at 360 wide.
       final latestAt = DateTime.parse('2027-01-24T08:00:00.000Z').toLocal();
@@ -953,8 +975,8 @@ void main() {
           .data!;
       expect(
         latestText,
-        '${two(latestAt.month)}-${two(latestAt.day)} '
-        '${two(latestAt.hour)}:${two(latestAt.minute)}，100 USD1，成交',
+        '${launch2MonthDay(latestAt)}, '
+        '${two(latestAt.hour)}:${two(latestAt.minute)}, 100 USD1, Filled',
       );
       expect(latestText, isNot(contains('·')));
       expect(
@@ -963,7 +985,7 @@ void main() {
       );
       await tester.tap(_key('launch2-buyback-info'));
       await tester.pumpAndSettle();
-      expect(find.text('回购不等于销毁'), findsOneWidget);
+      expect(find.text('Buyback isn\'t a burn'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -979,7 +1001,12 @@ void main() {
         ),
       );
       expect(_key('launch2-paused-reason'), findsOneWidget);
-      expect(find.text('链上还没有看到激活记录，平台正在核对'), findsOneWidget);
+      expect(
+        find.text(
+          'No activation record on-chain yet; the platform is checking',
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-paused-body'), findsOneWidget);
       expect(_key('launch2-buy-nft'), findsNothing);
       expect(_key('launch2-go-swap'), findsNothing);
@@ -989,7 +1016,7 @@ void main() {
     testWidgets('the project owner sees one line', (tester) async {
       await open(tester, l2Detail(owner: true));
       expect(_key('launch2-owner-strip'), findsOneWidget);
-      expect(find.text('你是项目方'), findsOneWidget);
+      expect(find.text('You\'re the owner'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1112,7 +1139,12 @@ void main() {
       await tester.tap(_key('launch2-buy-nft'));
       await tester.pumpAndSettle();
       expect(_key('launch2-nft-confirm'), findsOneWidget);
-      expect(find.text('我已知晓：不保证成交、不保证配售，公开内盘可能不发生。'), findsOneWidget);
+      expect(
+        find.text(
+          "I understand: fills and allocation aren't guaranteed, and the public pool may not happen.",
+        ),
+        findsOneWidget,
+      );
       final button = _key('launch2-nft-confirm-button');
       await tester.tap(button);
       await tester.pumpAndSettle();
@@ -1131,7 +1163,7 @@ void main() {
       await tester.tap(find.text('关闭'));
       await tester.pumpAndSettle();
       expect(_key('launch2-pending'), findsOneWidget);
-      expect(find.textContaining('已广播'), findsOneWidget);
+      expect(find.textContaining('Broadcast'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1162,7 +1194,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('launch2-action-failed'), findsOneWidget);
       // Decision 0153: the body line and the line above the button.
-      expect(find.textContaining('tBNB 手续费不足'), findsNWidgets(2));
+      expect(find.textContaining('Not enough tBNB for fees'), findsNWidgets(2));
       expect(wallet.handed, isEmpty);
       await _drain(tester);
     });
@@ -1181,7 +1213,7 @@ void main() {
           ],
         ),
       );
-      expect(find.text('已持有勋章'), findsOneWidget);
+      expect(find.text('Medal held'), findsOneWidget);
       expect(find.text('1 / 1'), findsOneWidget);
       await _drain(tester);
     });
@@ -1229,7 +1261,7 @@ void main() {
           ),
         ],
       );
-      expect(find.text('名单内'), findsOneWidget);
+      expect(find.text('Listed'), findsOneWidget);
       await tester.tap(_key('launch2-trade-max'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(milliseconds: 400));
@@ -1263,7 +1295,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
       expect(_key('launch2-trade-exceeds'), findsOneWidget);
-      expect(find.textContaining('超出可买上限'), findsOneWidget);
+      expect(find.textContaining('Over the buy limit'), findsOneWidget);
       final confirm = tester.widget<Widget>(_key('launch2-trade-confirm'));
       expect((confirm as dynamic).onPressed, isNull);
       await tester.tap(_key('launch2-trade-fill-max'));
@@ -1298,13 +1330,21 @@ void main() {
       await tester.enterText(_key('launch2-trade-amount'), '1000000');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
-      expect(find.text('超出可买上限（单地址累计上限 3,000,000 枚）'), findsOneWidget);
+      expect(
+        find.text('Over the buy limit (Per-address cap 3,000,000 tokens)'),
+        findsOneWidget,
+      );
       expect(find.text('0 / 3,000,000'), findsOneWidget);
       await tester.enterText(_key('launch2-trade-amount'), '2');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
       // No quote: the detail's cap, the old 5,000,000 here.
-      expect(find.text('没有取到报价 · 已用完单地址累计 5,000,000 枚额度'), findsOneWidget);
+      expect(
+        find.text(
+          "Couldn't get a quote · Used up the per-address cap of 5,000,000 tokens",
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1315,9 +1355,14 @@ void main() {
         quotes: <_Answer<Launch2Quote>>[_Answer<Launch2Quote>.value(l2Quote())],
         member: false,
       );
-      expect(find.text('不在名单'), findsOneWidget);
+      expect(find.text('Not listed'), findsOneWidget);
       expect(_key('launch2-trade-blocked'), findsOneWidget);
-      expect(find.text('提前购仅限名单内持有人，公开内盘开始后可买入'), findsOneWidget);
+      expect(
+        find.text(
+          'Priority buy is for allowlisted holders; buying opens with the public pool',
+        ),
+        findsOneWidget,
+      );
       final controls = tester.widget<Launch2Greyed>(
         _key('launch2-trade-controls'),
       );
@@ -1356,7 +1401,7 @@ void main() {
       expect(gateway.tradeCalls.single['amount'], Decimal.fromInt(50));
       expect(gateway.tradeCalls.single['minOut'], Decimal.parse('1113750.495'));
       expect(_key('launch2-trade-notice'), findsOneWidget);
-      expect(find.text('价格已变化，已刷新'), findsOneWidget);
+      expect(find.text('The price changed and was refreshed'), findsOneWidget);
       expect(gateway.quoteCalls, hasLength(2));
       expect(_key('launch2-sign-sheet'), findsNothing);
 
@@ -1447,7 +1492,10 @@ void main() {
       final bar = _key('launch2-bar-failure');
       expect(bar, findsOneWidget);
       expect(
-        find.descendant(of: bar, matching: find.text('USD1 余额不足：需要 100 USD1')),
+        find.descendant(
+          of: bar,
+          matching: find.text('Not enough USD1: need 100 USD1'),
+        ),
         findsOneWidget,
       );
       final line = tester.getRect(bar);
@@ -1461,7 +1509,7 @@ void main() {
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 2000));
       await tester.pumpAndSettle();
       expect(_key('launch2-action-failed'), findsOneWidget);
-      expect(find.text('铸造勋章'), findsOneWidget);
+      expect(find.text('Mint medal'), findsOneWidget);
       expect(wallet.handed, isEmpty);
 
       await tester.tap(_key('launch2-bar-topup'));
@@ -1473,6 +1521,9 @@ void main() {
       expect(_key('launch2-sign-sheet'), findsOneWidget);
       expect(_key('launch2-bar-failure'), findsNothing);
       expect(_key('launch2-action-failed'), findsNothing);
+      // S355a: the English sheet is taller; at 360×640 it scrolls.
+      await tester.ensureVisible(find.text('确认签名'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('确认签名'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('关闭'));
@@ -1570,7 +1621,9 @@ void main() {
       expect(
         find.descendant(
           of: line,
-          matching: find.text('USD1 余额不足：需要 50 USD1，最多可付 30 USD1'),
+          matching: find.text(
+            'Not enough USD1: need 50 USD1, can pay up to 30 USD1',
+          ),
         ),
         findsOneWidget,
       );
@@ -1712,7 +1765,7 @@ void main() {
       await confirmNft(tester);
       expect(_key('launch2-bar-topup'), findsOneWidget);
       expect(_key('launch2-bar-faucet'), findsNothing);
-      expect(find.text('获取资金'), findsNothing);
+      expect(find.text('Get funds'), findsNothing);
       await _drain(tester);
     });
 
@@ -1780,11 +1833,11 @@ void main() {
       expect(
         launch2ActionFailure(nft, usd1Balance: Decimal.zero),
         const Launch2ActionFailure(
-          'USD1 余额不足：需要 100 USD1，当前 0 USD1',
+          'Not enough USD1: need 100 USD1, have 0 USD1',
           topUp: true,
         ),
       );
-      expect(launch2ActionFailure(nft).text, 'USD1 余额不足：需要 100 USD1');
+      expect(launch2ActionFailure(nft).text, 'Not enough USD1: need 100 USD1');
       expect(
         launch2ActionFailure(
           const LoopChainException(
@@ -1792,7 +1845,7 @@ void main() {
             reasonCode: 'LAUNCH2_USD1_BALANCE_INSUFFICIENT',
           ),
         ),
-        const Launch2ActionFailure('USD1 余额不足', topUp: true),
+        const Launch2ActionFailure('Not enough USD1', topUp: true),
       );
       expect(
         launch2ActionFailure(
@@ -1805,7 +1858,9 @@ void main() {
           maxIsBalance: true,
           ticker: 'PEPE',
         ),
-        const Launch2ActionFailure(r'卖出数量超过持有：需要 12 $PEPE，当前持有 5 $PEPE'),
+        const Launch2ActionFailure(
+          r'Sell amount exceeds holdings: need 12 $PEPE, holding 5 $PEPE',
+        ),
       );
       expect(
         launch2ActionFailure(
@@ -1820,7 +1875,7 @@ void main() {
             reasonCode: 'LAUNCH2_AMOUNT_INVALID',
           ),
         ),
-        const Launch2ActionFailure('金额不正确'),
+        const Launch2ActionFailure('Invalid amount'),
       );
     });
 
@@ -1912,9 +1967,9 @@ void main() {
       );
       expect(_key('launch2-wallet-buy-$l2InstanceA'), findsNothing);
       expect(_key('launch2-wallet-sell-$l2InstanceA'), findsNothing);
-      expect(find.text('买入'), findsNothing);
-      expect(find.text('卖出'), findsNothing);
-      expect(find.text('Launch 链 · 内盘持仓'), findsOneWidget);
+      expect(find.text('Buy'), findsNothing);
+      expect(find.text('Sell'), findsNothing);
+      expect(find.text('Launch chain · bonding pool holdings'), findsOneWidget);
       final semantics = tester.ensureSemantics();
       expect(
         tester.getSemantics(_key('launch2-wallet-meme-$l2InstanceA')),
@@ -2062,11 +2117,11 @@ void main() {
         launch2: gateway,
       );
       expect(_key('launch2-stage-closed_no_holders'), findsOneWidget);
-      expect(find.text('已关闭'), findsOneWidget);
-      expect(find.text('无人铸造，已关闭'), findsWidgets);
+      expect(find.text('Closed'), findsOneWidget);
+      expect(find.text('No one minted, closed'), findsWidgets);
       expect(_key('launch2-closed-no-holders'), findsOneWidget);
       expect(find.text('#1,234'), findsOneWidget);
-      expect(find.text('关闭时间'), findsOneWidget);
+      expect(find.text('Closed at'), findsOneWidget);
       expect(_key('launch2-countdown'), findsNothing);
       expect(_key('launch2-buy-nft'), findsNothing);
       expect(_key('launch2-trade-amount'), findsNothing);
@@ -2147,7 +2202,12 @@ void main() {
       expect(gateway.quoteCalls, hasLength(1));
       expect(gateway.detailReads, greaterThan(reads));
       expect(_key('launch2-trade-quote-failed'), findsOneWidget);
-      expect(find.textContaining('当前阶段不能交易，已重新读取项目状态'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Trading isn\'t open at this stage; the project status was reloaded',
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-instance-state-error'), findsNothing);
       expect(_key('launch2-stage-public'), findsOneWidget);
       await _drain(tester);
@@ -2260,12 +2320,15 @@ void main() {
         'BUYBACK_QUOTE_UNAVAILABLE',
         'BUYBACK_LEGACY_PRICE_PROTECTION',
       ]) {
-        expect(launch2BuybackBlockedText(code), isNot('暂不执行'), reason: code);
+        expect(launch2BuybackBlockedText(code), isNot('On hold'), reason: code);
       }
-      expect(launch2BuybackBlockedText('BUYBACK_PROTECTION_BLOCKED'), '暂不执行');
+      expect(
+        launch2BuybackBlockedText('BUYBACK_PROTECTION_BLOCKED'),
+        'On hold',
+      );
       expect(
         launch2BuybackBlockedText('BUYBACK_PRICE_SOURCE_UNAVAILABLE'),
-        '暂不执行',
+        'On hold',
       );
       // Every stage on the wire has a label and a caption.
       for (final stage in Launch2Stage.values) {
@@ -2289,7 +2352,10 @@ void main() {
       );
       expect(_key('launch2-stage-public'), findsOneWidget);
       expect(_key('launch2-opened-without-holders'), findsOneWidget);
-      expect(find.textContaining('无 NFT 持有人，直接开放公开内盘'), findsOneWidget);
+      expect(
+        find.textContaining('No NFT holders, public pool opened directly'),
+        findsOneWidget,
+      );
       await l2OpenTradeSheet(tester);
       expect(_key('launch2-trade-amount'), findsOneWidget);
       expect(find.textContaining('名单'), findsNothing);
@@ -2323,7 +2389,7 @@ void main() {
           ],
         ),
       );
-      expect(find.textContaining('旧版合约'), findsOneWidget);
+      expect(find.textContaining('legacy contract'), findsOneWidget);
       await _drain(tester);
     });
   });
@@ -2358,8 +2424,8 @@ void main() {
       await tester.tap(_key('launch2-create-action'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-chooser'), findsOneWidget);
-      expect(find.text('v2 发射'), findsWidgets);
-      expect(find.text('经典发射'), findsOneWidget);
+      expect(find.text('v2 launch'), findsWidgets);
+      expect(find.text('Classic launch'), findsOneWidget);
       await tester.tap(_key('launch2-create-chooser-v2'));
       await tester.pumpAndSettle();
       expect(opened.last, Launch2CreatorRoute.createPath);
@@ -2406,7 +2472,7 @@ void main() {
       await tester.tap(_key('launch2-create-action'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-chooser'), findsNothing);
-      expect(find.text('经典发射'), findsNothing);
+      expect(find.text('Classic launch'), findsNothing);
       expect(opened.single, Launch2CreatorRoute.createPath);
       expect(_key('meme-launchpad'), findsNothing);
       expect(_key('meme-create-entry'), findsNothing);
@@ -2432,7 +2498,7 @@ void main() {
       expect(_key('launch2-list-all-empty'), findsOneWidget);
       expect(_key('launch2-list-all-empty-action'), findsNothing);
       expect(find.text('看历史代币'), findsNothing);
-      expect(find.text('看经典发射'), findsNothing);
+      expect(find.text('See classic launches'), findsNothing);
       await _drain(tester);
     });
 
@@ -2472,23 +2538,34 @@ void main() {
     test('rejected with a blocking reason: 回购暂缓：<原因> · next try', () {
       final line = launch2KeeperLine(summary(keeper: l2KeeperJson()))!;
       expect(line.held, isTrue);
-      expect(line.text, startsWith('回购暂缓：官方池本金保护，本金不足 10,000 USD1 或单笔超过 1%'));
-      expect(line.text, endsWith('后再试'));
+      expect(
+        line.text,
+        startsWith(
+          'Buyback on hold: Official pool principal protection: principal under 10,000 USD1 or one order over 1%',
+        ),
+      );
+      expect(line.text, contains('Retry at '));
     });
 
     test('every refusal and failure code reads as Chinese', () {
       const refusals = <String, String>{
-        'LAUNCH2_BUYBACK_NO_BUDGET': '托管余额不足一笔',
-        'LAUNCH2_BUYBACK_PAUSED': '合约回购已暂停',
-        'LAUNCH2_BUYBACK_NOT_GRADUATED': '项目还没有毕业',
-        'LAUNCH2_BUYBACK_NOT_KEEPER': '回购执行账户未就绪，平台处理中',
-        'LAUNCH2_BUYBACK_ESCROW_MISMATCH': '托管记录与链上不一致，平台核对中',
-        'LAUNCH2_BUYBACK_NO_OUTPUT': '成交到账为 0，平台处理中',
-        'LAUNCH2_BUYBACK_REFERENCE_UNAVAILABLE': '旧版合约价格保护生效',
-        'LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION': '旧版合约价格保护生效',
-        'LAUNCH2_BUYBACK_OUTPUT_BELOW_PROTECTION': '旧版合约价格保护生效',
-        'LAUNCH2_BUYBACK_CONTRACT_REVERTED': '合约拒绝执行，平台处理中',
-        'LAUNCH2_BUYBACK_SOMETHING_NEW': '暂不执行',
+        'LAUNCH2_BUYBACK_NO_BUDGET': 'Escrow balance below one order',
+        'LAUNCH2_BUYBACK_PAUSED': 'Contract buyback paused',
+        'LAUNCH2_BUYBACK_NOT_GRADUATED': 'The project hasn\'t graduated yet',
+        'LAUNCH2_BUYBACK_NOT_KEEPER': 'Buyback executor account isn\'t ready; the platform is handling it',
+        'LAUNCH2_BUYBACK_ESCROW_MISMATCH':
+            'Escrow records don\'t match the chain; the platform is checking',
+        'LAUNCH2_BUYBACK_NO_OUTPUT':
+            'The trade received 0; the platform is handling it',
+        'LAUNCH2_BUYBACK_REFERENCE_UNAVAILABLE':
+            'Legacy price protection active',
+        'LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION':
+            'Legacy price protection active',
+        'LAUNCH2_BUYBACK_OUTPUT_BELOW_PROTECTION':
+            'Legacy price protection active',
+        'LAUNCH2_BUYBACK_CONTRACT_REVERTED':
+            'The contract refused to execute; the platform is handling it',
+        'LAUNCH2_BUYBACK_SOMETHING_NEW': 'On hold',
       };
       for (final entry in refusals.entries) {
         final line = launch2KeeperLine(
@@ -2497,7 +2574,7 @@ void main() {
           ),
         )!;
         expect(line.held, isTrue, reason: entry.key);
-        expect(line.text, '回购暂缓：${entry.value}', reason: entry.key);
+        expect(line.text, 'Buyback on hold: ${entry.value}', reason: entry.key);
         expect(line.text, isNot(contains('LAUNCH2_')), reason: entry.key);
       }
       final failed = launch2KeeperLine(
@@ -2509,10 +2586,13 @@ void main() {
           ),
         ),
       )!;
-      expect(failed.text, '回购暂缓：上一笔没有执行，稍后重试');
+      expect(
+        failed.text,
+        "Buyback on hold: The last one didn't execute; retrying later",
+      );
       expect(
         launch2KeeperFailureText('LAUNCH2_BUYBACK_KEEPER_INSUFFICIENT_FUNDS'),
-        '执行账户手续费不足，平台处理中',
+        'The executor account is short on fees; the platform is handling it',
       );
     });
 
@@ -2524,7 +2604,7 @@ void main() {
       ]) {
         final line = launch2KeeperLine(summary(keeper: keeper))!;
         expect(line.held, isFalse);
-        expect(line.text, '自动回购运行中 · 上次 $last');
+        expect(line.text, 'Auto buyback running · Last $last');
       }
       final inFlight = launch2KeeperLine(
         summary(
@@ -2536,7 +2616,7 @@ void main() {
           latest: false,
         ),
       )!;
-      expect(inFlight.text, '自动回购运行中 · 一笔正在上链');
+      expect(inFlight.text, 'Auto buyback running · One on its way on-chain');
     });
 
     testWidgets('the buyback panel draws the keeper line', (tester) async {
@@ -2560,10 +2640,15 @@ void main() {
       await _scrollTo(tester, _key('launch2-buyback-held'));
       // Decision 0150: the reason, then sources and time on their own line.
       expect(
-        find.text('下一笔暂缓：官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%'),
+        find.text(
+          'Next one on hold: Official pool principal protection: principal under 10,000 USD1 or one order over 1%',
+        ),
         findsOneWidget,
       );
-      expect(find.textContaining('来源：链上读数 · 自动回购'), findsOneWidget);
+      expect(
+        find.textContaining('Source: chain read · auto buyback'),
+        findsOneWidget,
+      );
       expect(_key('launch2-buyback-keeper'), findsNothing);
       expect(_key('launch2-buyback-next'), findsNothing);
       await _drain(tester);
@@ -2675,9 +2760,17 @@ void main() {
       );
       await l2OpenTab(tester, 'buyback');
       await _scrollTo(tester, _key('launch2-buyback-held'));
-      expect(find.text('下一笔暂缓：旧版合约价格保护生效'), findsOneWidget);
+      expect(
+        find.text('Next one on hold: Legacy price protection active'),
+        findsOneWidget,
+      );
       final detail = tester.widget<Text>(_key('launch2-buyback-held-detail'));
-      expect(detail.data, matches(RegExp(r'^来源：链上读数 · 自动回购 · \d\d:\d\d 后再试$')));
+      expect(
+        detail.data,
+        matches(
+          RegExp(r'^Source: chain read · auto buyback · Retry at \d\d:\d\d$'),
+        ),
+      );
       expect(detail.maxLines, isNull);
       for (final key in <String>[
         'launch2-buyback-held-reason',
@@ -2715,7 +2808,9 @@ void main() {
       await l2OpenTab(tester, 'buyback');
       await _scrollTo(tester, _key('launch2-buyback-held'));
       expect(
-        find.textContaining('下一笔暂缓：旧版合约价格保护生效（链上读数）；托管余额不足一笔（自动回购）'),
+        find.textContaining(
+          'Next one on hold: Legacy price protection active (on-chain read); Escrow balance below one order (auto buyback)',
+        ),
         findsOneWidget,
       );
       expect(_key('launch2-buyback-keeper'), findsNothing);
@@ -2763,9 +2858,9 @@ void main() {
         ),
       );
       expect(_key('launch2-wallet-meme-$l2InstanceA'), findsOneWidget);
-      expect(find.text('Launch 链'), findsOneWidget);
+      expect(find.text('Launch chain'), findsOneWidget);
       expect(find.text('7,333.18'), findsOneWidget);
-      expect(find.text('Launch 链 · 内盘持仓'), findsNothing);
+      expect(find.text('Launch chain · bonding pool holdings'), findsNothing);
       await _drain(tester);
 
       await _pump(
@@ -2786,7 +2881,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Launch 链 · 内盘持仓'), findsOneWidget);
+      expect(find.text('Launch chain · bonding pool holdings'), findsOneWidget);
       expect(find.text('1,125,000.5'), findsOneWidget);
       await _drain(tester);
     });
@@ -2847,8 +2942,8 @@ void main() {
         title.constraints.maxWidth,
         greaterThanOrEqualTo(launch2TickerMinWidth),
       );
-      expect(find.text('毕业价'), findsOneWidget);
-      expect(find.text('已毕业'), findsOneWidget); // the pill only
+      expect(find.text('Graduation price'), findsOneWidget);
+      expect(find.text('Graduated'), findsOneWidget); // the pill only
     });
   });
 }

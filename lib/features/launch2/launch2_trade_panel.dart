@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -21,7 +22,8 @@ import 'package:loop_mobile/widgets/loop_keyboard.dart';
 
 /// The one line a moved or expired price leaves in the panel (S134–S137 §4:
 /// 「面板内一行，不弹 toast」).
-const String launch2PriceMovedText = '价格已变化，已刷新';
+String get launch2PriceMovedText =>
+    LoopL10n.current.launch2_launch2FormatSwitch31;
 
 /// 提前购 / 公开内盘 · the curve's buy / sell panel (decision 0139).
 ///
@@ -426,11 +428,11 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
         !_preparing &&
         quote.expectedOut > Decimal.zero;
     final String? blockedLine = widget.walletId == null
-        ? '还没有可用的钱包，激活钱包后可交易'
+        ? context.l10n.launch2_launch2PoolViewModelLaunch2PoolTradeView3
         : _snapshotUnverified
         ? launch2ReasonText('LAUNCH2_SNAPSHOT_UNVERIFIED')
         : notInList
-        ? '提前购仅限名单内持有人，公开内盘开始后可买入'
+        ? context.l10n.launch2_launch2TradePanelBuild
         : null;
     final controls = Column(
       mainAxisSize: MainAxisSize.min,
@@ -441,7 +443,10 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           LoopKeepsKeyboard(
             child: LoopSegBar(
               key: const ValueKey<String>('launch2-trade-side'),
-              labels: const <String>['买入', '卖出'],
+              labels: <String>[
+                context.l10n.common_buy,
+                context.l10n.common_sell,
+              ],
               padding: const EdgeInsets.only(bottom: 14),
               selectedIndex: _side == Launch2Side.buy ? 0 : 1,
               onSelected: (index) {
@@ -470,7 +475,11 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           maxLines: 1,
           style: LoopType.figureLg,
           decoration: InputDecoration(
-            labelText: _side == Launch2Side.buy ? '支付（含税）' : '卖出',
+            labelText: _side == Launch2Side.buy
+                ? context
+                      .l10n
+                      .launch2_launch2PoolViewModelLaunch2PoolFailureText
+                : context.l10n.common_sell,
             hintText: '0',
             suffixText: _side == Launch2Side.buy
                 ? 'USD1'
@@ -526,10 +535,10 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
           child: LoopButton(
             key: const ValueKey<String>('launch2-trade-confirm'),
             label: _preparing
-                ? '正在准备…'
+                ? context.l10n.launch2_launch2DynamicRewardsLabel
                 : _side == Launch2Side.buy
-                ? '确认买入'
-                : '确认卖出',
+                ? context.l10n.launch2_launch2PoolViewModelConfirmLabel2
+                : context.l10n.launch2_launch2PoolViewModelConfirmLabel3,
             primary: true,
             block: true,
             onPressed: canConfirm ? () => unawaited(_confirm()) : null,
@@ -549,13 +558,21 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Launch2SectionLabel(
-          _priority ? '提前购' : '公开内盘',
+          _priority
+              ? context.l10n.launch2_launch2FormatPriority
+              : context.l10n.launch2_launch2FormatPublic,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               if (_priority) ...<Widget>[
                 LoopBadge(
-                  viewer?.snapshotMember == true ? '名单内' : '不在名单',
+                  viewer?.snapshotMember == true
+                      ? context
+                            .l10n
+                            .launch2_launch2TradePanelLaunch2EligibilityBadge
+                      : context
+                            .l10n
+                            .launch2_launch2TradePanelLaunch2EligibilityBadge2,
                   key: const ValueKey<String>('launch2-eligibility-badge'),
                   kind: viewer?.snapshotMember == true
                       ? LoopBadgeKind.launch
@@ -563,10 +580,16 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
                 ),
                 const SizedBox(width: 8),
               ],
-              Text(
-                '税率 ${launch2BpsLabel(taxBps)}',
-                key: const ValueKey<String>('launch2-trade-tax'),
-                style: LoopType.caption.copyWith(color: LoopColors.text2),
+              Flexible(
+                child: Text(
+                  context.l10n.launch2_launch2TradePanelLaunch2TradeTax(
+                    launch2BpsLabel(taxBps),
+                  ),
+                  key: const ValueKey<String>('launch2-trade-tax'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.caption.copyWith(color: LoopColors.text2),
+                ),
               ),
             ],
           ),
@@ -635,7 +658,7 @@ class _QuotaBar extends StatelessWidget {
         Row(
           children: <Widget>[
             Text(
-              '累计额度',
+              context.l10n.launch2_launch2TradePanelBuild2,
               style: LoopType.body2.copyWith(color: LoopColors.text2),
             ),
             const SizedBox(width: 12),
@@ -660,9 +683,12 @@ class _QuotaBar extends StatelessWidget {
         LoopProgressBar(
           value: value == null ? null : launch2Share(value, cap),
           semanticLabel: value == null
-              ? '累计额度暂时读不到'
-              : '累计额度已用 ${launch2MemeFigure(value)} ${loopTickerLabel(ticker)}，'
-                    '${launch2CurveCapSentence(cap)}',
+              ? context.l10n.launch2_launch2TradePanelSemanticLabel
+              : context.l10n.launch2_launch2TradePanelSemanticLabel2(
+                  launch2CurveCapSentence(cap),
+                  launch2MemeFigure(value),
+                  loopTickerLabel(ticker),
+                ),
         ),
       ],
     );
@@ -679,7 +705,7 @@ class _MaxKey extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     button: true,
     enabled: onTap != null,
-    label: '填入最大可买',
+    label: context.l10n.launch2_launch2TradePanelLaunch2TradeMaxLabel,
     excludeSemantics: true,
     child: LoopPressable(
       key: const ValueKey<String>('launch2-trade-max'),
@@ -760,13 +786,17 @@ class _QuoteLines extends StatelessWidget {
     if (failure != null) {
       return LoopInlineUnavailable(
         key: const ValueKey<String>('launch2-trade-quote-failed'),
-        message: '没有取到报价 · ${_failureText(failure!, cap)}',
+        message: context.l10n.launch2_launch2PoolViewModelNull(
+          _failureText(failure!, cap),
+        ),
         padding: EdgeInsets.zero,
       );
     }
     if (value == null) {
       return Text(
-        quoting ? '正在报价…' : '输入金额后显示报价',
+        quoting
+            ? context.l10n.launch2_launch2TradePanelLaunch2TradeQuoteEmpty
+            : context.l10n.launch2_launch2PoolViewModelS21,
         key: const ValueKey<String>('launch2-trade-quote-empty'),
         style: LoopType.caption.copyWith(color: LoopColors.text3),
       );
@@ -794,26 +824,44 @@ class _QuoteLines extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: Launch2WarnLine(
-                    '超出可${side == Launch2Side.buy ? '买' : '卖'}上限'
-                    '（${launch2LimitedByText(value.limitedBy, cap: value.quotaCap)}）',
+                    context.l10n.launch2_launch2TradePanelLaunch2TradeExceeds(
+                      launch2LimitedByText(
+                        value.limitedBy,
+                        cap: value.quotaCap,
+                      ),
+                      side == Launch2Side.buy
+                          ? context.l10n.launch2_sideBuy
+                          : context.l10n.launch2_sideSell,
+                    ),
                     key: const ValueKey<String>('launch2-trade-exceeds'),
                   ),
                 ),
-                LoopKeepsKeyboard(
-                  child: TextButton(
-                    key: const ValueKey<String>('launch2-trade-fill-max'),
-                    onPressed: onFillMax,
-                    style: TextButton.styleFrom(
-                      foregroundColor: LoopColors.yellow,
-                      minimumSize: const Size(
-                        LoopTouch.minimum,
-                        LoopTouch.minimum,
+                Flexible(
+                  child: LoopKeepsKeyboard(
+                    child: TextButton(
+                      key: const ValueKey<String>('launch2-trade-fill-max'),
+                      onPressed: onFillMax,
+                      style: TextButton.styleFrom(
+                        foregroundColor: LoopColors.yellow,
+                        minimumSize: const Size(
+                          LoopTouch.minimum,
+                          LoopTouch.minimum,
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      side == Launch2Side.buy
-                          ? '填入 ${launch2Usd1Label(value.maxAmountIn, maxFractionDigits: 4)}'
-                          : '填入 ${launch2MemeLabel(value.maxAmountIn, ticker)}',
+                      child: Text(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        side == Launch2Side.buy
+                            ? context.l10n.launch2_launch2TradePanelIf(
+                                launch2Usd1Label(
+                                  value.maxAmountIn,
+                                  maxFractionDigits: 4,
+                                ),
+                              )
+                            : context.l10n.launch2_launch2TradePanelIf(
+                                launch2MemeLabel(value.maxAmountIn, ticker),
+                              ),
+                      ),
                     ),
                   ),
                 ),
@@ -821,14 +869,18 @@ class _QuoteLines extends StatelessWidget {
             ),
           ),
         LoopKeyValue(
-          label: side == Launch2Side.buy ? '预计获得' : '预计到手',
+          label: side == Launch2Side.buy
+              ? context.l10n.common_estimatedReceive
+              : context.l10n.launch2_launch2PoolViewModelS16,
           value: side == Launch2Side.buy
               ? launch2MemeLabel(value.expectedOut, ticker)
               : launch2Usd1Label(value.expectedOut, maxFractionDigits: 4),
           padding: pad,
         ),
         LoopKeyValue(
-          label: side == Launch2Side.buy ? '最少获得' : '最少到手',
+          label: side == Launch2Side.buy
+              ? context.l10n.common_minimumReceive
+              : context.l10n.launch2_launch2PoolViewModelS17,
           value: side == Launch2Side.buy
               ? launch2MemeLabel(value.minOut, ticker)
               : launch2Usd1Label(value.minOut, maxFractionDigits: 4),
@@ -844,18 +896,20 @@ class _QuoteLines extends StatelessWidget {
           style: LoopType.captionSm.copyWith(color: LoopColors.text3),
         ),
         LoopKeyValue(
-          label: '税 ${launch2BpsLabel(value.taxBps)}',
+          label: context.l10n.launch2_launch2SigningS2(
+            launch2BpsLabel(value.taxBps),
+          ),
           value: launch2Usd1Label(value.taxUsd1, maxFractionDigits: 4),
           padding: pad,
         ),
         if (value.refundUsd1 > Decimal.zero)
           LoopKeyValue(
-            label: '退回',
+            label: context.l10n.launch2_launch2TradePanelLabel,
             value: launch2Usd1Label(value.refundUsd1, maxFractionDigits: 4),
             padding: pad,
           ),
         LoopKeyValue(
-          label: '价格',
+          label: context.l10n.launch2_launch2SigningLabel3,
           value:
               '${launch2PriceLabel(value.priceBeforeUsd1)} → '
               '${launch2PriceLabel(value.priceAfterUsd1)}',
@@ -863,12 +917,16 @@ class _QuoteLines extends StatelessWidget {
         ),
         LoopProvenanceLine(
           key: const ValueKey<String>('launch2-trade-quote-provenance'),
-          sources: const <String>['链上曲线'],
+          sources: <String>[
+            context.l10n.launch2_launch2TradePanelLoopProvenanceLine,
+          ],
           observedAt: value.quotedAt,
           padding: EdgeInsets.zero,
-          detail:
-              '报价按区块 ${value.basisBlockNumber} 的曲线计算，含 10% 税；'
-              '滑点 ${launch2BpsLabel(value.slippageBps)}，到期自动重新报价。',
+          detail: context.l10n
+              .launch2_launch2TradePanelLaunch2TradeQuoteProvenanceDetail(
+                value.basisBlockNumber,
+                launch2BpsLabel(value.slippageBps),
+              ),
         ),
       ],
     );
@@ -925,4 +983,6 @@ class _PrepareFailureLine extends StatelessWidget {
 
 /// The line under the curve's 「最少获得 / 最少到手」 (decision 0200).
 String launch2CurveMinOutNote(int slippageBps) =>
-    '按当前曲线价计算，已含 ${launch2BpsLabel(slippageBps)} 滑点保护，成交以链上为准';
+    LoopL10n.current.launch2_launch2TradePanelLaunch2CurveMinOutNote(
+      launch2BpsLabel(slippageBps),
+    );

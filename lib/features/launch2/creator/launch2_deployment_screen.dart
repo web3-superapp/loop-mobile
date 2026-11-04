@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_sign_screen.dart'
     show Launch2AddressTail;
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -49,12 +50,18 @@ class Launch2DeploymentScreen extends ConsumerWidget {
       return LoopFocusPage(
         key: const ValueKey<String>('launch2-deployment-screen'),
         archetype: LoopPageArchetype.state,
-        title: '部署进度',
+        title: context
+            .l10n
+            .launch2Creator_launch2DeploymentLaunch2DeploymentScreenTitle,
         onBack: onBack,
-        block: const LoopPageBlock(
+        block: LoopPageBlock(
           key: ValueKey<String>('launch2-deployment-missing'),
-          title: '找不到这次部署',
-          message: '链接里没有有效的项目或任务编号。',
+          title: context
+              .l10n
+              .launch2Creator_launch2DeploymentLaunch2DeploymentMissingTitle,
+          message: context
+              .l10n
+              .launch2Creator_launch2DeploymentLaunch2DeploymentMissingMessage,
         ),
         body: const <Widget>[],
       );
@@ -77,7 +84,9 @@ class Launch2DeploymentScreen extends ConsumerWidget {
     return LoopStreamPage(
       key: const ValueKey<String>('launch2-deployment-screen'),
       archetype: LoopPageArchetype.state,
-      title: '部署进度',
+      title: context
+          .l10n
+          .launch2Creator_launch2DeploymentLaunch2DeploymentScreenTitle,
       onBack: onBack,
       updating: state.refreshing,
       onRefresh: ref.read(provider.notifier).reload,
@@ -89,7 +98,9 @@ class Launch2DeploymentScreen extends ConsumerWidget {
                   keyPrefix: 'launch2-deployment',
                   phase: state.phase,
                   failureKind: state.failureKind,
-                  emptyMessage: '找不到这次部署',
+                  emptyMessage: context
+                      .l10n
+                      .launch2Creator_launch2DeploymentLaunch2DeploymentMissingTitle,
                   onRetry: () =>
                       unawaited(ref.read(provider.notifier).reload()),
                 ),
@@ -99,7 +110,9 @@ class Launch2DeploymentScreen extends ConsumerWidget {
                   LoopNotice(
                     key: const ValueKey<String>('launch2-deployment-stale'),
                     icon: 'offline',
-                    body: '最新进度没有读到，下面是上一次读到的状态，会自动重试。',
+                    body: context
+                        .l10n
+                        .launch2Creator_launch2DeploymentLaunch2DeploymentStaleBody,
                   ),
                 ..._body(context, value, instance),
               ],
@@ -143,23 +156,31 @@ class Launch2DeploymentScreen extends ConsumerWidget {
         LoopNotice(
           key: const ValueKey<String>('launch2-deployment-activated'),
           icon: 'check',
-          body: instance == null ? '已激活，项目页生成中…' : '已激活，你是这个项目的项目方。',
+          body: instance == null
+              ? context
+                    .l10n
+                    .launch2Creator_launch2DeploymentLaunch2DeploymentActivatedBody
+              : context
+                    .l10n
+                    .launch2Creator_launch2DeploymentLaunch2DeploymentActivatedBody2,
         ),
         if (instance != null)
           _action(
             'launch2-deployment-open-instance',
-            '查看项目页',
+            context.l10n.launch2Creator_launch2DeploymentAction,
             () => onOpenInstance?.call(instance.instanceId),
           ),
       ] else if (job.status == Launch2JobStatus.cancelled) ...<Widget>[
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('launch2-deployment-cancelled'),
           icon: 'info',
-          body: '这次部署已取消。',
+          body: context
+              .l10n
+              .launch2Creator_launch2DeploymentLaunch2DeploymentCancelledBody,
         ),
         _action(
           'launch2-deployment-resign',
-          '重新签名',
+          context.l10n.launch2Creator_launch2DeploymentAction2,
           () => onResign?.call(project),
         ),
       ] else if (failure != null) ...<Widget>[
@@ -180,24 +201,33 @@ class Launch2DeploymentScreen extends ConsumerWidget {
         else if (!failure.retryable)
           _action(
             'launch2-deployment-resign',
-            '重新签名',
+            context.l10n.launch2Creator_launch2DeploymentAction2,
             () => onResign?.call(project),
           ),
       ] else if (job.status == Launch2JobStatus.awaitingExecutor)
-        const LoopNotice(
+        LoopNotice(
           key: ValueKey<String>('launch2-deployment-queued'),
           icon: 'clock',
-          body: '已验签登记，等待平台执行器部署。这一步还没有上链。',
+          body: context
+              .l10n
+              .launch2Creator_launch2DeploymentLaunch2DeploymentQueuedBody,
         ),
-      const LoopLabel('进度'),
+      LoopLabel(context.l10n.launch2Creator_launch2DeploymentLoopLabel),
       for (final event in job.events)
         _EventRow(
           key: ValueKey<String>('launch2-event-${event.sequence}'),
           event: event,
         ),
-      if (job.txHash != null) _TxRow(label: '部署交易', hash: job.txHash!),
+      if (job.txHash != null)
+        _TxRow(
+          label: context.l10n.launch2Creator_launch2DeploymentLabel,
+          hash: job.txHash!,
+        ),
       if (job.activationTxHash != null)
-        _TxRow(label: '激活交易', hash: job.activationTxHash!),
+        _TxRow(
+          label: context.l10n.launch2Creator_launch2DeploymentLabel2,
+          hash: job.activationTxHash!,
+        ),
       const SizedBox(height: 24),
     ];
   }
@@ -229,8 +259,10 @@ class _EventRow extends StatelessWidget {
     final failed = event.kind == 'failed' || event.errorCode != null;
     final detail = <String>[
       loopLocalTimestampLabel(event.createdAt),
-      if (event.confirmations != null) '${event.confirmations} 确认',
-      if (event.blockNumber != null) '区块 ${event.blockNumber}',
+      if (event.confirmations != null)
+        context.l10n.launch2Creator_launch2DeploymentBuild(event.confirmations),
+      if (event.blockNumber != null)
+        context.l10n.launch2Creator_launch2DeploymentBuild2(event.blockNumber),
     ].join(' · ');
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -303,9 +335,13 @@ class _TxRow extends StatelessWidget {
           LoopIconButton(
             key: ValueKey<String>('launch2-tx-copy-$hash'),
             icon: 'link',
-            label: '复制 BscScan 链接',
+            label: context.l10n.launch2Creator_launch2DeploymentLabel3,
             onPressed: () => unawaited(
-              LoopCopy.text(context, url, message: 'BscScan 链接已复制'),
+              LoopCopy.text(
+                context,
+                url,
+                message: context.l10n.launch2Creator_launch2DeploymentMessage,
+              ),
             ),
           ),
         ],

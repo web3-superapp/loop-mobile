@@ -380,6 +380,9 @@ void main() {
         // 「8 亿」, a trade row's token column) — the same kind. Quotes,
         // quota and signing facts use the exact `launch2MemeFigure`.
         'lib/features/launch2/launch2_format.dart',
+        // S355a · decision 0281: the template's supply in English reads
+        // `1B` / `800M` — the same summary slot, the zh 「10 亿」 unchanged.
+        'lib/features/launch2/creator/launch2_creator_widgets.dart',
         // Decision 0177 let the 动态 post summarise its token line; decision
         // 0187's compact post reads the quote pill from the feed payload
         // instead, so the view no longer calls the formatter.

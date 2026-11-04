@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 
@@ -18,16 +19,42 @@ import 'package:loop_mobile/widgets/loop_quote_row.dart';
 // Rounding and grouping happen here and nowhere else. USD1 is read at par
 // with the dollar, the way the contract (`priceSource: usd1_par`) reads it.
 
+/// Whether the App reads Chinese: the formatters below keep the zh-CN
+/// shapes (「10 亿」, 「10-18 17:32」); every other locale gets the English
+/// ones (glossary §1.7–8).
+bool get launch2ChineseCopy => LoopL10n.currentLocale.languageCode == 'zh';
+
+const List<String> _launch2MonthNames = <String>[
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/// 「Oct 18」: an English month and day of [local], without the year.
+String launch2MonthDay(DateTime local) =>
+    '${_launch2MonthNames[local.month - 1]} ${local.day}';
+
 /// The stage's short name, as the list pill and the page's stage bar say it.
 String launch2StageLabel(Launch2Stage stage) => switch (stage) {
-  Launch2Stage.upcoming => '即将铸造',
-  Launch2Stage.nftSale => '铸造中',
-  Launch2Stage.snapshotPending => '名单生成中',
-  Launch2Stage.closedNoHolders => '已关闭',
-  Launch2Stage.priority => '提前购',
-  Launch2Stage.public => '公开内盘',
-  Launch2Stage.graduated => '已毕业',
-  Launch2Stage.paused => '已暂停',
+  Launch2Stage.upcoming => LoopL10n.current.launch2_launch2FormatUpcoming,
+  Launch2Stage.nftSale => LoopL10n.current.launch2_launch2FormatNftSale,
+  Launch2Stage.snapshotPending =>
+    LoopL10n.current.launch2_launch2AtmosphereSwitch2,
+  Launch2Stage.closedNoHolders =>
+    LoopL10n.current.launch2_launch2FormatClosedNoHolders,
+  Launch2Stage.priority => LoopL10n.current.launch2_launch2FormatPriority,
+  Launch2Stage.public => LoopL10n.current.launch2_launch2FormatPublic,
+  Launch2Stage.graduated => LoopL10n.current.common_graduated,
+  Launch2Stage.paused => LoopL10n.current.common_paused,
 };
 
 /// `409 DATA_STALE` for a stage that takes no order (contract §3.3).
@@ -35,22 +62,25 @@ const String launch2StageMismatchCode = 'LAUNCH2_STAGE_MISMATCH';
 
 /// The one sentence for `closed_no_holders` (decision 0142). Only instances
 /// of a v2-generation Factory can still reach it (loop-api decision 0122).
-const String launch2ClosedNoHoldersText = '无人铸造，已关闭';
+String get launch2ClosedNoHoldersText =>
+    LoopL10n.current.launch2_launch2FormatLaunch2ClosedNoHoldersText;
 
 /// A v3 sale that ended with no NFT minted opened the public round directly
 /// (`snapshot.status = opened_without_holders`, decision 0144).
-const String launch2OpenedWithoutHoldersText = '无 NFT 持有人，直接开放公开内盘';
+String get launch2OpenedWithoutHoldersText =>
+    LoopL10n.current.launch2_launch2FormatLaunch2OpenedWithoutHoldersText;
 
 /// The second half of the stage bar (contract §2 「App」 column).
 String launch2StageCaption(Launch2Stage stage) => switch (stage) {
-  Launch2Stage.upcoming => '铸造倒计时',
-  Launch2Stage.nftSale => '剩余',
-  Launch2Stage.snapshotPending => '名单发布后开始 1 小时提前购',
+  Launch2Stage.upcoming => LoopL10n.current.launch2_launch2FormatUpcoming2,
+  Launch2Stage.nftSale => LoopL10n.current.launch2_launch2FormatNftSale2,
+  Launch2Stage.snapshotPending =>
+    LoopL10n.current.launch2_launch2FormatSnapshotPending,
   Launch2Stage.closedNoHolders => launch2ClosedNoHoldersText,
-  Launch2Stage.priority => '持有人优先 · 剩余',
-  Launch2Stage.public => '人人可买，卖满即毕业',
-  Launch2Stage.graduated => '官方池交易中',
-  Launch2Stage.paused => '暂停中',
+  Launch2Stage.priority => LoopL10n.current.launch2_launch2FormatPriority2,
+  Launch2Stage.public => LoopL10n.current.launch2_launch2FormatPublic2,
+  Launch2Stage.graduated => LoopL10n.current.launch2_launch2FormatGraduated,
+  Launch2Stage.paused => LoopL10n.current.launch2_launch2FormatPaused,
 };
 
 /// A remaining time on the countdown face: `2天 03:12:05`, `03:12:05`,
@@ -62,7 +92,14 @@ String launch2CountdownText(Duration remaining) {
   final minutes = (total % 3600) ~/ 60;
   final seconds = total % 60;
   String two(int value) => value.toString().padLeft(2, '0');
-  if (days > 0) return '$days天 ${two(hours)}:${two(minutes)}:${two(seconds)}';
+  if (days > 0) {
+    return LoopL10n.current.launch2_launch2FormatLaunch2CountdownText(
+      days,
+      two(hours),
+      two(minutes),
+      two(seconds),
+    );
+  }
   if (hours > 0) return '${two(hours)}:${two(minutes)}:${two(seconds)}';
   return '${two(minutes)}:${two(seconds)}';
 }
@@ -135,9 +172,11 @@ Decimal? launch2AmountFromInput(String text) {
 
 /// Why an instance is held.
 String launch2HoldReasonText(Launch2HoldReason? reason) => switch (reason) {
-  Launch2HoldReason.deployedEventMismatch => '链上部署记录与登记不一致，平台正在核对',
-  Launch2HoldReason.activationMissing => '链上还没有看到激活记录，平台正在核对',
-  null => '平台正在核对这个项目',
+  Launch2HoldReason.deployedEventMismatch =>
+    LoopL10n.current.launch2_launch2FormatDeployedEventMismatch,
+  Launch2HoldReason.activationMissing =>
+    LoopL10n.current.launch2_launch2FormatActivationMissing,
+  null => LoopL10n.current.launch2_launch2FormatSwitch,
 };
 
 /// The pre-S209 constant per-address curve cap, 5,000,000 MEME (decision
@@ -158,41 +197,48 @@ String launch2CurveCapFigure(Decimal? cap) =>
 /// Where a LoopDynamic buy's base fee is taken from (decision 0197): the
 /// one wording the pool quote and the creator's template card share
 /// (decision 0198).
-String launch2BuyFeeSideText({required bool fromUsd1}) =>
-    fromUsd1 ? '从付出的 USD1 扣' : '从到手的 MEME 扣';
+String launch2BuyFeeSideText({required bool fromUsd1}) => fromUsd1
+    ? LoopL10n.current.launch2_launch2FormatSwitch2
+    : LoopL10n.current.launch2_launch2FormatS;
 
 /// 「每个地址最多买 N 枚」 for an instance's cap (decision 0197).
-String launch2CurveCapSentence(Decimal? cap) =>
-    '每个地址最多买 ${launch2CurveCapFigure(cap)} 枚';
+String launch2CurveCapSentence(Decimal? cap) => LoopL10n.current
+    .launch2_launch2FormatLaunch2CurveCapSentence(launch2CurveCapFigure(cap));
 
 /// `LAUNCH2_QUOTA_EXHAUSTED` for an instance's cap (decision 0197).
-String launch2QuotaExhaustedText(Decimal? cap) =>
-    '已用完单地址累计 ${launch2CurveCapFigure(cap)} 枚额度';
+String launch2QuotaExhaustedText(Decimal? cap) => LoopL10n.current
+    .launch2_launch2FormatLaunch2QuotaExhaustedText(launch2CurveCapFigure(cap));
 
 /// What bounds the MAX, said as the reason a larger amount is refused.
 /// [cap] is the instance's per-address curve cap (decision 0197).
 String launch2LimitedByText(Launch2LimitedBy limitedBy, {Decimal? cap}) =>
     switch (limitedBy) {
-      Launch2LimitedBy.quota => '单地址累计上限 ${launch2CurveCapFigure(cap)} 枚',
-      Launch2LimitedBy.inventory => '内盘剩余库存',
-      Launch2LimitedBy.balance => '钱包余额',
-      Launch2LimitedBy.soldSupply => '内盘可卖数量',
-      Launch2LimitedBy.closed => '当前阶段不可交易',
+      Launch2LimitedBy.quota => LoopL10n.current.launch2_launch2FormatQuota(
+        launch2CurveCapFigure(cap),
+      ),
+      Launch2LimitedBy.inventory =>
+        LoopL10n.current.launch2_launch2FormatInventory,
+      Launch2LimitedBy.balance => LoopL10n.current.launch2_launch2FormatBalance,
+      Launch2LimitedBy.soldSupply =>
+        LoopL10n.current.launch2_launch2FormatSoldSupply,
+      Launch2LimitedBy.closed => LoopL10n.current.launch2_launch2FormatClosed,
     };
 
 /// The buyback's `nextOrderBlockedReason` in zh-CN; `null` reads as ready
 /// (loop-api decision 0122 redefined the set: the v3 executor has no price
 /// protection, `BUYBACK_LEGACY_PRICE_PROTECTION` is v2 instances only).
 String launch2BuybackBlockedText(String? reasonCode) => switch (reasonCode) {
-  null => '下一笔可以执行',
-  'BUYBACK_PAUSED' => '回购已暂停',
-  'BUYBACK_NOT_GRADUATED' => '毕业后才开始回购',
-  'BUYBACK_NO_BUDGET' => '托管余额不足一笔',
-  'BUYBACK_TOO_SOON' => '距上一笔不到 10 秒，稍后执行',
-  'BUYBACK_PRINCIPAL_INSUFFICIENT' => '官方池本金保护：本金不足 10,000 USD1 或单笔超过 1%',
-  'BUYBACK_QUOTE_UNAVAILABLE' => '合约报价暂时读不到，暂不执行',
-  'BUYBACK_LEGACY_PRICE_PROTECTION' => '旧版合约价格保护生效，暂不执行',
-  _ => '暂不执行',
+  null => LoopL10n.current.launch2_launch2FormatSwitch3,
+  'BUYBACK_PAUSED' => LoopL10n.current.launch2_launch2FormatSwitch4,
+  'BUYBACK_NOT_GRADUATED' => LoopL10n.current.launch2_launch2FormatSwitch5,
+  'BUYBACK_NO_BUDGET' => LoopL10n.current.launch2_launch2FormatSwitch6,
+  'BUYBACK_TOO_SOON' => LoopL10n.current.launch2_launch2FormatSwitch7,
+  'BUYBACK_PRINCIPAL_INSUFFICIENT' =>
+    LoopL10n.current.launch2_launch2FormatSwitch8,
+  'BUYBACK_QUOTE_UNAVAILABLE' => LoopL10n.current.launch2_launch2FormatSwitch9,
+  'BUYBACK_LEGACY_PRICE_PROTECTION' =>
+    LoopL10n.current.launch2_launch2FormatSwitch10,
+  _ => LoopL10n.current.launch2_launch2FormatSwitch11,
 };
 
 /// The keeper line of the buyback panel (decision 0146): whether the
@@ -244,9 +290,12 @@ Launch2KeeperLine? launch2KeeperLine(Launch2BuybackSummary summary) {
     return Launch2KeeperLine(
       held: false,
       text: <String>[
-        '自动回购运行中',
-        if (inFlight) '一笔正在上链',
-        if (last != null) '上次 ${loopDateTimeLabel(last)}',
+        LoopL10n.current.launch2_launch2FormatLaunch2KeeperLine,
+        if (inFlight) LoopL10n.current.launch2_launch2FormatLaunch2KeeperLine2,
+        if (last != null)
+          LoopL10n.current.launch2_launch2FormatLaunch2KeeperLine3(
+            loopDateTimeLabel(last),
+          ),
       ].join(' · '),
     );
   }
@@ -260,8 +309,11 @@ Launch2KeeperLine? launch2KeeperLine(Launch2BuybackSummary summary) {
     reasonCode: code,
     nextEligibleAt: next,
     text: <String>[
-      '回购暂缓：$reason',
-      if (next != null) '${loopClockLabel(next)} 后再试',
+      LoopL10n.current.launch2_launch2FormatLaunch2KeeperLine4(reason),
+      if (next != null)
+        LoopL10n.current.launch2_launch2FormatLaunch2KeeperLine5(
+          loopClockLabel(next),
+        ),
     ].join(' · '),
   );
 }
@@ -311,21 +363,28 @@ Launch2BuybackHeldLine? launch2BuybackHeldLine({
     return null;
   }
   final live = launch2BuybackBlockedText(liveBlockedReason)
-      .replaceAll('，暂不执行', '')
-      .replaceAll('，稍后执行', '');
+      .replaceAll(LoopL10n.current.launch2_launch2FormatReplaceAll, '')
+      .replaceAll(LoopL10n.current.launch2_launch2FormatReplaceAll2, '');
   final next = keeper.nextEligibleAt;
-  final retry = next == null ? null : '${loopClockLabel(next)} 后再试';
+  final retry = next == null
+      ? null
+      : LoopL10n.current.launch2_launch2FormatLaunch2KeeperLine5(
+          loopClockLabel(next),
+        );
   final same =
       _buybackHoldKind(liveBlockedReason) ==
       _buybackHoldKind(keeper.reasonCode);
   if (same) {
     return Launch2BuybackHeldLine(
-      reason: '下一笔暂缓：$live',
-      detail: <String>['来源：链上读数 · 自动回购', ?retry].join(' · '),
+      reason: LoopL10n.current.launch2_launch2FormatReason(live),
+      detail: <String>[
+        LoopL10n.current.launch2_launch2FormatLaunch2BuybackHeldLine,
+        ?retry,
+      ].join(' · '),
     );
   }
   return Launch2BuybackHeldLine(
-    reason: '下一笔暂缓：$live（链上读数）；${keeper.reason}（自动回购）',
+    reason: LoopL10n.current.launch2_launch2FormatReason2(live, keeper.reason),
     detail: retry,
   );
 }
@@ -334,37 +393,47 @@ Launch2BuybackHeldLine? launch2BuybackHeldLine({
 /// the frontend contract §3.2 (loop-api decisions 0121 / 0122).
 String launch2KeeperRefusalText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH2_BUYBACK_PRINCIPAL_INSUFFICIENT' =>
-    '官方池本金保护，本金不足 10,000 USD1 或单笔超过 1%',
-  'LAUNCH2_BUYBACK_NO_BUDGET' => '托管余额不足一笔',
-  'LAUNCH2_BUYBACK_PAUSED' => '合约回购已暂停',
-  'LAUNCH2_BUYBACK_NOT_GRADUATED' => '项目还没有毕业',
+    LoopL10n.current.launch2_launch2FormatSwitch12,
+  'LAUNCH2_BUYBACK_NO_BUDGET' => LoopL10n.current.launch2_launch2FormatSwitch6,
+  'LAUNCH2_BUYBACK_PAUSED' => LoopL10n.current.launch2_launch2FormatSwitch13,
+  'LAUNCH2_BUYBACK_NOT_GRADUATED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch14,
   'LAUNCH2_BUYBACK_NOT_KEEPER' ||
   'LAUNCH2_BUYBACK_KEEPER_NOT_AUTHORIZED' ||
-  'LAUNCH2_BUYBACK_KEEPER_CHAIN_MISMATCH' => '回购执行账户未就绪，平台处理中',
-  'LAUNCH2_BUYBACK_ESCROW_MISMATCH' => '托管记录与链上不一致，平台核对中',
-  'LAUNCH2_BUYBACK_NO_OUTPUT' => '成交到账为 0，平台处理中',
+  'LAUNCH2_BUYBACK_KEEPER_CHAIN_MISMATCH' =>
+    LoopL10n.current.launch2_launch2FormatSwitch15,
+  'LAUNCH2_BUYBACK_ESCROW_MISMATCH' =>
+    LoopL10n.current.launch2_launch2FormatSwitch16,
+  'LAUNCH2_BUYBACK_NO_OUTPUT' => LoopL10n.current.launch2_launch2FormatSwitch17,
   'LAUNCH2_BUYBACK_REFERENCE_UNAVAILABLE' ||
   'LAUNCH2_BUYBACK_SPOT_OUTSIDE_PROTECTION' ||
-  'LAUNCH2_BUYBACK_OUTPUT_BELOW_PROTECTION' => '旧版合约价格保护生效',
-  'LAUNCH2_BUYBACK_GAS_PRICE_ABOVE_CAP' => '链上手续费过高',
-  'LAUNCH2_BUYBACK_CONTRACT_REVERTED' => '合约拒绝执行，平台处理中',
-  _ => '暂不执行',
+  'LAUNCH2_BUYBACK_OUTPUT_BELOW_PROTECTION' =>
+    LoopL10n.current.launch2_launch2FormatSwitch18,
+  'LAUNCH2_BUYBACK_GAS_PRICE_ABOVE_CAP' =>
+    LoopL10n.current.launch2_launch2FormatSwitch19,
+  'LAUNCH2_BUYBACK_CONTRACT_REVERTED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch20,
+  _ => LoopL10n.current.launch2_launch2FormatSwitch11,
 };
 
 /// Why a prepared or sent buyback did not execute (`lastResult: failed`).
 String launch2KeeperFailureText(String? reasonCode) => switch (reasonCode) {
-  'LAUNCH2_BUYBACK_PAUSED' => '合约回购已暂停',
-  'LAUNCH2_BUYBACK_KEEPER_INSUFFICIENT_FUNDS' => '执行账户手续费不足，平台处理中',
-  'LAUNCH2_BUYBACK_GAS_ABOVE_CAP' => '链上手续费过高，稍后重试',
-  _ => '上一笔没有执行，稍后重试',
+  'LAUNCH2_BUYBACK_PAUSED' => LoopL10n.current.launch2_launch2FormatSwitch13,
+  'LAUNCH2_BUYBACK_KEEPER_INSUFFICIENT_FUNDS' =>
+    LoopL10n.current.launch2_launch2FormatSwitch21,
+  'LAUNCH2_BUYBACK_GAS_ABOVE_CAP' =>
+    LoopL10n.current.launch2_launch2FormatSwitch22,
+  _ => LoopL10n.current.launch2_launch2FormatSwitch23,
 };
 
 /// zh-CN for the server's own `launch2` refusal rules (contract §4). Every
 /// line says what did not happen.
 /// The chain guard's hold, in one sentence (decision 0161) — the banner,
 /// the panels' line and the refusal codes all say the same thing.
-const String launch2Usd1PausedText = 'USD1 已被发行方暂停，买卖和领取暂不可用';
-const String launch2AddressFrozenText = '本项目合约地址被 USD1 发行方限制，买卖和领取暂不可用';
+String get launch2Usd1PausedText =>
+    LoopL10n.current.launch2_launch2FormatLaunch2Usd1PausedText;
+String get launch2AddressFrozenText =>
+    LoopL10n.current.launch2_launch2FormatLaunch2AddressFrozenText;
 
 String launch2TradingHoldText(Launch2TradingHoldKind kind) => switch (kind) {
   Launch2TradingHoldKind.usd1Paused => launch2Usd1PausedText,
@@ -380,13 +449,18 @@ String launch2TradingHoldSinceText(DateTime since, {DateTime? now}) {
       local.month == today.month &&
       local.day == today.day;
   return sameDay
-      ? '自 ${loopLocalClockLabel(since)} 起'
-      : '自 ${loopLocalTimestampLabel(since)} 起';
+      ? LoopL10n.current.launch2_launch2FormatLaunch2TradingHoldSinceText(
+          loopLocalClockLabel(since),
+        )
+      : LoopL10n.current.launch2_launch2FormatLaunch2TradingHoldSinceText(
+          loopLocalTimestampLabel(since),
+        );
 }
 
 /// `LAUNCH2_QUOTE_ZERO` (decision 0225): the amount buys less than one
 /// unit. Was 「报价已变化，请重新报价」, shared with the deadline refusal.
-const String launch2QuoteZeroText = '这个金额买不到最小单位，换个金额试试';
+String get launch2QuoteZeroText =>
+    LoopL10n.current.launch2_launch2FormatLaunch2QuoteZeroText;
 
 /// The two balance refusals a quote or a prepare may answer with (`409
 /// INSUFFICIENT_BALANCE`, loop-api S266). Decision 0225: a quote refused
@@ -403,52 +477,69 @@ bool launch2IsBalanceRefusal(LoopChainException failure) =>
 
 /// Decision 0225: the buy side with a USD1 balance read as zero, said under
 /// the amount field before any quote is asked.
-const String launch2NoUsd1Text = '钱包里还没有 USD1';
+String get launch2NoUsd1Text =>
+    LoopL10n.current.launch2_launch2FormatLaunch2NoUsd1Text;
 
 /// Decision 0225: the sell side with this token's balance read as zero.
-const String launch2NoMemeText = '还没有这个代币';
+String get launch2NoMemeText =>
+    LoopL10n.current.launch2_launch2FormatLaunch2NoMemeText;
 
 String launch2ReasonText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH2_USD1_PAUSED' => launch2Usd1PausedText,
   'LAUNCH2_ADDRESS_FROZEN' => launch2AddressFrozenText,
-  'LAUNCH2_INSTANCE_NOT_FOUND' => '项目不存在',
-  launch2StageMismatchCode => '当前阶段不能交易，已重新读取项目状态',
-  'LAUNCH2_SELL_NOT_OPEN' => '提前购阶段只能买入，公开内盘开始后可卖出',
-  'LAUNCH2_SOLD_OUT' => '内盘已卖满',
+  'LAUNCH2_INSTANCE_NOT_FOUND' =>
+    LoopL10n.current.launch2_launch2FormatSwitch24,
+  launch2StageMismatchCode => LoopL10n.current.launch2_launch2FormatSwitch25,
+  'LAUNCH2_SELL_NOT_OPEN' => LoopL10n.current.launch2_launch2FormatSwitch26,
+  'LAUNCH2_SOLD_OUT' => LoopL10n.current.launch2_launch2FormatSwitch27,
   // Decision 0197: the cap is per instance; the trade panel names it
   // ([launch2QuotaExhaustedText]).
-  'LAUNCH2_QUOTA_EXHAUSTED' => '已用完单地址累计买入额度',
-  'LAUNCH2_INSTANCE_PAUSED' => '项目已暂停',
-  'LAUNCH2_NFT_ALREADY_MINTED' => '这个钱包已经买过 NFT（每个地址终身 1 枚）',
-  'LAUNCH2_PRICE_MOVED' => '价格已变化，已刷新',
-  'LAUNCH2_QUOTE_EXPIRED' => '报价已过期，已重新报价',
-  'LAUNCH2_USD1_BALANCE_INSUFFICIENT' => 'USD1 余额不足',
-  'LAUNCH2_MEME_BALANCE_INSUFFICIENT' => '卖出数量超过持有',
-  'LAUNCH2_GAS_INSUFFICIENT' => '$loopLaunchNativeSymbolText 手续费不足，充值后再试',
-  'LAUNCH2_AMOUNT_INVALID' => '金额不正确',
-  'LAUNCH2_AMOUNT_ABOVE_MAX' => '超出可买上限',
-  'LAUNCH2_DEADLINE_TOO_FAR' => '报价已变化，请重新报价',
+  'LAUNCH2_QUOTA_EXHAUSTED' => LoopL10n.current.launch2_launch2FormatSwitch28,
+  'LAUNCH2_INSTANCE_PAUSED' => LoopL10n.current.launch2_launch2FormatSwitch29,
+  'LAUNCH2_NFT_ALREADY_MINTED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch30,
+  'LAUNCH2_PRICE_MOVED' => LoopL10n.current.launch2_launch2FormatSwitch31,
+  'LAUNCH2_QUOTE_EXPIRED' => LoopL10n.current.launch2_launch2FormatSwitch32,
+  'LAUNCH2_USD1_BALANCE_INSUFFICIENT' =>
+    LoopL10n.current.launch2_launch2FormatSwitch33,
+  'LAUNCH2_MEME_BALANCE_INSUFFICIENT' =>
+    LoopL10n.current.launch2_launch2FormatSwitch34,
+  'LAUNCH2_GAS_INSUFFICIENT' => LoopL10n.current.launch2_launch2FormatSwitch35(
+    loopLaunchNativeSymbolText,
+  ),
+  'LAUNCH2_AMOUNT_INVALID' => LoopL10n.current.launch2_launch2FormatSwitch36,
+  'LAUNCH2_AMOUNT_ABOVE_MAX' => LoopL10n.current.launch2_launch2FormatSwitch37,
+  'LAUNCH2_DEADLINE_TOO_FAR' => LoopL10n.current.launch2_launch2FormatSwitch38,
   // Decision 0225: the curve really priced this amount at zero units.
   'LAUNCH2_QUOTE_ZERO' => launch2QuoteZeroText,
-  'LAUNCH2_WALLET_NOT_EMBEDDED' => '只能用 LOOP 内置钱包购买',
-  'LAUNCH2_NOT_IN_SNAPSHOT' => '提前购仅限名单内持有人',
-  'LAUNCH2_COUNTERPARTY_NOT_INSTANCE' => '暂不可用',
-  'LAUNCH2_INTENT_EXPIRED' => '这笔交易已过期，没有提交任何交易，请重新发起',
-  'LAUNCH2_SIMULATION_REVERTED' => '试算没有通过，这笔交易在链上会被拒绝',
-  'LAUNCH2_APPROVAL_REQUIRED' => '需要先授权，授权前无法试算',
-  'LAUNCH2_SNAPSHOT_UNVERIFIED' => '名单核验中，提前购暂不可用',
-  'LAUNCH2_FACTORY_NOT_CONFIGURED' ||
-  'LAUNCH2_CHAIN_NOT_CONFIGURED' => 'MEME v2 合约还没有配置',
-  'LAUNCH2_REPOSITORY_UNAVAILABLE' ||
-  'LAUNCH2_RUNTIME_UNAVAILABLE' => 'MEME v2 服务暂时不可用',
-  'LAUNCH2_CHAIN_READ_FAILED' => '链上读数暂时取不到',
-  'LAUNCH2_WALLETS_UNAVAILABLE' => '钱包目录暂时读不到',
-  'LAUNCH2_WRITES_DISABLED' => '交易暂时关闭',
-  'LAUNCH2_MAINNET_SIGNING_CLOSED' => '主网签名暂未开放',
-  'LAUNCH2_MODULE_NOT_ENABLED' || 'LAUNCH2_CAPABILITY_ABSENT' => 'MEME v2 暂未开放',
-  'CANARY_CEILING_EXCEEDED' => '超过单笔金额上限',
-  'CANARY_DAILY_CEILING_EXCEEDED' => '超过今日金额上限',
-  'ASSET_NOT_IN_CANARY_ALLOWLIST' => '这笔交易暂不在允许范围内',
+  'LAUNCH2_WALLET_NOT_EMBEDDED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch39,
+  'LAUNCH2_NOT_IN_SNAPSHOT' => LoopL10n.current.launch2_launch2FormatSwitch40,
+  'LAUNCH2_COUNTERPARTY_NOT_INSTANCE' =>
+    LoopL10n.current.launch2_launch2FormatSwitch41,
+  'LAUNCH2_INTENT_EXPIRED' => LoopL10n.current.launch2_launch2FormatSwitch42,
+  'LAUNCH2_SIMULATION_REVERTED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch43,
+  'LAUNCH2_APPROVAL_REQUIRED' => LoopL10n.current.launch2_launch2FormatSwitch44,
+  'LAUNCH2_SNAPSHOT_UNVERIFIED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch45,
+  'LAUNCH2_FACTORY_NOT_CONFIGURED' || 'LAUNCH2_CHAIN_NOT_CONFIGURED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch46,
+  'LAUNCH2_REPOSITORY_UNAVAILABLE' || 'LAUNCH2_RUNTIME_UNAVAILABLE' =>
+    LoopL10n.current.launch2_launch2FormatSwitch47,
+  'LAUNCH2_CHAIN_READ_FAILED' => LoopL10n.current.launch2_launch2FormatSwitch48,
+  'LAUNCH2_WALLETS_UNAVAILABLE' =>
+    LoopL10n.current.launch2_launch2FormatSwitch49,
+  'LAUNCH2_WRITES_DISABLED' => LoopL10n.current.launch2_launch2FormatSwitch50,
+  'LAUNCH2_MAINNET_SIGNING_CLOSED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch51,
+  'LAUNCH2_MODULE_NOT_ENABLED' ||
+  'LAUNCH2_CAPABILITY_ABSENT' => LoopL10n.current.launch2_launch2FormatSwitch52,
+  'CANARY_CEILING_EXCEEDED' => LoopL10n.current.launch2_launch2FormatSwitch53,
+  'CANARY_DAILY_CEILING_EXCEEDED' =>
+    LoopL10n.current.launch2_launch2FormatSwitch54,
+  'ASSET_NOT_IN_CANARY_ALLOWLIST' =>
+    LoopL10n.current.launch2_launch2FormatSwitch55,
   _ => loopReasonCodeSummaryText(reasonCode),
 };
 
@@ -486,8 +577,10 @@ final class Launch2ActionFailure {
 /// no figure: names the token and the fee. The symbol goes through
 /// [loopDisplaySymbol] (decision 0204).
 String get launch2GasShortText =>
-    '$loopLaunchNativeSymbolText 手续费不足：钱包里的 $loopLaunchNativeSymbolText '
-    '不够付这笔的网络手续费，充值后再试';
+    LoopL10n.current.launch2_launch2FormatLaunch2GasShortText(
+      loopLaunchNativeSymbolText,
+      loopLaunchNativeSymbolText,
+    );
 
 /// The gas refusal's line with the server's figures (decision 0156): the
 /// fee ceiling the check compared and the wallet's tBNB. A missing figure
@@ -499,10 +592,19 @@ String launch2GasFailureText(LoopChainException failure) {
       '${loopFormatDecimal(value, maxFractionDigits: 8)} $loopLaunchNativeSymbolText';
   if (required == null && balance == null) return launch2GasShortText;
   final parts = <String>[
-    if (required != null) '这笔约需 ${bnb(required)}',
-    if (balance != null) '钱包有 ${bnb(balance)}',
+    if (required != null)
+      LoopL10n.current.launch2_launch2FormatLaunch2GasFailureText(
+        bnb(required),
+      ),
+    if (balance != null)
+      LoopL10n.current.launch2_launch2FormatLaunch2GasFailureText2(
+        bnb(balance),
+      ),
   ];
-  return '$loopLaunchNativeSymbolText 手续费不足：${parts.join('，')}，充值后再试';
+  return LoopL10n.current.launch2_launch2FormatLaunch2GasFailureText3(
+    loopLaunchNativeSymbolText,
+    parts.join(LoopL10n.current.common_listSeparator),
+  );
 }
 
 Decimal? _detailFigure(String? raw) =>
@@ -546,14 +648,19 @@ Launch2ActionFailure launch2ActionFailure(
           _detailFigure(failure.balanceUsd1) ??
           (maxIsBalance ? max : usd1Balance);
       final parts = <String>[
-        if (required != null) '需要 ${usd1(required)}',
+        if (required != null)
+          LoopL10n.current.launch2_launch2FormatSwitch56(usd1(required)),
         if (current != null)
-          '当前 ${usd1(current)}'
+          LoopL10n.current.launch2_launch2FormatSwitch57(usd1(current))
         else if (max != null)
-          '最多可付 ${usd1(max)}',
+          LoopL10n.current.launch2_launch2FormatSwitch58(usd1(max)),
       ];
       return Launch2ActionFailure(
-        parts.isEmpty ? fallback(failure) : 'USD1 余额不足：${parts.join('，')}',
+        parts.isEmpty
+            ? fallback(failure)
+            : LoopL10n.current.launch2_launch2FormatLaunch2ActionFailure(
+                parts.join(LoopL10n.current.common_listSeparator),
+              ),
         topUp: true,
       );
     case 'LAUNCH2_MEME_BALANCE_INSUFFICIENT':
@@ -561,14 +668,19 @@ Launch2ActionFailure launch2ActionFailure(
       final holding =
           _detailFigure(failure.balanceMeme) ?? (maxIsBalance ? max : null);
       final parts = <String>[
-        if (required != null) '需要 ${meme(required)}',
+        if (required != null)
+          LoopL10n.current.launch2_launch2FormatSwitch56(meme(required)),
         if (holding != null)
-          '当前持有 ${meme(holding)}'
+          LoopL10n.current.launch2_launch2FormatSwitch60(meme(holding))
         else if (max != null)
-          '最多可卖 ${meme(max)}',
+          LoopL10n.current.launch2_launch2FormatSwitch61(meme(max)),
       ];
       return Launch2ActionFailure(
-        parts.isEmpty ? fallback(failure) : '卖出数量超过持有：${parts.join('，')}',
+        parts.isEmpty
+            ? fallback(failure)
+            : LoopL10n.current.launch2_launch2FormatLaunch2ActionFailure2(
+                parts.join(LoopL10n.current.common_listSeparator),
+              ),
       );
     case 'LAUNCH2_GAS_INSUFFICIENT':
       return Launch2ActionFailure(launch2GasFailureText(failure), topUp: true);
@@ -585,13 +697,15 @@ Launch2ActionFailure launch2ActionFailure(
 /// display rule). The priority hour opens only with the stage itself.
 String launch2SnapshotPendingTitle(Launch2Snapshot snapshot) =>
     switch (snapshot.publication?.status) {
-      null => '名单生成中',
-      Launch2PublicationStatus.pending ||
-      Launch2PublicationStatus.broadcast => '名单发布中',
+      null => LoopL10n.current.launch2_launch2AtmosphereSwitch2,
+      Launch2PublicationStatus.pending || Launch2PublicationStatus.broadcast =>
+        LoopL10n.current.launch2_launch2FormatBroadcast,
       Launch2PublicationStatus.confirmed =>
-        snapshot.published ? 'NFT名单公布' : '名单已上链，同步中',
-      Launch2PublicationStatus.failed ||
-      Launch2PublicationStatus.mismatch => '名单发布异常，平台处理中',
+        snapshot.published
+            ? LoopL10n.current.launch2_launch2FormatSwitch62
+            : LoopL10n.current.launch2_launch2FormatS3,
+      Launch2PublicationStatus.failed || Launch2PublicationStatus.mismatch =>
+        LoopL10n.current.launch2_launch2FormatMismatch,
     };
 
 /// The project page's stage label (the folio kicker). Decision 0203
@@ -606,8 +720,12 @@ String launch2InstanceStageLabel(Launch2InstanceDetail detail) =>
 /// The line under it: the cutoff block and what opens next.
 String launch2SnapshotPendingMessage(Launch2Snapshot snapshot) {
   final block = snapshot.cutoffBlockNumber ?? snapshot.publication?.cutoffBlock;
-  if (block == null) return '等待截止块确认，名单发布后开始 1 小时提前购';
-  return '截止块 #${loopGroupedFigure(block.toString())}，名单发布后开始 1 小时提前购';
+  if (block == null) {
+    return LoopL10n.current.launch2_launch2FormatLaunch2SnapshotPendingMessage;
+  }
+  return LoopL10n.current.launch2_launch2FormatLaunch2SnapshotPendingMessage2(
+    loopGroupedFigure(block.toString()),
+  );
 }
 
 /// Whether the page draws the NFT名单公布 block (decision 0202): the list was
@@ -626,9 +744,12 @@ String? launch2SnapshotVerificationText(
   Launch2SnapshotVerification? verification,
 ) => switch (verification) {
   null => null,
-  Launch2SnapshotVerification.verified => '已核验',
-  Launch2SnapshotVerification.pending => '核验中',
-  Launch2SnapshotVerification.mismatch => '核验不一致，平台处理中',
+  Launch2SnapshotVerification.verified =>
+    LoopL10n.current.launch2_launch2FormatVerified,
+  Launch2SnapshotVerification.pending =>
+    LoopL10n.current.launch2Creator_launch2Confirmed,
+  Launch2SnapshotVerification.mismatch =>
+    LoopL10n.current.launch2_launch2FormatMismatch2,
 };
 
 /// The BscScan page of [hash] on [chainId] (decision 0202): the main
@@ -648,9 +769,17 @@ Uri? launch2ExplorerTxUri(String chainId, String? hash) {
 String launch2SaleDurationLabel(Launch2NftSale sale) {
   final minutes = sale.endAt.difference(sale.startAt).inMinutes;
   final hours = minutes / 60;
-  if (hours >= 24 && hours % 24 == 0) return '${hours ~/ 24} 天';
-  if (hours == hours.roundToDouble()) return '${hours.toInt()} 小时';
-  return '$minutes 分钟';
+  if (hours >= 24 && hours % 24 == 0) {
+    return LoopL10n.current.launch2Creator_launch2Launch2DurationLabel(
+      hours ~/ 24,
+    );
+  }
+  if (hours == hours.roundToDouble()) {
+    return LoopL10n.current.launch2Creator_launch2CreateLeadLabel(
+      hours.toInt(),
+    );
+  }
+  return LoopL10n.current.launch2Creator_launch2CreateLeadLabel2(minutes);
 }
 
 /// A countdown said aloud (decision 0163): 「2 天 3 小时」, 「2 小时 14 分」,
@@ -660,8 +789,24 @@ String launch2SpokenDuration(Duration remaining) {
   final days = total ~/ 1440;
   final hours = (total % 1440) ~/ 60;
   final minutes = total % 60;
-  if (days > 0) return hours > 0 ? '$days 天 $hours 小时' : '$days 天';
-  if (hours > 0) return '$hours 小时 $minutes 分';
-  if (minutes > 0) return '$minutes 分';
-  return '不到 1 分';
+  if (days > 0) {
+    return hours > 0
+        ? LoopL10n.current.launch2_launch2FormatLaunch2SpokenDuration(
+            days,
+            hours,
+          )
+        : LoopL10n.current.launch2Creator_launch2Launch2DurationLabel(days);
+  }
+  if (hours > 0) {
+    return LoopL10n.current.launch2_launch2FormatLaunch2SpokenDuration2(
+      hours,
+      minutes,
+    );
+  }
+  if (minutes > 0) {
+    return LoopL10n.current.launch2_launch2FormatLaunch2SpokenDuration3(
+      minutes,
+    );
+  }
+  return LoopL10n.current.launch2_launch2FormatLaunch2SpokenDuration4;
 }

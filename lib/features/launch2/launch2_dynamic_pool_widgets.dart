@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -15,10 +16,12 @@ import 'package:loop_mobile/widgets/loop_pressable.dart';
 // ---------------------------------------------------------------------------
 
 /// What arms a round, said while none is running.
-const String launch2DynamicIdleText = '价格 5 分钟内跌超 10% 将开启动态税与买入奖励';
+String get launch2DynamicIdleText =>
+    LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicIdleText;
 
 /// How a running round ends.
-const String launch2DynamicEndText = '出现一根收盘不低于开盘的 5 分钟 K 线即结束（收涨、收平或无成交都算）';
+String get launch2DynamicEndText =>
+    LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicEndText;
 
 /// The round card's rows for one state, label first (decision 0159:
 /// `currentDropBps`, `potUsd1`, `viewer.currentRoundWeightUsd1` and its
@@ -30,36 +33,51 @@ List<(String key, String label, String value)> launch2DynamicRoundRows(
   final share = state.viewerSharePercent;
   final pot = (
     'pot',
-    '奖金池',
+    LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicRoundRows,
     launch2Usd1Label(state.potUsd1, maxFractionDigits: 4),
   );
   if (!state.armed) return <(String, String, String)>[pot];
   return <(String, String, String)>[
     (
       'drop',
-      '当前跌幅',
+      LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicRoundRows2,
       // A candle that ended without a trade since: the Hook reads 0 until
       // the next swap, poke or claim closes it.
-      state.rollPending ? 'K 线已结束，待结算' : launch2BpsLabel(state.currentDropBps),
+      state.rollPending
+          ? LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicRoundRows3
+          : launch2BpsLabel(state.currentDropBps),
     ),
     pot,
     (
       'my-weight',
-      '本轮我的权重',
+      LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicRoundRows4,
       // Decision 0202: no wallet, or no buy in this round, is 暂无 — not
       // 「0 USD1 · 占 0%」.
       viewer == null || viewer.currentRoundWeightUsd1 <= Decimal.zero
-          ? '暂无'
+          ? LoopL10n.current.common_none
           : share == null
           ? launch2Usd1Label(
               viewer.currentRoundWeightUsd1,
               maxFractionDigits: 4,
             )
-          : '${launch2Usd1Label(viewer.currentRoundWeightUsd1, maxFractionDigits: 4)}'
-                ' · 占 ${loopFormatDecimal(share, maxFractionDigits: 2)}%',
+          : LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicRoundRows5(
+              loopFormatDecimal(share, maxFractionDigits: 2),
+              launch2Usd1Label(
+                viewer.currentRoundWeightUsd1,
+                maxFractionDigits: 4,
+              ),
+            ),
     ),
-    ('candle-end', '本根 K 线结束', loopClockLabel(state.candleEndsAt)),
-    ('end', '结束条件', launch2DynamicEndText),
+    (
+      'candle-end',
+      LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicRoundRows6,
+      loopClockLabel(state.candleEndsAt),
+    ),
+    (
+      'end',
+      LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicRoundRows7,
+      launch2DynamicEndText,
+    ),
   ];
 }
 
@@ -89,9 +107,11 @@ class Launch2DynamicRoundCard extends StatelessWidget {
       // Decision 0166: the page's `.label` (was a 20 / 700 heading), the
       // armed badge at its end and 「我的奖励」 after it.
       Launch2SectionLabel(
-        '本轮状态',
+        context.l10n.launch2_launch2DynamicPoolLaunch2DynRewardsLink,
         trailing: LoopBadge(
-          state.armed ? '已激活' : '未激活',
+          state.armed
+              ? context.l10n.launch2Creator_launch2ModelsActive
+              : context.l10n.launch2_launch2DynamicPoolS,
           key: ValueKey<String>(
             state.armed ? 'launch2-dyn-armed' : 'launch2-dyn-idle',
           ),
@@ -99,7 +119,8 @@ class Launch2DynamicRoundCard extends StatelessWidget {
         ),
         info: Semantics(
           button: true,
-          label: '我的奖励',
+          label:
+              context.l10n.launch2_launch2DynamicPoolLaunch2DynRewardsLinkLabel,
           excludeSemantics: true,
           child: LoopPressable(
             key: const ValueKey<String>('launch2-dyn-rewards-link'),
@@ -115,7 +136,9 @@ class Launch2DynamicRoundCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      '我的奖励',
+                      context
+                          .l10n
+                          .launch2_launch2DynamicPoolLaunch2DynRewardsLinkLabel,
                       // R17 (decision 0190 L23).
                       style: LoopTypography.withWeight(
                         LoopType.label,
@@ -167,7 +190,8 @@ class Launch2DynamicRoundCard extends StatelessWidget {
         sources: const <String>['LoopHook'],
         observedAt: observedAt,
         padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 4),
-        detail: '跌幅按 5 分钟 K 线计算；回购买入不计奖励权重。',
+        detail:
+            context.l10n.launch2_launch2DynamicPoolLaunch2DynProvenanceDetail,
       ),
     ],
   );
@@ -191,7 +215,7 @@ List<(String key, String label, String value)> launch2DynamicBuyFeeRows(
   final usd1Hook = state.buyFeeToken == Launch2BuyFeeToken.usd1;
   final showUsd1 = usd1Hook || usd1 > Decimal.zero;
   final showMeme = !usd1Hook || meme > Decimal.zero;
-  const label = '买入基础税累计';
+  final label = LoopL10n.current.launch2_launch2DynamicPoolLabel;
   return <(String, String, String)>[
     if (showUsd1)
       ('buy-fees-usd1', label, launch2Usd1Label(usd1, maxFractionDigits: 4)),
@@ -216,12 +240,12 @@ List<(String key, String label, String value)> launch2DynamicFeeRows(
   return <(String, String, String)>[
     (
       'dynamic-fees',
-      '动态税累计',
+      LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicFeeRows,
       launch2Usd1Label(summary.dynamicFeesUsd1, maxFractionDigits: 4),
     ),
     (
       'sell-fees',
-      '卖出基础税累计',
+      LoopL10n.current.launch2_launch2DynamicPoolLaunch2DynamicFeeRows2,
       launch2Usd1Label(summary.baseSellFeesUsd1, maxFractionDigits: 4),
     ),
     ...launch2DynamicBuyFeeRows(state, ticker: ticker),
@@ -245,7 +269,9 @@ class Launch2DynamicFeeSummaryCard extends StatelessWidget {
     key: const ValueKey<String>('launch2-dyn-fees'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      const Launch2SectionLabel('费用累计'),
+      Launch2SectionLabel(
+        context.l10n.launch2_launch2DynamicPoolLaunch2SectionLabel,
+      ),
       LoopRecordCard(
         key: const ValueKey<String>('launch2-dyn-fees-card'),
         child: Column(
@@ -290,16 +316,16 @@ class Launch2DynamicUnavailableBlock extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
       LoopNotice.structured(
-        title: '外盘暂不可用',
+        title: context.l10n.launch2_launch2DynamicPoolTitle,
         happened: reason,
-        impact: '这个项目的外盘交易与奖励暂时不能进行。',
-        next: '稍后点「重试」再读一次。',
+        impact: context.l10n.launch2_launch2DynamicPoolImpact,
+        next: context.l10n.launch2_launch2DynamicPoolNext,
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 8),
         child: LoopButton(
           key: const ValueKey<String>('launch2-dyn-unavailable-retry'),
-          label: '重试',
+          label: context.l10n.common_retry,
           block: true,
           onPressed: onRetry,
         ),

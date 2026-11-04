@@ -23,6 +23,7 @@ import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_wallet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -88,7 +89,8 @@ class _Launch2DynamicRewardsScreenState
               .reload(),
       ]);
 
-  static const String _confirmedText = '外盘奖励已领取，已在链上确认。';
+  static String get _confirmedText =>
+      LoopL10n.current.launch2_launch2DynamicRewardsConfirmedText;
 
   /// After a broadcast the rounds are read again until the claimed one
   /// shows it, then the page stops asking.
@@ -120,7 +122,7 @@ class _Launch2DynamicRewardsScreenState
     }
     if (_settleReads >= _settleLimit) {
       setState(() {
-        _pending = '已广播，但还没有读到确认。它可能仍在确认中，请稍后再查；不要重复领取。';
+        _pending = LoopL10n.current.launch2_launch2DynamicRewardsPending;
         _pendingLocked = false;
       });
       return;
@@ -217,9 +219,11 @@ class _Launch2DynamicRewardsScreenState
         confirmed = report.confirmed;
         text = confirmed
             ? _confirmedText
-            : '领取已提交（${launch2ShortAddress(hash)}），正在等待链上确认。不要重复领取。';
+            : LoopL10n.current.launch2_launch2DynamicRewardsConfirmedText2(
+                launch2ShortAddress(hash),
+              );
       } catch (_) {
-        text = '$text 上报没有成功，链上结果不受影响；不要重复领取。';
+        text = LoopL10n.current.launch2_launch2DynamicRewardsText(text);
       }
     }
     if (!mounted) return;
@@ -242,14 +246,20 @@ class _Launch2DynamicRewardsScreenState
       return LoopFocusPage(
         key: const ValueKey<String>('launch2-dyn-rewards-invalid-route'),
         archetype: LoopPageArchetype.listing,
-        title: '外盘奖励',
+        title: context
+            .l10n
+            .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidRouteTitle,
         onBack: widget.onBack,
-        body: const <Widget>[
+        body: <Widget>[
           LoopEmptyState(
             key: ValueKey<String>('launch2-dyn-rewards-invalid-identity'),
             illustration: LoopIllustration.launchpad,
-            title: '路由中没有可用的项目标识',
-            message: '没有请求任何数据，也没有回退到其他项目。',
+            title: context
+                .l10n
+                .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityTitle,
+            message: context
+                .l10n
+                .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidIdentityMessage,
             compact: true,
           ),
         ],
@@ -315,7 +325,9 @@ class _Launch2DynamicRewardsScreenState
     return LoopDashboardPage(
       key: ValueKey<String>('launch2-dyn-rewards-$instanceId'),
       archetype: LoopPageArchetype.listing,
-      title: '外盘奖励',
+      title: context
+          .l10n
+          .launch2_launch2DynamicRewardsLaunch2DynRewardsInvalidRouteTitle,
       subtitle: detail == null ? null : loopTickerLabel(detail.row.ticker),
       onBack: widget.onBack,
       updating:
@@ -327,7 +339,9 @@ class _Launch2DynamicRewardsScreenState
       block: blocked
           ? LoopPageBlock(
               key: const ValueKey<String>('launch2-dyn-rewards-blocked'),
-              title: 'MEME v2 暂时不可用',
+              title: context
+                  .l10n
+                  .launch2_launch2DynamicRewardsLaunch2DynRewardsBlockedTitle,
               message: launch2CapabilityText(capability),
             )
           : null,
@@ -351,12 +365,16 @@ class _Launch2DynamicRewardsScreenState
     if (kindState == null ||
         kindState.mode == LoopChainGatewayMode.unavailable ||
         kind is Launch2OfficialTaxPool) {
-      return const <Widget>[
+      return <Widget>[
         LoopEmptyState(
           key: ValueKey<String>('launch2-dyn-rewards-none'),
           illustration: LoopIllustration.history,
-          title: '这个项目没有外盘奖励',
-          message: '只有开启动态税的项目才有按轮次的外盘奖励。',
+          title: LoopL10n
+              .current
+              .launch2_launch2DynamicRewardsLaunch2DynRewardsNoneTitle,
+          message: LoopL10n
+              .current
+              .launch2_launch2DynamicRewardsLaunch2DynRewardsNoneMessage,
           compact: true,
         ),
       ];
@@ -368,7 +386,7 @@ class _Launch2DynamicRewardsScreenState
         Launch2DynamicUnavailableBlock(
           reason: kind is Launch2LoopDynamicUnavailable
               ? launch2PoolReasonText(kind.reasonCode)
-              : '外盘池子正在同步，请稍后再试',
+              : LoopL10n.current.launch2_launch2DynamicRewardsReason,
           onRetry: () => unawaited(
             ref
                 .read(launch2PoolKindControllerProvider(instanceId).notifier)
@@ -392,12 +410,16 @@ class _Launch2DynamicRewardsScreenState
       ];
     }
     if (rewardsKey == null) {
-      return const <Widget>[
+      return <Widget>[
         LoopEmptyState(
           key: ValueKey<String>('launch2-dyn-rewards-no-wallet'),
           illustration: LoopIllustration.profile,
-          title: '还没有可用的钱包',
-          message: '外盘奖励按钱包记录，激活钱包后可查看与领取。',
+          title: LoopL10n
+              .current
+              .launch2_launch2DynamicRewardsLaunch2DynRewardsNoWalletTitle,
+          message: LoopL10n
+              .current
+              .launch2_launch2DynamicRewardsLaunch2DynRewardsNoWalletMessage,
           compact: true,
         ),
       ];
@@ -431,11 +453,16 @@ class _Launch2DynamicRewardsScreenState
       return <Widget>[
         ...widgets,
         Launch2DynamicFeeSummaryCard(state: pool, ticker: detail.row.ticker),
-        const LoopEmptyState(
+        LoopEmptyState(
           key: ValueKey<String>('launch2-dyn-rewards-empty'),
           illustration: LoopIllustration.history,
-          title: '还没有外盘奖励',
-          message: '$launch2DynamicIdleText。开启后用任何软件买入都计入本轮权重，本轮结束后在这里领取。',
+          title: LoopL10n
+              .current
+              .launch2_launch2DynamicRewardsLaunch2DynRewardsEmptyTitle,
+          message: LoopL10n.current
+              .launch2_launch2DynamicRewardsLaunch2DynRewardsEmptyMessage(
+                launch2DynamicIdleText,
+              ),
           compact: true,
         ),
       ];
@@ -472,7 +499,9 @@ class _Launch2DynamicRewardsScreenState
         sources: const <String>['LoopHook'],
         observedAt: ref.read(provider.notifier).valueObservedAt,
         padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 4),
-        detail: '权重按钱包在本轮的买入金额记（USD1）；回购买入不计。领取以链上确认为准。',
+        detail: LoopL10n
+            .current
+            .launch2_launch2DynamicRewardsLaunch2DynRewardsProvenanceDetail,
       ),
     ];
   }
@@ -509,20 +538,28 @@ class _RoundRow extends StatelessWidget {
   /// into clock times.
   String get _span {
     final end = round.endCandle;
-    final start = 'K 线 #${round.startCandle}';
-    return end == null ? '$start 起 · 进行中' : '$start – #$end';
+    final start = LoopL10n.current.launch2_launch2DynamicRewardsStart(
+      round.startCandle,
+    );
+    return end == null
+        ? LoopL10n.current.launch2_launch2DynamicRewardsSpan(start)
+        : '$start – #$end';
   }
 
   String get _label => preparing
-      ? '正在准备…'
+      ? LoopL10n.current.launch2_launch2DynamicRewardsLabel
       : round.alreadyClaimed || confirmed
-      ? '已领取'
+      ? LoopL10n.current.launch2_launch2DynamicRewardsLabel2
       : broadcast
-      ? '领取确认中…'
+      ? LoopL10n.current.launch2_launch2DynamicRewardsLabel3
       : switch (round.status) {
-          Launch2DynamicRoundStatus.open => '本轮结束后可领',
+          Launch2DynamicRoundStatus.open =>
+            LoopL10n.current.launch2_launch2DynamicRewardsOpen,
           Launch2DynamicRoundStatus.noReward => launch2DynamicNoRewardText,
-          _ => round.canClaim ? '领取' : '没有可领',
+          _ =>
+            round.canClaim
+                ? LoopL10n.current.common_claim
+                : LoopL10n.current.launch2_launch2DynamicRewardsS,
         };
 
   static const EdgeInsets _kvPadding = EdgeInsets.symmetric(vertical: 6);
@@ -539,9 +576,11 @@ class _RoundRow extends StatelessWidget {
           // Decision 0166: the `.label` the project page uses (the 20 / 700
           // heading style is gone).
           Launch2SectionLabel(
-            '第 $id 轮',
+            context.l10n.launch2_launch2DynamicRewardsLaunch2SectionLabel(id),
             trailing: LoopBadge(
-              round.closed ? '已结束' : '进行中',
+              round.closed
+                  ? context.l10n.common_ended
+                  : context.l10n.common_inProgress,
               kind: round.closed ? LoopBadgeKind.mute : LoopBadgeKind.launch,
             ),
           ),
@@ -556,13 +595,13 @@ class _RoundRow extends StatelessWidget {
                 LoopKeyValue(
                   padding: _kvPadding,
                   key: ValueKey<String>('launch2-dyn-round-$id-span'),
-                  label: '起止',
+                  label: context.l10n.launch2_launch2DynamicRewardsLabel4,
                   value: _span,
                 ),
                 LoopKeyValue(
                   padding: _kvPadding,
                   key: ValueKey<String>('launch2-dyn-round-$id-weight'),
-                  label: '我的权重 / 总权重',
+                  label: context.l10n.launch2_launch2DynamicRewardsLabel5,
                   value:
                       '${loopFormatDecimal(round.weightUsd1, maxFractionDigits: 4)} / '
                       '${usd1(round.totalBuyWeightUsd1)}',
@@ -570,21 +609,21 @@ class _RoundRow extends StatelessWidget {
                 LoopKeyValue(
                   padding: _kvPadding,
                   key: ValueKey<String>('launch2-dyn-round-$id-allocation'),
-                  label: '本轮奖金',
+                  label: context.l10n.launch2_launch2DynamicRewardsLabel6,
                   value: round.allocationUsd1 == null
-                      ? '本轮结束后结算'
+                      ? context.l10n.launch2_launch2DynamicRewardsValue
                       : usd1(round.allocationUsd1!),
                 ),
                 LoopKeyValue(
                   padding: _kvPadding,
                   key: ValueKey<String>('launch2-dyn-round-$id-claimable'),
-                  label: '可领',
+                  label: context.l10n.launch2_launch2DynamicRewardsLabel7,
                   value: usd1(round.claimableUsd1),
                 ),
                 LoopKeyValue(
                   padding: _kvPadding,
                   key: ValueKey<String>('launch2-dyn-round-$id-claimed'),
-                  label: '已领',
+                  label: context.l10n.launch2_launch2DynamicRewardsLabel8,
                   value: round.claimedUsd1 != null
                       ? usd1(round.claimedUsd1!)
                       : usd1(Decimal.zero),
@@ -617,7 +656,8 @@ class _RoundRow extends StatelessWidget {
 }
 
 /// A round's line when the reader has nothing to claim in it (decision 0202).
-const String launch2DynamicNoRewardText = '本轮没有可领取的奖励';
+String get launch2DynamicNoRewardText =>
+    LoopL10n.current.launch2_launch2DynamicRewardsLaunch2DynamicNoRewardText;
 
 /// A round the reader has no weight in (decision 0202): its number, whether
 /// it still runs, and that there is nothing to claim.
@@ -636,9 +676,9 @@ class _NoWeightRoundRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Launch2SectionLabel(
-            '第 $id 轮',
+            context.l10n.launch2_launch2DynamicRewardsLaunch2SectionLabel(id),
             trailing: LoopBadge(
-              open ? '进行中' : '已结束',
+              open ? context.l10n.common_inProgress : context.l10n.common_ended,
               kind: open ? LoopBadgeKind.launch : LoopBadgeKind.mute,
             ),
           ),
@@ -649,12 +689,16 @@ class _NoWeightRoundRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Text(
-                  open ? '你在本轮还没有买入' : launch2DynamicNoRewardText,
+                  open
+                      ? context.l10n.launch2_launch2DynamicRewardsBuild
+                      : launch2DynamicNoRewardText,
                   style: LoopType.bodySm,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  open ? '轮次开启期间买入即计入本轮权重，本轮结束后在这里领取。' : '你在本轮没有买入，没有奖励权重。',
+                  open
+                      ? context.l10n.launch2_launch2DynamicRewardsBuild2
+                      : context.l10n.launch2_launch2DynamicRewardsS2,
                   style: LoopType.caption.copyWith(color: LoopColors.text2),
                 ),
               ],

@@ -6,6 +6,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/loop_shots.dart';
+
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/config/loop_test_hints.dart';
 import 'package:loop_mobile/core/text/loop_token_text.dart';
@@ -387,9 +390,11 @@ Future<void> _pump(
   bool launch2Visible = true,
   bool settle = true,
   List<Override> overrides = const <Override>[],
+  Size size = const Size(390, 2600),
 }) => pumpS7Page(
   tester,
   page,
+  size: size,
   launch: launch ?? _FakeLaunch(),
   meta: meta ?? _meta(),
   settle: settle,
@@ -437,6 +442,15 @@ Future<void> _drain(WidgetTester tester) async {
 
 LaunchProjectPage _page(List<LaunchProject> items) =>
     LaunchProjectPage(items: items, nextCursor: null);
+
+// S355a (decision 0281): 360×800 English self-review renders of the launch2
+// pages. Not checks: they run only with `--dart-define=LOOP_SHOTS=true` and
+// write to `LOOP_SHOTS_DIR`; a plain `flutter test` skips them.
+const bool _s355aShots = bool.fromEnvironment('LOOP_SHOTS');
+const String _s355aDir = String.fromEnvironment(
+  'LOOP_SHOTS_DIR',
+  defaultValue: 'build/s355a-shots',
+);
 
 void main() {
   // S237 · decision 0204: these cases pin the testnet / specimen behaviour.
@@ -502,14 +516,14 @@ void main() {
       expect(tester.getSize(mine), const Size(44, 44));
       expect(
         tester.getCenter(mine).dx,
-        greaterThan(tester.getCenter(find.text('发起 v2 发射')).dx),
+        greaterThan(tester.getCenter(find.text('Start a v2 launch')).dx),
       );
       final glyphs = tester.widgetList<LoopIcon>(
         find.descendant(of: mine, matching: find.byType(LoopIcon)),
       );
       expect(glyphs, isNotEmpty);
       expect(glyphs.every((icon) => icon.name == 'user'), isTrue);
-      expect(find.bySemanticsLabel('我的项目'), findsOneWidget);
+      expect(find.bySemanticsLabel('My projects'), findsOneWidget);
       await tester.tap(mine);
       expect(opened, 1);
       await _drain(tester);
@@ -637,7 +651,10 @@ void main() {
       await tester.enterText(_key('launch2-create-x'), 'http://x.com/a');
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
-      expect(find.text('只支持 https:// 开头的链接'), findsOneWidget);
+      expect(
+        find.text('Only links starting with https:// are supported'),
+        findsOneWidget,
+      );
 
       // The system back is the page's own back: one step.
       await tester.binding.handlePopRoute();
@@ -667,15 +684,18 @@ void main() {
         findsOneWidget,
       );
       expect(_key('launch2-template-card'), findsOneWidget);
-      expect(find.text('10 亿'), findsOneWidget);
-      expect(find.text('8 亿'), findsOneWidget);
+      expect(find.text('1B'), findsOneWidget);
+      expect(find.text('800M'), findsOneWidget);
       expect(find.text('133,333.332 USD1'), findsOneWidget);
       expect(find.text('10%'), findsOneWidget);
       expect(find.text('2%'), findsOneWidget);
       // Decision 0198: the cap in tokens, the 0197 way.
-      expect(find.text('5,000,000 枚（0.5%）'), findsOneWidget);
+      expect(find.text('5,000,000 tokens (0.5%)'), findsOneWidget);
       expect(find.text('100 USD1'), findsOneWidget);
-      expect(find.text('由平台模板固定，不能修改。'), findsOneWidget);
+      expect(
+        find.text('Fixed by the platform template; can\'t be changed.'),
+        findsOneWidget,
+      );
 
       // No sale start yet: the page asks for one, nothing is written.
       await tester.tap(_key('launch2-create-next'));
@@ -730,8 +750,11 @@ void main() {
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-failed-config'), findsOneWidget);
-      expect(find.textContaining('铸造开始时间太早'), findsOneWidget);
-      expect(find.text('重试提交'), findsOneWidget);
+      expect(
+        find.textContaining('mint start time is too early'),
+        findsOneWidget,
+      );
+      expect(find.text('Retry submission'), findsOneWidget);
       expect(submitted, isEmpty);
 
       await tester.tap(_key('launch2-create-next'));
@@ -789,7 +812,7 @@ void main() {
         launch: launch,
         creator: creator,
       );
-      expect(find.text('修改资料'), findsOneWidget);
+      expect(find.text('Edit details'), findsOneWidget);
       expect(find.text('MoonCat'), findsOneWidget);
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
@@ -999,7 +1022,7 @@ void main() {
       expect(_key('launch2-status-approved'), findsOneWidget);
       // The template is the saved draft's own.
       expect(_key('launch2-template-card'), findsOneWidget);
-      expect(find.text('7 天'), findsOneWidget);
+      expect(find.text('7d'), findsOneWidget);
       await tester.tap(_key('launch2-project-sign'));
       expect(opened.single, Launch2CreatorRoute.sign(_projectId));
       await _drain(tester);
@@ -1129,14 +1152,14 @@ void main() {
       expect(find.text('MoonCat'), findsOneWidget);
       expect(find.text('\$MCAT'), findsOneWidget);
       expect(find.text('BSC 测试网'), findsOneWidget);
-      expect(find.textContaining('后过期'), findsOneWidget);
+      expect(find.textContaining('Expires in'), findsOneWidget);
 
       await tester.tap(_key('launch2-sign-submit'));
       await tester.pumpAndSettle();
       expect(_key('launch2-sign-sheet'), findsOneWidget);
-      expect(find.text('授权部署 \$MCAT'), findsOneWidget);
+      expect(find.text('Authorize deploying \$MCAT'), findsOneWidget);
       expect(signer.calls, isEmpty);
-      await tester.tap(find.text('签名'));
+      await tester.tap(find.text('Sign'));
       await tester.pumpAndSettle();
       expect(signer.calls.single.$1, _owner);
       expect(signer.calls.single.$3, 97);
@@ -1174,7 +1197,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.tap(_key('launch2-sign-submit'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('签名'));
+      await tester.tap(find.text('Sign'));
       await tester.pumpAndSettle();
       expect(creator.requestReads, 2);
       expect(_key('launch2-sign-refreshed'), findsOneWidget);
@@ -1182,7 +1205,7 @@ void main() {
 
       await tester.tap(_key('launch2-sign-submit'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('签名'));
+      await tester.tap(find.text('Sign'));
       await tester.pumpAndSettle();
       // A new signature, so a new action.
       expect(creator.submittedSignatures, hasLength(2));
@@ -1245,13 +1268,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.tap(_key('launch2-sign-submit'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('签名'));
+      await tester.tap(find.text('Sign'));
       await tester.pumpAndSettle();
       expect(
         _key('launch2-sign-failed-HOOKS_CONFIG_NOT_APPROVED'),
         findsOneWidget,
       );
-      expect(find.text('配置还在等平台审批，审批通过后再签名。'), findsOneWidget);
+      expect(
+        find.text(
+          'The configuration is waiting for platform approval. Sign after it\'s approved.',
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
 
       final declined = _FakeCreator(
@@ -1269,7 +1297,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.tap(_key('launch2-sign-submit'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('签名'));
+      await tester.tap(find.text('Sign'));
       await tester.pumpAndSettle();
       expect(_key('launch2-sign-wallet-refused'), findsOneWidget);
       expect(declined.submittedSignatures, isEmpty);
@@ -1294,7 +1322,12 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 100));
       expect(_key('launch2-sign-load-failed-unavailable'), findsOneWidget);
-      expect(find.text('v2 发射暂未开放，开放后这里可以继续。'), findsOneWidget);
+      expect(
+        find.text(
+          'v2 launch isn\'t open yet. You can continue here once it opens.',
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-sign-submit'), findsNothing);
       await _drain(tester);
     });
@@ -1342,7 +1375,7 @@ void main() {
       for (var sequence = 1; sequence <= 7; sequence += 1) {
         expect(_key('launch2-event-$sequence'), findsOneWidget);
       }
-      expect(find.text('激活交易已广播'), findsOneWidget);
+      expect(find.text('Activation transaction broadcast'), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 30));
       await tester.pump(const Duration(milliseconds: 30));
       await tester.tap(_key('launch2-deployment-open-instance'));
@@ -1375,7 +1408,10 @@ void main() {
         _key('launch2-deployment-failure-HOOKS_SIGNATURE_EXPIRED'),
         findsOneWidget,
       );
-      expect(find.text('签名已过期，请重新签名提交。'), findsWidgets);
+      expect(
+        find.text('The signature expired. Sign and submit again.'),
+        findsWidgets,
+      );
       // Decision 0169: the failed step is a Chalk dot; no danger pink.
       final dot = tester.widget<Container>(
         _key('launch2-event-dot-failed').first,
@@ -1527,7 +1563,7 @@ void main() {
         ),
       );
       expect(_key('launch2-status-awaiting_approval'), findsOneWidget);
-      expect(find.text('审核中'), findsWidgets);
+      expect(find.text('In review'), findsWidgets);
       expect(_key('launch2-project-sign'), findsNothing);
       await _drain(tester);
 
@@ -1541,8 +1577,8 @@ void main() {
         ),
       );
       expect(_key('launch2-project-next-sign'), findsOneWidget);
-      expect(find.text('已批准'), findsOneWidget);
-      expect(find.textContaining('批准。用钱包签名后'), findsOneWidget);
+      expect(find.text('Approved'), findsOneWidget);
+      expect(find.textContaining('. Sign with your wallet'), findsOneWidget);
       await _drain(tester);
     });
 
@@ -1614,14 +1650,17 @@ void main() {
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-sale-too-early'), findsOneWidget);
-      expect(find.textContaining('平台要求至少提前 720 小时'), findsOneWidget);
+      expect(find.textContaining('at least 720h'), findsOneWidget);
       expect(creator.saveVersions, isEmpty);
       expect(launch.submitted, isEmpty);
 
       // The picker offers nothing earlier than now + lead.
       await tester.tap(_key('launch2-create-sale-start'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('平台要求至少提前 720 小时开始铸造'), findsOneWidget);
+      expect(
+        find.textContaining('Minting must start at least 720h from now'),
+        findsOneWidget,
+      );
       await tester.tap(_key('launch2-sale-start-confirm'));
       await tester.pumpAndSettle();
       await tester.tap(_key('launch2-create-next'));
@@ -1657,9 +1696,15 @@ void main() {
       expect(_key('launch2-status-rejected'), findsOneWidget);
       expect(_key('launch2-milestones-rejected'), findsOneWidget);
       expect(_key('launch2-rejection-other'), findsOneWidget);
-      expect(find.text('审核未通过：其他原因'), findsOneWidget);
-      expect(find.textContaining('审核意见：Logo 与官网不一致，请替换后重提'), findsOneWidget);
-      expect(find.textContaining('发射配置未通过审核'), findsOneWidget);
+      expect(find.text('Review rejected: 其他原因'), findsOneWidget);
+      expect(
+        find.textContaining('Review notes: Logo 与官网不一致，请替换后重提'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining("Launch configuration didn't pass review"),
+        findsOneWidget,
+      );
       expect(_key('launch2-project-sign'), findsNothing);
       await tester.tap(_key('launch2-project-resubmit'));
       expect(opened.single, Launch2CreatorRoute.edit(_projectId));
@@ -1691,9 +1736,12 @@ void main() {
           ],
         ),
       );
-      expect(find.text('审核未通过：名称或代码与已有项目冲突'), findsOneWidget);
-      expect(find.textContaining('项目资料未通过审核'), findsOneWidget);
-      expect(find.textContaining('审核意见'), findsNothing);
+      expect(find.text('Review rejected: 名称或代码与已有项目冲突'), findsOneWidget);
+      expect(
+        find.textContaining("Project details didn't pass review"),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Review notes'), findsNothing);
       // No more 「重新发起」: the same project is edited and resubmitted.
       expect(_key('launch2-project-restart'), findsNothing);
       await tester.tap(_key('launch2-project-resubmit'));
@@ -1735,7 +1783,7 @@ void main() {
       // Read only: shown, never an input.
       expect(_key('launch2-fixed-recipient'), findsOneWidget);
       expect(find.text(_fixedRecipient), findsOneWidget);
-      expect(find.text('平台固定'), findsOneWidget);
+      expect(find.text('Fixed by platform'), findsOneWidget);
       expect(
         find.descendant(
           of: _key('launch2-fixed-recipient'),
@@ -1813,13 +1861,18 @@ void main() {
         await tester.tap(_key('launch2-create-next'));
         await tester.pumpAndSettle();
       }
-      expect(find.text('暂未配置'), findsOneWidget);
+      expect(find.text('Not configured yet'), findsOneWidget);
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
       expect(creator.saved, isEmpty);
       expect(launch.submitted, isEmpty);
       expect(_key('launch2-create-failed-config'), findsOneWidget);
-      expect(find.textContaining('平台回购收币地址暂未配置'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "The platform's buyback recipient address isn't configured",
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1853,7 +1906,12 @@ void main() {
         await tester.tap(_key('launch2-create-next'));
         await tester.pumpAndSettle();
       }
-      expect(find.textContaining('回购收币地址必须是平台固定地址'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "The buyback recipient address must be the platform's fixed address",
+        ),
+        findsOneWidget,
+      );
       await _drain(tester);
     });
 
@@ -1898,7 +1956,12 @@ void main() {
         settle: false,
       );
       await tester.pump(const Duration(milliseconds: 100));
-      expect(find.textContaining('回购收币地址必须是平台固定地址'), findsOneWidget);
+      expect(
+        find.textContaining(
+          "The buyback recipient address must be the platform's fixed address",
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-sign-retry'), findsNothing);
       await tester.tap(_key('launch2-sign-edit'));
       expect(edits.single, _projectId);
@@ -1926,7 +1989,12 @@ void main() {
         settle: false,
       );
       await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text('这一版配置的版本号已被你钱包的另一个项目用过，请修改资料重新保存一版。'), findsOneWidget);
+      expect(
+        find.text(
+          'Another project in your wallet already used this configuration version. Edit the details and save a new version.',
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('HOOKS_'), findsNothing);
       expect(_key('launch2-sign-retry'), findsNothing);
       await tester.tap(_key('launch2-sign-edit'));
@@ -1965,8 +2033,11 @@ void main() {
           ],
         ),
       );
-      expect(find.text('已拒绝 · 其他原因'), findsOneWidget);
-      expect(find.text('回购收币地址需要更新'), findsOneWidget);
+      expect(find.text('Rejected · 其他原因'), findsOneWidget);
+      expect(
+        find.text('Buyback recipient address needs updating'),
+        findsOneWidget,
+      );
       await tester.tap(_key('launch2-project-row-$second'));
       expect(opened.single, Launch2CreatorRoute.project(second));
       await _drain(tester);
@@ -2019,7 +2090,7 @@ void main() {
         creator: creator,
       );
       await toSubmit(tester);
-      expect(find.text('重试提交'), findsNothing);
+      expect(find.text('Retry submission'), findsNothing);
       expect(creator.configReads, greaterThanOrEqualTo(1));
       expect(creator.saveVersions, <int>[1]);
       expect(launch.submitted, <String>[_projectId]);
@@ -2049,10 +2120,10 @@ void main() {
         ),
       );
       await tester.scrollUntilVisible(_key('launch2-template-card'), 200);
-      expect(find.text('单地址上限'), findsOneWidget);
-      expect(find.text('3,000,000 枚（0.3%）'), findsOneWidget);
-      expect(find.text('外盘买入税'), findsOneWidget);
-      expect(find.text('2%（从付出的 USD1 扣）'), findsOneWidget);
+      expect(find.text('Per-address cap'), findsOneWidget);
+      expect(find.text('3,000,000 tokens (0.3%)'), findsOneWidget);
+      expect(find.text('DEX pool buy tax'), findsOneWidget);
+      expect(find.text('2% (taken from the USD1 you pay)'), findsOneWidget);
     });
 
     testWidgets('an older template says the constant cap and no fee side', (
@@ -2077,8 +2148,8 @@ void main() {
         ),
       );
       await tester.scrollUntilVisible(_key('launch2-template-card'), 200);
-      expect(find.text('5,000,000 枚（0.5%）'), findsOneWidget);
-      expect(find.text('外盘买入税'), findsNothing);
+      expect(find.text('5,000,000 tokens (0.5%)'), findsOneWidget);
+      expect(find.text('DEX pool buy tax'), findsNothing);
     });
 
     testWidgets('我的项目: one project this build cannot read is its own row; '
@@ -2112,7 +2183,12 @@ void main() {
       expect(_key('launch2-projects-list'), findsOneWidget);
       expect(_key('launch2-project-row-$_projectId'), findsOneWidget);
       expect(_key('launch2-project-unreadable-$unreadableId'), findsOneWidget);
-      expect(find.text('发射配置暂时读不到，下拉刷新或点开重试'), findsOneWidget);
+      expect(
+        find.text(
+          'Couldn\'t load the launch configuration. Pull to refresh or tap to retry',
+        ),
+        findsOneWidget,
+      );
       // It claims no state: one badge, the readable project's.
       expect(find.byType(LoopBadge), findsOneWidget);
       await tester.tap(_key('launch2-project-unreadable-$unreadableId'));
@@ -2217,7 +2293,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(creator.configReads, 2);
-      expect(find.text('已拒绝 · 其他原因'), findsOneWidget);
+      expect(find.text('Rejected · 其他原因'), findsOneWidget);
       expect(_key('launch2-status-rejected'), findsOneWidget);
       await _drain(tester);
     });
@@ -2241,9 +2317,15 @@ void main() {
         ),
       );
       expect(_key('launch2-create-rejection'), findsOneWidget);
-      expect(find.text('审核未通过：其他原因'), findsOneWidget);
-      expect(find.textContaining('审核意见：Logo 与官网不一致，请替换后重提'), findsOneWidget);
-      expect(find.textContaining('发射配置未通过审核'), findsOneWidget);
+      expect(find.text('Review rejected: 其他原因'), findsOneWidget);
+      expect(
+        find.textContaining('Review notes: Logo 与官网不一致，请替换后重提'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining("Launch configuration didn't pass review"),
+        findsOneWidget,
+      );
       // The banner stays on every step.
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
@@ -2323,7 +2405,9 @@ void main() {
         ),
       );
       expect(
-        find.textContaining('${loopLocalTimestampLabel(resubmitted)} 提交'),
+        find.textContaining(
+          'Submitted ${loopLocalTimestampLabel(resubmitted)}',
+        ),
         findsOneWidget,
       );
       expect(
@@ -2358,10 +2442,10 @@ void main() {
       );
       String sale() =>
           tester.widget<LoopKeyValue>(_key('launch2-project-sale-start')).value;
-      expect(sale(), endsWith('（1 小时后）'));
+      expect(sale(), endsWith('(in 1h)'));
       now = now.add(const Duration(minutes: 2));
       await tester.pump(const Duration(seconds: 1));
-      expect(sale(), endsWith('（59 分钟后）'));
+      expect(sale(), endsWith('(in 59 min)'));
       now = start.add(const Duration(minutes: 1));
       await tester.pump(const Duration(seconds: 1));
       expect(sale(), loopLocalTimestampLabel(start));
@@ -2386,7 +2470,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.tap(_key('launch2-sign-submit'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('签名'));
+      await tester.tap(find.text('Sign'));
       await tester.pumpAndSettle();
       return submitted;
     }
@@ -2490,7 +2574,7 @@ void main() {
         tester
             .widget<Launch2CreateStepBar>(_key('launch2-create-step-1'))
             .labels,
-        <String>['资料', '链接', '发射'],
+        <String>['Profile', 'Link', 'Launch'],
       );
       await tester.tap(_key('launch2-create-upload'));
       await tester.pumpAndSettle();
@@ -2503,12 +2587,19 @@ void main() {
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-step-2'), findsOneWidget);
-      expect(find.text('外部链接'), findsOneWidget);
+      expect(find.text('External links'), findsOneWidget);
       expect(
-        find.text('项目的 X / Telegram / 官网 / Discord，都可不填；审核与用户都会看到。'),
+        find.text(
+          'The project\'s X / Telegram / website / Discord, all optional; reviewers and users will see them.',
+        ),
         findsOneWidget,
       );
-      expect(find.text('要绑定社区，请由社区群主在社区侧「社区管理 → 绑定代币」里操作。'), findsOneWidget);
+      expect(
+        find.text(
+          'To bind a community, the community owner does it under Community management → Bind token.',
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('绑定项目的社区'), findsNothing);
       expect(_key('launch2-create-x'), findsOneWidget);
       await _drain(tester);
@@ -2535,10 +2626,11 @@ void main() {
                   body: TextButton(
                     onPressed: () => Navigator.of(signContext).pushReplacement(
                       MaterialPageRoute<void>(
-                        builder: (_) => const Scaffold(body: Text('部署进度')),
+                        builder: (_) =>
+                            const Scaffold(body: Text('Deployment progress')),
                       ),
                     ),
-                    child: const Text('签名并提交'),
+                    child: const Text('Sign and submit'),
                   ),
                 ),
               ),
@@ -2551,9 +2643,9 @@ void main() {
       expect(creator.configReads, 1);
       await tester.tap(_key('launch2-project-sign'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('签名并提交'));
+      await tester.tap(find.text('Sign and submit'));
       await tester.pumpAndSettle();
-      expect(find.text('部署进度'), findsOneWidget);
+      expect(find.text('Deployment progress'), findsOneWidget);
       expect(creator.configReads, 1);
 
       await tester.binding.handlePopRoute();
@@ -2593,22 +2685,22 @@ void main() {
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
       expect(_key('launch2-create-step-3'), findsOneWidget);
-      expect(find.text('铸造开始时间'), findsOneWidget);
-      expect(find.text('选择铸造开始时间'), findsOneWidget);
-      expect(find.text('铸造价格'), findsOneWidget);
-      expect(find.text('铸造期'), findsOneWidget);
+      expect(find.text('Mint start time'), findsOneWidget);
+      expect(find.text('Choose mint start time'), findsOneWidget);
+      expect(find.text('Mint price'), findsOneWidget);
+      expect(find.text('Mint period'), findsOneWidget);
       expectNoOldWords(tester);
       // Nothing picked yet: the page asks in the same words.
       await tester.tap(_key('launch2-create-next'));
       await tester.pumpAndSettle();
-      expect(find.text('请先选择铸造开始时间。'), findsOneWidget);
+      expect(find.text('Choose a mint start time first.'), findsOneWidget);
       // The picker sheet and its lead hint.
       await tester.tap(_key('launch2-create-sale-start'));
       await tester.pumpAndSettle();
       expect(
         find.descendant(
           of: _key('launch2-sale-start-sheet'),
-          matching: find.text('铸造开始时间'),
+          matching: find.text('Mint start time'),
         ),
         findsOneWidget,
       );
@@ -2637,10 +2729,10 @@ void main() {
       );
       expect(
         tester.widget<LoopKeyValue>(_key('launch2-project-sale-start')).label,
-        '铸造开始',
+        'Mint starts',
       );
-      expect(find.text('铸造价格'), findsOneWidget);
-      expect(find.text('铸造期'), findsOneWidget);
+      expect(find.text('Mint price'), findsOneWidget);
+      expect(find.text('Mint period'), findsOneWidget);
       expectNoOldWords(tester);
       await _drain(tester);
     });
@@ -2657,7 +2749,7 @@ void main() {
         settle: false,
       );
       await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text('铸造开始'), findsOneWidget);
+      expect(find.text('Mint starts'), findsOneWidget);
       expectNoOldWords(tester);
       await _drain(tester);
     });
@@ -2665,7 +2757,7 @@ void main() {
     test('failure lines name 铸造开始时间', () {
       expect(
         launch2JobFailureText('HOOKS_ACTIVATION_WINDOW_CLOSED'),
-        '距铸造开始太近无法激活，修改铸造开始时间后重新提交。',
+        'Too close to the mint start to activate. Change the mint start time and submit again.',
       );
     });
 
@@ -2674,10 +2766,13 @@ void main() {
         'HOOKS_LAUNCH_NAME_INVALID',
         'HOOKS_LAUNCH_TICKER_INVALID',
       ]) {
-        expect(launch2JobFailureText(code), '名称 / 代码不合规，请修改后重新提交。');
+        expect(
+          launch2JobFailureText(code),
+          'The name or ticker isn\'t allowed. Edit and submit again.',
+        );
         expect(launch2JobFailureNeedsEdit(code), isTrue);
         expect(launch2JobFailureResignable(code), isFalse);
-        expect(launch2JobFailureEditLabel(code), '修改名称或代码');
+        expect(launch2JobFailureEditLabel(code), 'Edit name or ticker');
       }
       expect(
         launch2JobFailureNeedsEdit('HOOKS_ACTIVATION_WINDOW_CLOSED'),
@@ -2685,9 +2780,21 @@ void main() {
       );
       expect(
         launch2JobFailureEditLabel('HOOKS_ACTIVATION_WINDOW_CLOSED'),
-        '修改铸造开始时间',
+        'Edit mint start time',
       );
       expect(launch2JobFailureNeedsEdit('HOOKS_SIGNATURE_EXPIRED'), isFalse);
+    });
+  });
+
+  group('S355a shots', () {
+    testWidgets('create · step 1', skip: !_s355aShots, (tester) async {
+      await _pump(
+        tester,
+        const Launch2CreateScreen(),
+        size: const Size(360, 800),
+      );
+      await loopShot(tester, 's355a-create', slice: 800, dir: _s355aDir);
+      await _drain(tester);
     });
   });
 }

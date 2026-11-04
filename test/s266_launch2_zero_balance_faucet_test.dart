@@ -282,8 +282,14 @@ void main() {
 
   group('copy', () {
     test('QUOTE_ZERO and DEADLINE_TOO_FAR no longer share a sentence', () {
-      expect(launch2ReasonText('LAUNCH2_QUOTE_ZERO'), '这个金额买不到最小单位，换个金额试试');
-      expect(launch2ReasonText('LAUNCH2_DEADLINE_TOO_FAR'), '报价已变化，请重新报价');
+      expect(
+        launch2ReasonText('LAUNCH2_QUOTE_ZERO'),
+        'This amount can\'t buy the smallest unit. Try another amount',
+      );
+      expect(
+        launch2ReasonText('LAUNCH2_DEADLINE_TOO_FAR'),
+        'The quote changed. Get a new quote',
+      );
     });
 
     test('only the two balance refusals count as the wallet being short', () {
@@ -334,7 +340,10 @@ void main() {
       expect(launch2.quoteCalls, hasLength(1));
       expect(_key('launch2-trade-quote-failed'), findsNothing);
       expect(_key('launch2-trade-quote-short'), findsOneWidget);
-      expect(find.text('USD1 余额不足：需要 50 USD1，当前 0 USD1'), findsOneWidget);
+      expect(
+        find.text('Not enough USD1: need 50 USD1, have 0 USD1'),
+        findsOneWidget,
+      );
       expect(find.textContaining('没有取到报价'), findsNothing);
       expect(_key('launch2-trade-quote-topup'), findsOneWidget);
       expect(_key('launch2-trade-quote-faucet'), findsOneWidget);
@@ -358,7 +367,10 @@ void main() {
       );
       await _pump(tester, launch2: launch2, faucet: false);
       await _type(tester, '50');
-      expect(find.text('USD1 余额不足：需要 50 USD1，最多可付 0 USD1'), findsOneWidget);
+      expect(
+        find.text('Not enough USD1: need 50 USD1, can pay up to 0 USD1'),
+        findsOneWidget,
+      );
       expect(_key('launch2-trade-quote-topup'), findsOneWidget);
       expect(_key('launch2-trade-quote-faucet'), findsNothing);
       await _drain(tester);
@@ -379,13 +391,16 @@ void main() {
       await tester.tap(
         find.descendant(
           of: _key('launch2-trade-side'),
-          matching: find.text('卖出'),
+          matching: find.text('Sell'),
         ),
       );
       await tester.pumpAndSettle();
       await _type(tester, '100');
       expect(_key('launch2-trade-quote-short'), findsOneWidget);
-      expect(find.textContaining('卖出数量超过持有'), findsOneWidget);
+      expect(
+        find.textContaining('Sell amount exceeds holdings'),
+        findsOneWidget,
+      );
       expect(_key('launch2-trade-quote-topup'), findsNothing);
       expect(_key('launch2-trade-quote-faucet'), findsNothing);
       await _drain(tester);
@@ -404,7 +419,12 @@ void main() {
       await _pump(tester, launch2: launch2);
       await _type(tester, '0.0000001');
       expect(_key('launch2-trade-quote-failed'), findsOneWidget);
-      expect(find.text('没有取到报价 · 这个金额买不到最小单位，换个金额试试'), findsOneWidget);
+      expect(
+        find.text(
+          "Couldn't get a quote · This amount can't buy the smallest unit. Try another amount",
+        ),
+        findsOneWidget,
+      );
       expect(_key('launch2-trade-quote-faucet'), findsNothing);
       expect(_key('launch2-trade-empty-balance'), findsNothing);
       await _drain(tester);
@@ -456,7 +476,7 @@ void main() {
       await l2OpenTradeSheet(tester);
       // Before anything is typed the line already stands under the field.
       expect(_key('launch2-trade-empty-balance'), findsOneWidget);
-      expect(find.text('钱包里还没有 USD1'), findsOneWidget);
+      expect(find.text('No USD1 in your wallet yet'), findsOneWidget);
       expect(_key('launch2-trade-empty-topup'), findsOneWidget);
       expect(_key('launch2-trade-empty-faucet'), findsOneWidget);
       await _type(tester, '50');
@@ -497,15 +517,15 @@ void main() {
         ),
       );
       await _pump(tester, launch2: launch2);
-      expect(find.text('钱包里还没有 USD1'), findsOneWidget);
+      expect(find.text('No USD1 in your wallet yet'), findsOneWidget);
       await tester.tap(
         find.descendant(
           of: _key('launch2-trade-side'),
-          matching: find.text('卖出'),
+          matching: find.text('Sell'),
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('还没有这个代币'), findsOneWidget);
+      expect(find.text('You don\'t hold this token yet'), findsOneWidget);
       expect(_key('launch2-trade-empty-topup'), findsNothing);
       expect(_key('launch2-trade-empty-faucet'), findsNothing);
       await _type(tester, '10');

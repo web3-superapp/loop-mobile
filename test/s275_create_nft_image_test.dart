@@ -294,7 +294,7 @@ void main() {
       final creator = _FakeCreator(saveAnswer: _config(_bodyWithNft()).draft!);
       await _pump(tester, const Launch2CreateScreen(), creator: creator);
       expect(_key('launch2-create-nft-preview'), findsOneWidget);
-      expect(find.text('NFT 图'), findsOneWidget);
+      expect(find.text('NFT image'), findsOneWidget);
       expect(find.text(launch2NftImageHelp), findsOneWidget);
       expect(_key('launch2-nft-image-empty'), findsOneWidget);
 
@@ -347,7 +347,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch2-create-nft-upload'),
-          matching: find.text('换一张'),
+          matching: find.text('Replace'),
         ),
         findsOneWidget,
       );
@@ -567,7 +567,7 @@ void main() {
       expect(
         find.descendant(
           of: _key('launch2-project-nft-image'),
-          matching: find.text('NFT 图'),
+          matching: find.text('NFT image'),
         ),
         findsOneWidget,
       );

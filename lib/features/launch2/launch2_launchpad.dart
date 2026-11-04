@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/launch2/launch2_overview.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
@@ -42,14 +43,20 @@ import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 /// 「刚刚」, 「N 分钟前」, then the local 「HH:mm」.
 String launch2RelativeTime(DateTime at, DateTime now) {
   final age = now.difference(at);
-  if (age < const Duration(minutes: 1)) return '刚刚';
-  if (age < const Duration(hours: 1)) return '${age.inMinutes} 分钟前';
+  if (age < const Duration(minutes: 1)) return LoopL10n.current.common_justNow;
+  if (age < const Duration(hours: 1)) {
+    return LoopL10n.current.launch2_launch2LaunchpadLaunch2RelativeTime(
+      age.inMinutes,
+    );
+  }
   return loopLocalClockLabel(at);
 }
 
 /// 「0x1d2f…9b」: the actor as the tape prints it.
 String launch2TapeActor(String? actor) {
-  if (actor == null) return '有人';
+  if (actor == null) {
+    return LoopL10n.current.launch2_launch2LaunchpadLaunch2TapeActor;
+  }
   if (actor.length <= 10) return actor;
   return '${actor.substring(0, 6)}…${actor.substring(actor.length - 2)}';
 }
@@ -61,7 +68,9 @@ String launch2ActivityWho(Launch2Activity item) {
   final name = item.account?.displayName;
   if (name != null && name.trim().isNotEmpty) return '$name ';
   // 「有人买入」 runs on; an address takes a space before the verb.
-  return item.actor == null ? '有人' : '${launch2TapeActor(item.actor)} ';
+  return item.actor == null
+      ? LoopL10n.current.launch2_launchpadSomeoneWho
+      : '${launch2TapeActor(item.actor)} ';
 }
 
 /// One tape item's sentence, without its time.
@@ -71,13 +80,20 @@ String launch2ActivityText(Launch2Activity item) {
   final amount = item.amountUsd1;
   final usd1 = amount == null ? '' : ' ${launch2Usd1Label(amount)}';
   return switch (item.kind) {
-    Launch2ActivityKind.curveBuy => '$who买入 $ticker$usd1',
-    Launch2ActivityKind.curveSell => '$who卖出 $ticker$usd1',
-    Launch2ActivityKind.nftMint => '$who铸造 $ticker 勋章',
-    Launch2ActivityKind.graduated => '$ticker 毕业了',
-    Launch2ActivityKind.buyback => '平台回购 $ticker$usd1',
-    Launch2ActivityKind.roundActivated => '$ticker 外盘新一轮激活',
-    Launch2ActivityKind.rewardClaimed => '$who领取 $ticker 奖励$usd1',
+    Launch2ActivityKind.curveBuy =>
+      LoopL10n.current.launch2_launch2LaunchpadCurveBuy(ticker, usd1, who),
+    Launch2ActivityKind.curveSell =>
+      LoopL10n.current.launch2_launch2LaunchpadCurveSell(ticker, usd1, who),
+    Launch2ActivityKind.nftMint =>
+      LoopL10n.current.launch2_launch2LaunchpadNftMint(ticker, who),
+    Launch2ActivityKind.graduated =>
+      LoopL10n.current.launch2_launch2LaunchpadGraduated(ticker),
+    Launch2ActivityKind.buyback =>
+      LoopL10n.current.launch2_launch2LaunchpadBuyback(ticker, usd1),
+    Launch2ActivityKind.roundActivated =>
+      LoopL10n.current.launch2_launch2LaunchpadRoundActivated(ticker),
+    Launch2ActivityKind.rewardClaimed =>
+      LoopL10n.current.launch2_launch2LaunchpadRewardClaimed(ticker, usd1, who),
   };
 }
 
@@ -89,17 +105,34 @@ String launch2ActivityLine(Launch2Activity item, DateTime now) =>
 
 /// The groups of the 「v2 发射」 list (docs/32 §7.4), in order.
 enum Launch2StageGroup {
-  minting('铸造中'),
-  priority('提前购'),
-  curve('内盘'),
-  snapshot('名单生成中'),
-  upcoming('预告'),
-  graduated('已毕业'),
-  closed('已暂停 / 无人铸造');
+  minting(),
+  priority(),
+  curve(),
+  snapshot(),
+  upcoming(),
+  graduated(),
+  closed();
 
-  const Launch2StageGroup(this.title);
+  const Launch2StageGroup();
 
-  final String title;
+  String get title => switch (this) {
+    Launch2StageGroup.minting => LoopL10n.current.launch2_launch2FormatNftSale,
+
+    Launch2StageGroup.priority =>
+      LoopL10n.current.launch2_launch2FormatPriority,
+
+    Launch2StageGroup.curve => LoopL10n.current.launch2_launch2InstanceLabel,
+
+    Launch2StageGroup.snapshot =>
+      LoopL10n.current.launch2_launch2AtmosphereSwitch2,
+
+    Launch2StageGroup.upcoming =>
+      LoopL10n.current.launch2_launch2LaunchpadUpcoming,
+
+    Launch2StageGroup.graduated => LoopL10n.current.common_graduated,
+
+    Launch2StageGroup.closed => LoopL10n.current.launch2_launch2LaunchpadClosed,
+  };
 
   static Launch2StageGroup of(Launch2Stage stage) => switch (stage) {
     Launch2Stage.nftSale => minting,
@@ -127,17 +160,26 @@ List<(Launch2StageGroup, List<Launch2InstanceRow>)> launch2GroupRows(
 
 /// The four counts under the ledger card, each the groups it stands for.
 enum Launch2DeskSegment {
-  minting('铸造中', <Launch2StageGroup>[Launch2StageGroup.minting]),
-  curve('内盘', <Launch2StageGroup>[
+  minting(<Launch2StageGroup>[Launch2StageGroup.minting]),
+  curve(<Launch2StageGroup>[
     Launch2StageGroup.priority,
     Launch2StageGroup.curve,
   ]),
-  upcoming('预告', <Launch2StageGroup>[Launch2StageGroup.upcoming]),
-  graduated('已毕业', <Launch2StageGroup>[Launch2StageGroup.graduated]);
+  upcoming(<Launch2StageGroup>[Launch2StageGroup.upcoming]),
+  graduated(<Launch2StageGroup>[Launch2StageGroup.graduated]);
 
-  const Launch2DeskSegment(this.title, this.groups);
+  const Launch2DeskSegment(this.groups);
 
-  final String title;
+  String get title => switch (this) {
+    Launch2DeskSegment.minting => LoopL10n.current.launch2_launch2FormatNftSale,
+
+    Launch2DeskSegment.curve => LoopL10n.current.launch2_launch2InstanceLabel,
+
+    Launch2DeskSegment.upcoming =>
+      LoopL10n.current.launch2_launch2LaunchpadUpcoming,
+
+    Launch2DeskSegment.graduated => LoopL10n.current.common_graduated,
+  };
   final List<Launch2StageGroup> groups;
 
   static Launch2DeskSegment? of(Launch2Stage stage) {
@@ -184,19 +226,26 @@ List<(Launch2DeskSegment, int)> launch2DeskCounts(
 /// 铸造中, 提前购, 内盘, 名单生成中 and 已暂停 — each row wearing its own stage
 /// capsule; 「预告」 the queued ones; 「已毕业」 the `stage=graduated` list.
 enum Launch2DeskTab {
-  live('内盘', <Launch2StageGroup>[
+  live(<Launch2StageGroup>[
     Launch2StageGroup.minting,
     Launch2StageGroup.priority,
     Launch2StageGroup.curve,
     Launch2StageGroup.snapshot,
     Launch2StageGroup.closed,
   ]),
-  upcoming('预告', <Launch2StageGroup>[Launch2StageGroup.upcoming]),
-  graduated('已毕业', <Launch2StageGroup>[Launch2StageGroup.graduated]);
+  upcoming(<Launch2StageGroup>[Launch2StageGroup.upcoming]),
+  graduated(<Launch2StageGroup>[Launch2StageGroup.graduated]);
 
-  const Launch2DeskTab(this.title, this.groups);
+  const Launch2DeskTab(this.groups);
 
-  final String title;
+  String get title => switch (this) {
+    Launch2DeskTab.live => LoopL10n.current.launch2_launch2InstanceLabel,
+
+    Launch2DeskTab.upcoming =>
+      LoopL10n.current.launch2_launch2LaunchpadUpcoming,
+
+    Launch2DeskTab.graduated => LoopL10n.current.common_graduated,
+  };
   final List<Launch2StageGroup> groups;
 
   static Launch2DeskTab of(Launch2Stage stage) {
@@ -249,10 +298,12 @@ List<Launch2InstanceRow> launch2DeskRecordRows(List<Launch2InstanceRow> hero) =>
 /// `LAUNCH DESK · BSC` (decision 0204: the testnet stamp is a test-only
 /// hint, drawn only while the test-hints switch is on).
 String launch2DeskKicker(String? chainId) {
-  if (chainId == null) return '发射台';
+  if (chainId == null) return LoopL10n.current.common_launchpad;
   return loopTestnetBadgeFor(chainId) != null
-      ? '发射台 · $loopTestnetStampText'
-      : '发射台 · BSC';
+      ? LoopL10n.current.launch2_launch2LaunchpadLaunch2DeskKicker(
+          loopTestnetStampText,
+        )
+      : LoopL10n.current.launch2_launch2LaunchpadS;
 }
 
 // ---- the desk's pages ---------------------------------------------------------
@@ -509,7 +560,10 @@ class Launch2DeskFolio extends ConsumerWidget {
     if (event == null) {
       // S350b · decision 0275: the empty desk says the fact and nothing
       // about what will appear (需求方 10-26, decision 0248).
-      return Launch2DeskEventFace(kicker: kicker, title: '暂无进行中的发射');
+      return Launch2DeskEventFace(
+        kicker: kicker,
+        title: context.l10n.launch2_launch2LaunchpadTitle,
+      );
     }
     final ticker = launch2HeroTicker(event.ticker);
     final status = launch2DeskStatus(event);
@@ -907,13 +961,13 @@ class _Launch2DeskCampaignCardState
     return Semantics(
       button: true,
       label: <String>[
-        '活动',
+        context.l10n.launch2_launch2LaunchpadSemantics,
         campaign.title,
         ?subtitle,
         launch2CampaignKicker(campaign),
         stamp,
         campaign.ctaLabel,
-      ].join('，'),
+      ].join(LoopL10n.current.common_listSeparator),
       excludeSemantics: true,
       child: LoopPressable(
         onTap: _open,
@@ -1029,7 +1083,11 @@ class Launch2DeskRecordCard extends ConsumerWidget {
             style: figureStyle,
           )
         : next == null
-        ? Text('待定', maxLines: 1, style: figureStyle)
+        ? Text(
+            context.l10n.launch2_launch2LaunchpadBuild,
+            maxLines: 1,
+            style: figureStyle,
+          )
         : Launch2Countdown(
             target: next,
             onElapsed: onElapsed,
@@ -1085,22 +1143,27 @@ class Launch2DeskRecordCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    KeyedSubtree(
-                      key: ValueKey<String>('launch2-desk-record-figure-$id'),
-                      child: figure,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      launch2RecordFigureCaption(row.stage),
-                      style: LoopType.captionSm.copyWith(
-                        color: LoopColors.text3,
+                // S355a: the English caption is longer; it gives way.
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      KeyedSubtree(
+                        key: ValueKey<String>('launch2-desk-record-figure-$id'),
+                        child: figure,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        launch2RecordFigureCaption(row.stage),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopType.captionSm.copyWith(
+                          color: LoopColors.text3,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1161,7 +1224,7 @@ class Launch2DeskTape extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        const LoopLabel('实时成交'),
+        LoopLabel(context.l10n.launch2_launch2LaunchpadLoopLabel),
         Container(
           key: const ValueKey<String>('launch2-tape-card'),
           margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
@@ -1268,7 +1331,9 @@ class _TapeLine extends StatelessWidget {
                 LoopProfileFaceLink(
                   key: const ValueKey<String>('launch2-tape-face'),
                   publicProfileId: account.publicProfileId,
-                  name: account.displayName ?? '这位用户',
+                  name:
+                      account.displayName ??
+                      context.l10n.launch2_launch2LaunchpadLaunch2TapeFaceName,
                   onOpen: onOpenProfile,
                   child: LoopProfileAvatar(
                     avatarRef: account.avatarRef,
@@ -1306,8 +1371,14 @@ List<InlineSpan> launch2TapeSpans(Launch2Activity item) {
   ).copyWith(color: LoopColors.chalk);
   const tickerStyle = TextStyle(color: LoopColors.chalk);
   final verb = switch (item.kind) {
-    Launch2ActivityKind.curveBuy => ('买入', LoopColors.rise),
-    Launch2ActivityKind.curveSell => ('卖出', LoopColors.fall),
+    Launch2ActivityKind.curveBuy => (
+      LoopL10n.current.common_buy,
+      LoopColors.rise,
+    ),
+    Launch2ActivityKind.curveSell => (
+      LoopL10n.current.common_sell,
+      LoopColors.fall,
+    ),
     _ => null,
   };
   if (verb != null) {

@@ -10,7 +10,8 @@ import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart'
-    show launch2BuyFeeSideText, launch2CurveCapFigure;
+    show launch2BuyFeeSideText, launch2ChineseCopy, launch2CurveCapFigure;
+import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -28,13 +29,23 @@ Decimal launch2Units(BigInt raw) =>
 /// 「10 亿」「8 亿」「500 万」 for a whole-token supply.
 String launch2SupplyLabel(BigInt raw) {
   final units = launch2Units(raw);
+  if (!launch2ChineseCopy) {
+    // en: compact K / M / B (glossary §1.7) — 1,000,000,000 → 1B.
+    return units >= Decimal.fromInt(10000)
+        ? loopFormatCompactFigure(units, usd: false)
+        : loopFormatDecimal(units, maxFractionDigits: 2);
+  }
   final yi = Decimal.fromInt(100000000);
   final wan = Decimal.fromInt(10000);
   if (units >= yi && (units % yi) == Decimal.zero) {
-    return '${loopFormatDecimal((units / yi).toDecimal())} 亿';
+    return LoopL10n.current.launch2Creator_launch2Launch2SupplyLabel(
+      loopFormatDecimal((units / yi).toDecimal()),
+    );
   }
   if (units >= wan && (units % wan) == Decimal.zero) {
-    return '${loopFormatDecimal((units / wan).toDecimal())} 万';
+    return LoopL10n.current.launch2Creator_launch2Launch2SupplyLabel2(
+      loopFormatDecimal((units / wan).toDecimal()),
+    );
   }
   return loopFormatDecimal(units, maxFractionDigits: 2);
 }
@@ -46,9 +57,17 @@ String launch2BpsLabel(int bps) =>
     '${loopFormatDecimal(Decimal.fromInt(bps).shift(-2), maxFractionDigits: 2)}%';
 
 String launch2DurationLabel(int seconds) {
-  if (seconds % 86400 == 0) return '${seconds ~/ 86400} 天';
-  if (seconds % 3600 == 0) return '${seconds ~/ 3600} 小时';
-  return '${seconds ~/ 60} 分钟';
+  if (seconds % 86400 == 0) {
+    return LoopL10n.current.launch2Creator_launch2Launch2DurationLabel(
+      seconds ~/ 86400,
+    );
+  }
+  if (seconds % 3600 == 0) {
+    return LoopL10n.current.launch2Creator_launch2CreateLeadLabel(
+      seconds ~/ 3600,
+    );
+  }
+  return LoopL10n.current.launch2Creator_launch2CreateLeadLabel2(seconds ~/ 60);
 }
 
 /// The BscScan testnet page for one transaction hash on the deployment chain.
@@ -59,30 +78,37 @@ String? launch2ExplorerTx(String? hash) =>
 String launch2FailureText(LoopChainException failure) {
   switch (failure.reasonCode) {
     case 'HOOKS_LAUNCH_DISABLED':
-      return 'v2 发射暂未开放，开放后这里可以继续。';
+      return LoopL10n.current.launch2Creator_launch2S;
     case 'HOOKS_LAUNCH_FACTORY_UNAVAILABLE':
-      return '发射工厂暂时不可用（或正在计算地址），稍后再试。';
+      return LoopL10n.current.launch2Creator_launch2S2;
     case 'HOOKS_CONFIG_NOT_APPROVED':
-      return '配置还在等平台审批，审批通过后再签名。';
+      return LoopL10n.current.launch2Creator_launch2S3;
     case 'HOOKS_SIGNATURE_EXPIRED':
-      return '签名请求已过期，续期后重新签名。';
+      return LoopL10n.current.launch2Creator_launch2S4;
     case launch2RecipientFixedCode:
-      return '回购收币地址必须是平台固定地址。这一版配置用的是其他地址，'
-          '请修改资料重新保存一版（需要重新审核）。';
+      return LoopL10n.current.launch2Creator_launch2Launch2RecipientFixedCode;
     case launch2ConfigVersionUsedCode:
-      return '这一版配置的版本号已被你钱包的另一个项目用过，请修改资料重新保存一版。';
+      return LoopL10n
+          .current
+          .launch2Creator_launch2Launch2ConfigVersionUsedCode;
     case launch2RecipientUnavailableCode:
-      return '平台回购收币地址暂未配置，暂时不能保存或签名，稍后再试。';
+      return LoopL10n
+          .current
+          .launch2Creator_launch2Launch2RecipientUnavailableCode;
   }
   return switch (failure.kind) {
     LoopChainFailureKind.invalidData =>
-      '服务端没有接受这份资料。最常见的原因是铸造开始时间太早，'
-          '需要给部署和激活留出时间，往后调整后再提交。',
-    LoopChainFailureKind.versionConflict => '资料在别处被改过，已重新读取，请确认后再提交。',
-    LoopChainFailureKind.idempotencyConflict => '这次提交和上一次内容不同，请重新签名。',
-    LoopChainFailureKind.permissionDenied => '当前账号不能执行这一步。',
-    LoopChainFailureKind.notFound => '找不到这个项目，它可能不属于当前账号。',
-    LoopChainFailureKind.bootstrapRequired => '账号还在初始化，稍后再试。',
+      LoopL10n.current.launch2Creator_launch2InvalidData,
+    LoopChainFailureKind.versionConflict =>
+      LoopL10n.current.launch2Creator_launch2VersionConflict,
+    LoopChainFailureKind.idempotencyConflict =>
+      LoopL10n.current.launch2Creator_launch2IdempotencyConflict,
+    LoopChainFailureKind.permissionDenied =>
+      LoopL10n.current.launch2Creator_launch2PermissionDenied,
+    LoopChainFailureKind.notFound =>
+      LoopL10n.current.launch2Creator_launch2NotFound,
+    LoopChainFailureKind.bootstrapRequired =>
+      LoopL10n.current.launch2Creator_launch2BootstrapRequired,
     _ => loopChainFailureReason(failure.kind),
   };
 }
@@ -90,23 +116,28 @@ String launch2FailureText(LoopChainException failure) {
 /// §9.2: one sentence per `failure.code`; an unknown code asks the owner to
 /// contact the platform.
 String launch2JobFailureText(String code) => switch (code) {
-  'HOOKS_SIGNATURE_EXPIRED' => '签名已过期，请重新签名提交。',
-  'HOOKS_CONFIG_SUPERSEDED' => '配置已更新，请重新签名。',
-  'HOOKS_CONFIG_NOT_APPROVED' => '配置审批已失效，等待平台审批后重新签名。',
-  'HOOKS_AUTHORIZATION_INVALID' => '签名无效，请重新签名。',
-  'HOOKS_OWNER_NONCE_CONSUMED' => '钱包 nonce 已变化，请重新签名。',
-  'HOOKS_LAUNCH_ALREADY_DEPLOYED' => '该版本已在链上部署，请联系平台。',
-  'HOOKS_ACTIVATION_WINDOW_CLOSED' => '距铸造开始太近无法激活，修改铸造开始时间后重新提交。',
+  'HOOKS_SIGNATURE_EXPIRED' => LoopL10n.current.launch2Creator_launch2Switch,
+  'HOOKS_CONFIG_SUPERSEDED' => LoopL10n.current.launch2Creator_launch2Switch2,
+  'HOOKS_CONFIG_NOT_APPROVED' => LoopL10n.current.launch2Creator_launch2Switch3,
+  'HOOKS_AUTHORIZATION_INVALID' =>
+    LoopL10n.current.launch2Creator_launch2Switch4,
+  'HOOKS_OWNER_NONCE_CONSUMED' =>
+    LoopL10n.current.launch2Creator_launch2Switch5,
+  'HOOKS_LAUNCH_ALREADY_DEPLOYED' =>
+    LoopL10n.current.launch2Creator_launch2Switch6,
+  'HOOKS_ACTIVATION_WINDOW_CLOSED' =>
+    LoopL10n.current.launch2Creator_launch2Switch7,
   // Decision 0206 (backend 0164, contracts 0016 `InvalidName` /
   // `InvalidTicker`): the name or ticker broke the 1–20 rule.
-  'HOOKS_LAUNCH_NAME_INVALID' ||
-  'HOOKS_LAUNCH_TICKER_INVALID' => '名称 / 代码不合规，请修改后重新提交。',
-  'HOOKS_VERIFICATION_MISMATCH' => '部署核验不一致，项目未激活，请联系平台。',
+  'HOOKS_LAUNCH_NAME_INVALID' || 'HOOKS_LAUNCH_TICKER_INVALID' =>
+    LoopL10n.current.launch2Creator_launch2Switch8,
+  'HOOKS_VERIFICATION_MISMATCH' =>
+    LoopL10n.current.launch2Creator_launch2Switch9,
   'HOOKS_EXECUTOR_FUNDS_INSUFFICIENT' ||
   'HOOKS_BROADCAST_REJECTED' ||
   'HOOKS_TX_DROPPED' ||
-  'HOOKS_DEPLOY_REVERTED' => '平台处理中，会自动重试。',
-  _ => '部署没有完成，请联系平台。',
+  'HOOKS_DEPLOY_REVERTED' => LoopL10n.current.launch2Creator_launch2Switch10,
+  _ => LoopL10n.current.launch2Creator_launch2Switch11,
 };
 
 /// The failures the owner answers by signing again (§9.2).
@@ -127,40 +158,53 @@ bool launch2JobFailureNeedsEdit(String code) => const <String>{
 
 /// The edit button for a [launch2JobFailureNeedsEdit] failure.
 String launch2JobFailureEditLabel(String code) => switch (code) {
-  'HOOKS_LAUNCH_NAME_INVALID' || 'HOOKS_LAUNCH_TICKER_INVALID' => '修改名称或代码',
-  _ => '修改铸造开始时间',
+  'HOOKS_LAUNCH_NAME_INVALID' || 'HOOKS_LAUNCH_TICKER_INVALID' =>
+    LoopL10n.current.launch2Creator_launch2Switch12,
+  _ => LoopL10n.current.launch2Creator_launch2Switch13,
 };
 
 /// §9.1: the job's own status, in the owner's words.
 String launch2JobStatusText(Launch2DeploymentJob job) => switch (job.status) {
-  Launch2JobStatus.awaitingExecutor => '排队中',
-  Launch2JobStatus.claimed => '准备部署',
+  Launch2JobStatus.awaitingExecutor =>
+    LoopL10n.current.launch2Creator_launch2AwaitingExecutor,
+  Launch2JobStatus.claimed => LoopL10n.current.launch2Creator_launch2Claimed,
   Launch2JobStatus.broadcast =>
-    job.confirmations == null ? '已上链，等待确认' : '已上链，${job.confirmations} 确认',
-  Launch2JobStatus.confirmed => '核验中',
-  Launch2JobStatus.verified => '激活中',
-  Launch2JobStatus.activated => '已激活',
-  Launch2JobStatus.failed => job.failure?.retryable == true ? '重试中' : '部署失败',
-  Launch2JobStatus.reorged => '链上重组，重新确认中',
-  Launch2JobStatus.cancelled => '已取消',
+    job.confirmations == null
+        ? LoopL10n.current.launch2Creator_launch2Switch14
+        : LoopL10n.current.launch2Creator_launch2S5(job.confirmations),
+  Launch2JobStatus.confirmed =>
+    LoopL10n.current.launch2Creator_launch2Confirmed,
+  Launch2JobStatus.verified =>
+    LoopL10n.current.launch2Creator_launch2ModelsVerified,
+  Launch2JobStatus.activated =>
+    LoopL10n.current.launch2Creator_launch2ModelsActive,
+  Launch2JobStatus.failed =>
+    job.failure?.retryable == true
+        ? LoopL10n.current.launch2Creator_launch2Switch15
+        : LoopL10n.current.launch2Creator_launch2ModelsDeployFailed,
+  Launch2JobStatus.reorged => LoopL10n.current.launch2Creator_launch2Reorged,
+  Launch2JobStatus.cancelled => LoopL10n.current.common_cancelled,
 };
 
 /// §9.3: the seven events of a successful run have their own line; every
 /// other kind reads generically, and nothing depends on `included`.
 String launch2EventTitle(Launch2JobEvent event) => switch (event.kind) {
-  'created' => '已验签登记',
-  'claimed' || 'retry_claimed' => '执行器已认领',
-  'broadcast' || 'rebroadcast' => '部署交易已广播',
-  'included' => '交易已打包',
-  'confirmed' => '部署已确认',
-  'verified' => '模块核验通过',
-  'activation_broadcast' => '激活交易已广播',
-  'activation_included' => '激活交易已打包',
-  'activated' => '已激活',
-  'reorg_detected' || 'reclaimed_after_reorg' => '链上重组，重新确认',
-  'failed' => '部署失败',
-  'cancelled' => '已取消',
-  _ => '状态更新',
+  'created' => LoopL10n.current.launch2Creator_launch2Switch16,
+  'claimed' ||
+  'retry_claimed' => LoopL10n.current.launch2Creator_launch2Switch17,
+  'broadcast' ||
+  'rebroadcast' => LoopL10n.current.launch2Creator_launch2Switch18,
+  'included' => LoopL10n.current.launch2Creator_launch2Switch19,
+  'confirmed' => LoopL10n.current.launch2Creator_launch2Switch20,
+  'verified' => LoopL10n.current.launch2Creator_launch2Switch21,
+  'activation_broadcast' => LoopL10n.current.launch2Creator_launch2Switch22,
+  'activation_included' => LoopL10n.current.launch2Creator_launch2Switch23,
+  'activated' => LoopL10n.current.launch2Creator_launch2ModelsActive,
+  'reorg_detected' ||
+  'reclaimed_after_reorg' => LoopL10n.current.launch2Creator_launch2Switch24,
+  'failed' => LoopL10n.current.launch2Creator_launch2ModelsDeployFailed,
+  'cancelled' => LoopL10n.current.common_cancelled,
+  _ => LoopL10n.current.launch2Creator_launch2Switch25,
 };
 
 /// The fixed template, read-only (S134–S137 §3.1): the page's one large
@@ -183,32 +227,57 @@ class Launch2TemplateCard extends StatelessWidget {
     final capBps = economics.perAddressCapBps;
     // Decision 0198: the Factory's own cap (loop-api 0152), said the way the
     // instance's 发射规则 says it (decision 0197): 「N 枚（x%）」.
-    final capFigure =
-        '${launch2CurveCapFigure(launch2Units(economics.curveCapRaw))} 枚';
+    final capFigure = LoopL10n.current.launch2Creator_launch2CapFigure(
+      launch2CurveCapFigure(launch2Units(economics.curveCapRaw)),
+    );
     final loopDynamic = economics.loopDynamic;
     final buyFeeToken = loopDynamic?.buyFeeToken;
     final rows = <(String, String)>[
-      ('内盘可售', launch2SupplyLabel(economics.curveSaleSupplyRaw)),
-      ('毕业储备', launch2Usd1Label(economics.graduationReserveUsd1Raw)),
-      ('内盘买卖税', launch2BpsLabel(economics.curveBuyTaxBps)),
-      ('外盘买卖税', launch2BpsLabel(economics.officialPoolBuyTaxBps)),
+      (
+        context.l10n.launch2Creator_launch2Build,
+        launch2SupplyLabel(economics.curveSaleSupplyRaw),
+      ),
+      (
+        context.l10n.launch2Creator_launch2Build2,
+        launch2Usd1Label(economics.graduationReserveUsd1Raw),
+      ),
+      (
+        context.l10n.launch2Creator_launch2Build3,
+        launch2BpsLabel(economics.curveBuyTaxBps),
+      ),
+      (
+        context.l10n.launch2Creator_launch2Build4,
+        launch2BpsLabel(economics.officialPoolBuyTaxBps),
+      ),
       // Only when the template says which side; never inferred.
       if (loopDynamic != null && buyFeeToken != null)
         (
-          '外盘买入税',
-          '${launch2BpsLabel(loopDynamic.buyFeePpm ~/ 100)}（'
-              '${launch2BuyFeeSideText(fromUsd1: buyFeeToken == Launch2BuyFeeToken.usd1)}）',
+          context.l10n.launch2Creator_launch2Build5,
+          context.l10n.launch2Creator_figureWithNote(
+            launch2BpsLabel(loopDynamic.buyFeePpm ~/ 100),
+            launch2BuyFeeSideText(
+              fromUsd1: buyFeeToken == Launch2BuyFeeToken.usd1,
+            ),
+          ),
         ),
       (
-        '单地址上限',
-        capBps == null ? capFigure : '$capFigure（${launch2BpsLabel(capBps)}）',
+        context.l10n.launch2Creator_launch2Build6,
+        capBps == null
+            ? capFigure
+            : context.l10n.launch2Creator_figureWithNote(
+                capFigure,
+                launch2BpsLabel(capBps),
+              ),
       ),
-      ('铸造价格', launch2Usd1Label(economics.nftPriceUsd1Raw)),
       (
-        '铸造期',
+        context.l10n.launch2Creator_launch2Build7,
+        launch2Usd1Label(economics.nftPriceUsd1Raw),
+      ),
+      (
+        context.l10n.launch2Creator_launch2Build8,
         fromServer
             ? launch2DurationLabel(economics.nftSaleDurationSeconds)
-            : '由实例决定',
+            : context.l10n.launch2Creator_launch2Build9,
       ),
     ];
     return LoopSurfaceCard(
@@ -222,7 +291,10 @@ class Launch2TemplateCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('总量', style: LoopType.caption.copyWith(color: LoopColors.text3)),
+          Text(
+            context.l10n.common_totalSupply,
+            style: LoopType.caption.copyWith(color: LoopColors.text3),
+          ),
           const SizedBox(height: 2),
           Text(
             launch2SupplyLabel(economics.memeTotalSupplyRaw),
@@ -238,7 +310,7 @@ class Launch2TemplateCard extends StatelessWidget {
             ),
           const SizedBox(height: 6),
           Text(
-            '由平台模板固定，不能修改。',
+            context.l10n.launch2Creator_launch2Build10,
             style: LoopType.captionSm.copyWith(color: LoopColors.text3),
           ),
         ],
@@ -277,9 +349,22 @@ String launch2SaleStartLabel(DateTime start, DateTime now) {
   final local = loopLocalTimestampLabel(start);
   final delta = start.difference(now);
   if (delta.isNegative) return local;
-  if (delta.inDays >= 1) return '$local（${delta.inDays} 天后）';
-  if (delta.inHours >= 1) return '$local（${delta.inHours} 小时后）';
-  return '$local（${delta.inMinutes} 分钟后）';
+  if (delta.inDays >= 1) {
+    return LoopL10n.current.launch2Creator_launch2Launch2SaleStartLabel(
+      delta.inDays,
+      local,
+    );
+  }
+  if (delta.inHours >= 1) {
+    return LoopL10n.current.launch2Creator_launch2Launch2SaleStartLabel2(
+      delta.inHours,
+      local,
+    );
+  }
+  return LoopL10n.current.launch2Creator_launch2Launch2SaleStartLabel3(
+    delta.inMinutes,
+    local,
+  );
 }
 
 /// The platform's fixed buyback recipient, read only (decision 0144,
@@ -302,7 +387,14 @@ class Launch2FixedRecipient extends StatelessWidget {
         4,
       ),
       child: Semantics(
-        label: value == null ? '回购收币地址暂未配置' : '回购收币地址 $value，平台固定，不可修改',
+        label: value == null
+            ? context
+                  .l10n
+                  .launch2Creator_launch2Launch2FixedRecipientAddressLabel
+            : context.l10n
+                  .launch2Creator_launch2Launch2FixedRecipientAddressLabel2(
+                    value,
+                  ),
         excludeSemantics: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -318,7 +410,10 @@ class Launch2FixedRecipient extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      value ?? '暂未配置',
+                      value ??
+                          context
+                              .l10n
+                              .launch2Creator_launch2Launch2FixedRecipientAddress,
                       key: const ValueKey<String>(
                         'launch2-fixed-recipient-address',
                       ),
@@ -330,15 +425,15 @@ class Launch2FixedRecipient extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const LoopBadge('平台固定'),
+                  LoopBadge(context.l10n.launch2Creator_launch2LoopBadge),
                 ],
               ),
             ),
             const SizedBox(height: 6),
             Text(
               value == null
-                  ? '平台还没有配置回购收币地址，暂时不能提交。'
-                  : '回购买到的代币转入这个地址。地址由平台固定，不能修改。',
+                  ? context.l10n.launch2Creator_launch2Build11
+                  : context.l10n.launch2Creator_launch2S6,
               style: LoopType.captionSm.copyWith(color: LoopColors.text3),
             ),
           ],
@@ -371,22 +466,25 @@ class Launch2RejectionNotice extends StatelessWidget {
       tone: LoopNoticeTone.warn,
       title: launch2RejectionTitle(rejection),
       body: <String>[
-        if (note != null) '审核意见：$note',
-        '${loopLocalTimestampLabel(rejection.at)} '
-            '${configuration ? '发射配置' : '项目资料'}未通过审核，'
-            '修改后可以重新提交。',
+        if (note != null) context.l10n.launch2Creator_launch2LoopNotice(note),
+        context.l10n.launch2Creator_launch2LoopNotice2(
+          configuration
+              ? context.l10n.launch2Creator_launch2ProjectLoopLabel
+              : context.l10n.launch2Creator_projectDetails,
+          loopLocalTimestampLabel(rejection.at),
+        ),
       ].join('\n'),
     );
   }
 }
 
 /// 「已拒绝 · 材料不完整」: a rejected project's row in 我的项目 (decision 0200).
-String launch2RejectedRowText(LaunchRejection rejection) =>
-    '已拒绝 · ${rejection.reason.label}';
+String launch2RejectedRowText(LaunchRejection rejection) => LoopL10n.current
+    .launch2Creator_launch2Launch2RejectedRowText(rejection.reason.label);
 
 /// 「审核未通过：材料不完整」.
-String launch2RejectionTitle(LaunchRejection rejection) =>
-    '审核未通过：${rejection.reason.label}';
+String launch2RejectionTitle(LaunchRejection rejection) => LoopL10n.current
+    .launch2Creator_launch2Launch2RejectionTitle(rejection.reason.label);
 
 /// Calls [onReturn] when the page it wraps becomes the top route again after
 /// another page covered it (decision 0200). 我的项目 and the project page stay
@@ -430,7 +528,8 @@ class _Launch2RefreshOnReturnState extends State<Launch2RefreshOnReturn> {
 
 /// What the create page says under the NFT image slot (decision 0233;
 /// S326 · decision 0256 shortened it to the design's words).
-const String launch2NftImageHelp = '将作为项目 NFT 图片显示在钱包里';
+String get launch2NftImageHelp =>
+    LoopL10n.current.launch2Creator_launch2Launch2NftImageHelp;
 
 /// S326 · decision 0256 (UX-006): the create page's step bar — equal
 /// segments across the top of the page, every reached step Yellow, the rest
@@ -453,7 +552,11 @@ class Launch2CreateStepBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     container: true,
-    label: '第 ${current + 1} 步，共 ${labels.length} 步，${labels[current]}',
+    label: context.l10n.launch2Creator_launch2Label(
+      current + 1,
+      labels.length,
+      labels[current],
+    ),
     excludeSemantics: true,
     child: Row(
       children: <Widget>[
@@ -533,7 +636,9 @@ class Launch2UploadSlot extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          uploading ? '上传中…' : '上传',
+          uploading
+              ? context.l10n.common_uploading
+              : context.l10n.launch2Creator_launch2S7,
           style: words.copyWith(
             color: uploading ? LoopColors.text3 : LoopColors.chalk,
           ),
@@ -565,7 +670,9 @@ class Launch2UploadSlot extends StatelessWidget {
               alignment: Alignment.center,
               color: LoopColors.veil,
               child: Text(
-                uploading ? '上传中…' : '换一张',
+                uploading
+                    ? context.l10n.common_uploading
+                    : context.l10n.launch2Creator_launch2S8,
                 style: words.copyWith(color: LoopColors.chalk),
               ),
             ),
@@ -576,7 +683,9 @@ class Launch2UploadSlot extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: onTap != null,
-      label: url == null ? '上传$semanticLabel' : '$semanticLabel，换一张',
+      label: url == null
+          ? context.l10n.launch2Creator_launch2Label2(semanticLabel)
+          : context.l10n.launch2Creator_launch2Label3(semanticLabel),
       excludeSemantics: true,
       child: Opacity(
         opacity: onTap == null && !uploading ? 0.5 : 1,
@@ -741,7 +850,9 @@ class Launch2NftImageFrame extends StatelessWidget {
                   size: inner,
                   shape: BoxShape.rectangle,
                   radius: LoopRadius.innerValue,
-                  semanticLabel: 'NFT 图',
+                  semanticLabel: context
+                      .l10n
+                      .launch2Creator_launch2CreateLaunch2CreateNftMissing,
                 ),
         ),
         const Positioned(

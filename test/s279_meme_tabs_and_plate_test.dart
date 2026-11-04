@@ -295,7 +295,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('launch2-graduated-empty'), findsOneWidget);
       // S350b · decision 0275: the fact alone.
-      expect(find.text('还没有毕业的 v2 项目'), findsOneWidget);
+      expect(find.text('No graduated v2 projects yet'), findsOneWidget);
       await _drain(tester);
 
       answer = () => Future<Launch2InstancePage>.error(
@@ -361,7 +361,7 @@ void main() {
       final capsule = _key('launch2-create-action');
       expect(tester.getSize(capsule).height, greaterThanOrEqualTo(44));
       expect(
-        find.descendant(of: capsule, matching: find.text('发射')),
+        find.descendant(of: capsule, matching: find.text('Launch')),
         findsOneWidget,
       );
       final ground = tester.widget<Container>(_key('launch2-create-capsule'));

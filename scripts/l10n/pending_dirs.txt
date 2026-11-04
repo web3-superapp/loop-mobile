@@ -13,7 +13,6 @@ lib/features/community
 lib/features/dapp
 lib/features/intel
 lib/features/launch
-lib/features/launch2
 lib/features/market
 lib/features/meme
 lib/features/mining
