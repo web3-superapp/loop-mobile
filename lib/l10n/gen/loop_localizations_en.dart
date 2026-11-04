@@ -18121,6 +18121,15 @@ class LoopLocalizationsEn extends LoopLocalizations {
   }
 
   @override
+  String get mining_referralStatsActive => 'Active members';
+
+  @override
+  String get mining_referralStatsDeep => 'Levels 2–5';
+
+  @override
+  String get mining_referralStatsDirect => 'Direct invites';
+
+  @override
   String get mining_referralSubject => 'Join me on LOOP';
 
   @override

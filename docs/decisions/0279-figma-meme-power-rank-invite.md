@@ -42,7 +42,7 @@ MEME（稿 `1-meme-2001-21.png`）
 
 - MEME：`Launch2DeskTabs` 包 `LoopTabStrip`（计数、per-tab key 不变，`scaleDownLabels: true` 让英文「Bonding pool」在 360 不截断）；tab → 列表 8。`Launch2Board` 改为页面内平铺 + 每行 1px 白 5%；`Launch2BoardRow` 70 + 线、新 `Launch2ProgressBar`（142×4、`progressTrack` / `progressFill`）、% `LoopType.progress`；`Launch2BoardStage` 19 高 r4 `stageTag`，已毕业用 `tagPurple`；跑马灯 35 高白 3% + `LoopDepth.ticker`，「实时」无底紫字，买入 17 高 `buyTag`；横幅 162、r8、1px `bannerEdge`；162 高下空态标题改两行 19 / 700（不再缩成小字），活动副标改 12 / 300 两行、按钮 36；发射 30 高 r6 火箭 21；`Launch2AtmosphereBackdrop` 在墙上叠稿的 `ambient-glow.svg`（420 圆 `#a62eff`，(−175, 70)）。
 - 情报 · 算力：`MiningSummaryHero` 改算力卡（渐变 + 墙 30%、标签 `eyebrow`、快照右上 `metaSm` 白 30%、值 `heroFigure` 白）；`MiningRankEntry` 改「Current rank #12 + 皇冠位图」，数字 `rankFigure`，颜色 `MiningRankEntry.placeColor`（1 黄 / 3 铜 / 其余主字），无名次时只画皇冠 + 箭头；新增文案 `mining_widgetsCurrentRank`（当前排名 / Current rank）、`mining_widgetsRankPlace`（第 {n} 名 / #{n}）。代币 / NFT / 邀请改 `LoopFilterChips`。
-- 邀请：卡片改 r8 `card` 内边距 19；标签 11 / 400、码 `inviteCode`、链接 `codeSm`；按钮 `LoopButtonSize.medium`，分享带 `share` 图标。「邀请列表 / 邀请加成」已是 `LoopFilterChips`（0277），不动。
+- 邀请：卡片改 r8 `card` 内边距 19；标签 11 / 400、码 `inviteCode`、链接 `codeSm`；按钮 `LoopButtonSize.medium`，分享带 `share` 图标。「邀请列表 / 邀请加成」已是 `LoopFilterChips`（0277），不动。主代理 11-04 裁决加三格卡：`ReferralStatsCard` 放在邀请码卡下、子胶囊上，读 view model 的 `ReferralStats`（directCount / validCount / level2to5Count），服务端没给 stats 时不画；标签 11 / 400、值 18 / 600、竖线 1×37 白 5%；文案 `mining_referralStats*`（直接邀请 / 有效成员 / 二至五级）。
 - 算力榜：分组改 `LoopTabStrip`；「我的名次」改 `IntelPowerCard`（同算力卡），名次数字 30 / 700 按名次着色；新 `IntelRankSectionHeading`（19 / 700 + 「ⓘ 榜单实时更新」，邀请中心卡自带实时点时不重复）；领奖台按 §5.15 重画（紫光用 RadialGradient 画、皇冠用 `assets/figma/crown-vector.svg`、头像环改描边不填充）；名次行 51 高 / 列 34 / 头像 36 / 副行 `progress` / 数值 `figureXs`。
 - 英文溢出（S355 报的 b 类）：NFT 铸造页 folio 倒计时戳与挖矿规则页「Pending approval」戳给 `LoopFolioPrimary` 新可选参数 `stampWidthFactor`（默认仍 0.42），两页分别放到 0.6 / 0.5。
 
@@ -52,4 +52,4 @@ MEME（稿 `1-meme-2001-21.png`）
 
 - 旧断言改到稿值（无删除、无 skip）：s182 / s264 / s279 / s326（MEME 页签不再有喷点、行高 70、跑马灯 35 白 3%）、s269 / s325、s350b、s344、s321、s265d / s265 / s190 / s121c（算力卡、领奖台 62 / 54、线条皇冠）、s197_4。
 - 新增 `test/s353b_figma_alignment_test.dart`（四页稿值 + 360 / 390）与 `test/s353b_shots_test.dart`（`LOOP_SHOTS=true` 才出图）。
-- 未做 / 待定：邀请页稿里的「直接邀请 / 有效成员 / 二至五级」三格卡是 TF 64 没有的新结构，未加；「邀请列表」行仍是 `LoopRecordGroup` 卡片行（稿里只有邀请排行榜）；发射轨道折叠条、认购轮次行、360×640 NFT 签名抽屉三项英文溢出在 `launch_widgets.dart` / 旧 IDO 页（S358 / 隐藏页），未动。
+- 未做 / 待定：「邀请列表」行仍是 `LoopRecordGroup` 卡片行（稿里只有邀请排行榜）；发射轨道折叠条、认购轮次行、360×640 NFT 签名抽屉三项英文溢出在 `launch_widgets.dart` / 旧 IDO 页（S358 / 隐藏页），未动。

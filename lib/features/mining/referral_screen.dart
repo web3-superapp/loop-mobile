@@ -157,6 +157,10 @@ class _ReferralCenterSectionsState
             codeKey: const ValueKey<String>('referral-invite-code'),
           ),
         ),
+        // S353b · decision 0279 (docs/58 §5.17): the three counts the server
+        // sends; none drawn while it sends none.
+        if (overview.stats case final ReferralStats stats)
+          ReferralStatsCard(stats: stats),
         Row(
           children: <Widget>[
             Expanded(
@@ -253,6 +257,88 @@ class _ReferralCenterSectionsState
         kind: LoopToastKind.ok,
       );
     }
+  }
+}
+
+/// 邀请's three counts (S353b · decision 0279, docs/58 §5.17): 直接邀请 /
+/// 有效成员 / 二至五级 in three equal cells on an 8 corner `#121318` card,
+/// each a 11 / 400 label over its 18 / 600 figure, the cells split by 1 × 37
+/// white 5 % rules.
+class ReferralStatsCard extends StatelessWidget {
+  const ReferralStatsCard({
+    required this.stats,
+    super.key = const ValueKey<String>('referral-stats'),
+  });
+
+  final ReferralStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = LoopType.stageTag.copyWith(
+      color: LoopColors.text2,
+      height: 15 / 11,
+    );
+    // 18 / 600: the Figma's count, the same step as a post's author.
+    final figure = LoopType.postAuthor.copyWith(color: LoopColors.textPrimary);
+    Widget cell(String slug, String name, int value) => Expanded(
+      child: Semantics(
+        container: true,
+        label: '$name${LoopL10n.current.common_listSeparator}$value',
+        excludeSemantics: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: label,
+            ),
+            const SizedBox(height: 1),
+            Text(
+              '$value',
+              key: ValueKey<String>('referral-stats-$slug'),
+              maxLines: 1,
+              style: figure,
+            ),
+          ],
+        ),
+      ),
+    );
+    const rule = SizedBox(
+      width: 1,
+      height: 37,
+      child: ColoredBox(color: LoopColors.divider),
+    );
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      padding: const EdgeInsets.fromLTRB(4, 9, 4, 7),
+      decoration: const BoxDecoration(
+        color: LoopColors.card,
+        borderRadius: LoopRadius.chip,
+      ),
+      child: Row(
+        children: <Widget>[
+          cell(
+            'direct',
+            context.l10n.mining_referralStatsDirect,
+            stats.directCount,
+          ),
+          rule,
+          cell(
+            'active',
+            context.l10n.mining_referralStatsActive,
+            stats.validCount,
+          ),
+          rule,
+          cell(
+            'deep',
+            context.l10n.mining_referralStatsDeep,
+            stats.level2to5Count,
+          ),
+        ],
+      ),
+    );
   }
 }
 

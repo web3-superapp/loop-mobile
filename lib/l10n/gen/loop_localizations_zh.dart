@@ -16618,6 +16618,15 @@ class LoopLocalizationsZh extends LoopLocalizations {
   }
 
   @override
+  String get mining_referralStatsActive => '有效成员';
+
+  @override
+  String get mining_referralStatsDeep => '二至五级';
+
+  @override
+  String get mining_referralStatsDirect => '直接邀请';
+
+  @override
   String get mining_referralSubject => '邀请你加入 LOOP';
 
   @override

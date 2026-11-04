@@ -23242,6 +23242,18 @@
       }
     }
   },
+  "mining_referralStatsActive": "Active members",
+  "@mining_referralStatsActive": {
+    "description": "lib/features/mining/referral_screen.dart"
+  },
+  "mining_referralStatsDeep": "Levels 2–5",
+  "@mining_referralStatsDeep": {
+    "description": "lib/features/mining/referral_screen.dart"
+  },
+  "mining_referralStatsDirect": "Direct invites",
+  "@mining_referralStatsDirect": {
+    "description": "lib/features/mining/referral_screen.dart"
+  },
   "mining_referralSubject": "Join me on LOOP",
   "@mining_referralSubject": {
     "description": "lib/features/mining/referral_screen.dart:531, lib/features/mining/referral_screen.dart:957"

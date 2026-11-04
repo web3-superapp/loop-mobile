@@ -980,6 +980,24 @@
     "where": "lib/features/mining/referral_screen.dart:788",
     "zh": "{name}，加入于 {launchTimestampLabel}，{referralInviteeStatusLabel}"
   },
+  "mining_referralStatsActive": {
+    "en": "Active members",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart",
+    "zh": "有效成员"
+  },
+  "mining_referralStatsDeep": {
+    "en": "Levels 2–5",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart",
+    "zh": "二至五级"
+  },
+  "mining_referralStatsDirect": {
+    "en": "Direct invites",
+    "placeholders": {},
+    "where": "lib/features/mining/referral_screen.dart",
+    "zh": "直接邀请"
+  },
   "mining_referralSubject": {
     "en": "Join me on LOOP",
     "placeholders": {},

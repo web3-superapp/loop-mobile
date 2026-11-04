@@ -28606,6 +28606,24 @@ abstract class LoopLocalizations {
     Object? referralInviteeStatusLabel,
   );
 
+  /// lib/features/mining/referral_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Active members'**
+  String get mining_referralStatsActive;
+
+  /// lib/features/mining/referral_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Levels 2–5'**
+  String get mining_referralStatsDeep;
+
+  /// lib/features/mining/referral_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Direct invites'**
+  String get mining_referralStatsDirect;
+
   /// lib/features/mining/referral_screen.dart:531, lib/features/mining/referral_screen.dart:957
   ///
   /// In en, this message translates to:

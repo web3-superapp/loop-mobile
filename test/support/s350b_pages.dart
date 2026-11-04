@@ -175,6 +175,13 @@ ReferralOverview s350bBoosted() {
       hourEnd: DateTime.utc(2026, 11, 3, 9),
     ),
     inviteLink: 'https://api-staging.example.com/i/LOOP-7HJKM',
+    // S353b: the three counts under the invite card.
+    stats: ReferralStats(
+      directCount: 4,
+      validCount: 3,
+      level2to5Count: 12,
+      validAsOf: DateTime.utc(2026, 11, 3, 9),
+    ),
     rules: base.rules,
   );
 }

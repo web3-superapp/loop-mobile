@@ -10,6 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/intel/intel_rank_board.dart';
+import 'package:loop_mobile/features/intel/intel_screen.dart';
 import 'package:loop_mobile/features/launch2/launch2_atmosphere.dart';
 import 'package:loop_mobile/features/launch2/launch2_launchpad.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
@@ -20,6 +21,7 @@ import 'package:loop_mobile/widgets/loop_tab_strip.dart';
 import 'support/loop_ground_probe.dart';
 import 'support/s269_pages.dart';
 import 'support/s350b_pages.dart';
+import 'support/s7_page_harness.dart';
 
 Finder _key(String value) => find.byKey(ValueKey<String>(value));
 
@@ -193,6 +195,43 @@ void main() {
           matching: find.text('Share link'),
         );
         expect(_cut(tester, share), isFalse);
+        // §5.17: the three counts under the card, above the sub tabs.
+        final stats = _key('referral-stats');
+        expect(stats, findsOneWidget);
+        expect(
+          tester.getRect(stats).top,
+          greaterThanOrEqualTo(tester.getRect(_key('referral-hero')).bottom),
+        );
+        expect(
+          tester.getRect(stats).bottom,
+          lessThanOrEqualTo(tester.getRect(_key('referral-tabs')).top),
+        );
+        for (final (slug, label, value) in <(String, String, String)>[
+          ('direct', 'Direct invites', '4'),
+          ('active', 'Active members', '3'),
+          ('deep', 'Levels 2–5', '12'),
+        ]) {
+          final figure = tester.widget<Text>(_key('referral-stats-$slug'));
+          expect(figure.data, value);
+          expect(figure.style!.fontSize, 18);
+          expect(figure.style!.fontWeight, FontWeight.w600);
+          final word = find.descendant(of: stats, matching: find.text(label));
+          expect(_style(tester, word).fontSize, 11);
+          expect(_cut(tester, word), isFalse, reason: label);
+        }
+      });
+
+      testWidgets('no counts sent: no stats card', (tester) async {
+        await pumpS7Page(
+          tester,
+          IntelScreen(onNavigate: (_) {}, sub: 'invite'),
+          mining: FakeMiningGateway(),
+          referral: FakeReferralGateway(),
+          size: const Size(360, 1700),
+        );
+        await tester.pumpAndSettle();
+        expect(_key('referral-hero'), findsOneWidget);
+        expect(_key('referral-stats'), findsNothing);
       });
     }
   });
