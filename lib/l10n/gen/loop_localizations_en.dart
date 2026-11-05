@@ -5457,6 +5457,9 @@ class LoopLocalizationsEn extends LoopLocalizations {
   }
 
   @override
+  String get community_discoverJoinedFirst => 'Joined first';
+
+  @override
   String get community_discoverKicker => 'Community discovery';
 
   @override
@@ -21942,13 +21945,13 @@ class LoopLocalizationsEn extends LoopLocalizations {
       'View profile';
 
   @override
+  String get square_communityListApplyEntry => 'Apply';
+
+  @override
   String get square_communityListBarrierLabel => 'Close sorting rules';
 
   @override
   String get square_communityListBarrierLabel2 => 'Close sorting';
-
-  @override
-  String get square_communityListBuild => 'Discover communities';
 
   @override
   String get square_communityListBuild2 =>
@@ -21963,9 +21966,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get square_communityListJoin => ', not joined';
-
-  @override
-  String get square_communityListJoined => 'Joined';
 
   @override
   String get square_communityListJoined2 => ', joined';
@@ -21999,14 +21999,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
   @override
   String get square_communityListSquareCommunityCapabilityUnavailableTitle =>
       'Communities aren\'t available right now';
-
-  @override
-  String get square_communityListSquareCommunityJoinedEmptyAllLabel =>
-      'View all';
-
-  @override
-  String get square_communityListSquareCommunityJoinedEmptyTitle =>
-      'No joined communities yet';
 
   @override
   String get square_communityListSquareCommunityOrderingBackLabel =>

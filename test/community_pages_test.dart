@@ -757,9 +757,9 @@ void main() {
       );
     });
 
-    testWidgets('the joined entry point narrows the membership filter', (
-      tester,
-    ) async {
+    // S364 · decision 0288: the joined entry opens the whole directory under
+    // 加入优先 — the joined read first, then the directory.
+    testWidgets('the joined entry point opens 加入优先', (tester) async {
       final gateway = FakeCommunityGateway(
         directoryPage: CommunityDirectoryPage(
           ordering: const CommunityOrderingApplied(
@@ -781,7 +781,14 @@ void main() {
         community: gateway,
       );
 
-      expect(gateway.commands.single, 'list:members:joined:null');
+      expect(gateway.commands, <String>[
+        'list:members:joined:null',
+        'list:members:all:null',
+      ]);
+      expect(
+        find.byKey(const ValueKey<String>('discover-seg-joinedFirst')),
+        findsOneWidget,
+      );
     });
   });
 

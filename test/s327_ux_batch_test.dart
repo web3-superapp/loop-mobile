@@ -186,8 +186,9 @@ void main() {
         SquareCommunityList(onOpenCommunity: (_) {}, onOpenSearch: () {}),
         community: FakeCommunityGateway(directoryPage: page),
       );
-      expect(find.text('Discover communities'), findsOneWidget);
-      expect(find.text('Rules and listing'), findsOneWidget);
+      // S364 · decision 0288: the 「发现社区 / 规则与入驻」 line is gone.
+      expect(find.text('Discover communities'), findsNothing);
+      expect(find.text('Rules and listing'), findsNothing);
       // S335 (decision 0264): the banner and the heading are gone.
       expect(find.text('热门社区'), findsNothing);
       expect(find.text('全部社区'), findsNothing);

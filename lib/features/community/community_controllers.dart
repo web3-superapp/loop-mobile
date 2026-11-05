@@ -222,6 +222,7 @@ final class CommunityDiscoverState {
     this.loadingMore = false,
     this.refreshing = false,
     this.refreshFailed = false,
+    this.joinedFirst = false,
   });
 
   factory CommunityDiscoverState.initial(
@@ -263,6 +264,12 @@ final class CommunityDiscoverState {
   /// not a next page: its retry is [CommunityDiscoverController.refresh].
   final bool refreshFailed;
 
+  /// 「加入优先」 (S364 · decision 0288): the reader's own communities first,
+  /// by members, then the rest of the directory by members. The server has
+  /// no such order; [sort] stays [CommunityDirectorySort.members] and the
+  /// controller merges the joined read with the directory.
+  final bool joinedFirst;
+
   /// A failed next page, waiting for the reader's own retry.
   bool get appendFailed =>
       failureKind != null && !refreshFailed && nextCursor != null;
@@ -293,6 +300,7 @@ final class CommunityDiscoverState {
 final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
     with CommunitySingleFlight {
   CommunityMembershipFilter _membership = CommunityMembershipFilter.all;
+  bool _joinedFirst = false;
   DateTime? _readAt;
 
   DateTime _now() => ref.read(loopReadClockProvider)();
@@ -305,6 +313,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
     ref.onDispose(nextGeneration);
     _readAt = null;
     _membership = CommunityMembershipFilter.all;
+    _joinedFirst = false;
     loopRetainRead(ref, onRevisit: _revisit);
     ref.listen<int>(loopNetworkRecoveryTickProvider, (_, _) {
       if (!ref.mounted || inFlight || state.loadingMore) return;
@@ -323,6 +332,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         phase: CommunityViewPhase.offline,
         sort: initial.sort,
         membership: initial.membership,
+        joinedFirst: _joinedFirst,
         failureKind: CommunityFailureKind.offline,
       );
     }
@@ -347,6 +357,32 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
   Future<void> openJoined() {
     _membership = CommunityMembershipFilter.joined;
     return reload();
+  }
+
+  /// The whole directory under 「加入优先」 (S364 · decision 0288): what
+  /// 我的 → 「全部已加入的社区」 (`community-discover?membership=joined`)
+  /// opens now that 广场 has no 我加入的 tab.
+  Future<void> openJoinedFirst() {
+    _membership = CommunityMembershipFilter.all;
+    _joinedFirst = true;
+    state = CommunityDiscoverState(
+      mode: state.mode,
+      phase: CommunityViewPhase.loading,
+      sort: CommunityDirectorySort.members,
+      membership: _membership,
+      joinedFirst: true,
+    );
+    return _fetch(append: false);
+  }
+
+  /// 「加入优先」 picked from the order sheet.
+  Future<void> selectJoinedFirst() {
+    if (_joinedFirst &&
+        _membership == CommunityMembershipFilter.all &&
+        state.phase == CommunityViewPhase.ready) {
+      return Future<void>.value();
+    }
+    return openJoinedFirst();
   }
 
   /// The whole directory. A directory retained on the joined filter is read
@@ -418,6 +454,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
       phase: current.phase,
       sort: current.sort,
       membership: current.membership,
+      joinedFirst: current.joinedFirst,
       items: List<CommunitySummary>.unmodifiable(items),
       nextCursor: current.nextCursor,
       recommendation: current.recommendation,
@@ -431,14 +468,18 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
   }
 
   Future<void> selectSort(CommunityDirectorySort sort) {
-    if (sort == state.sort && state.phase == CommunityViewPhase.ready) {
+    if (sort == state.sort &&
+        !_joinedFirst &&
+        state.phase == CommunityViewPhase.ready) {
       return Future<void>.value();
     }
+    _joinedFirst = false;
     state = CommunityDiscoverState(
       mode: state.mode,
       phase: CommunityViewPhase.loading,
       sort: sort,
       membership: _membership,
+      joinedFirst: _joinedFirst,
     );
     return _fetch(append: false);
   }
@@ -449,6 +490,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
       phase: CommunityViewPhase.loading,
       sort: state.sort,
       membership: _membership,
+      joinedFirst: _joinedFirst,
     );
     return _fetch(append: false);
   }
@@ -472,6 +514,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
       phase: CommunityViewPhase.ready,
       sort: state.sort,
       membership: _membership,
+      joinedFirst: _joinedFirst,
       items: state.items,
       // The cursor of the rows kept: a failed refresh leaves the list as it
       // was, still able to read on.
@@ -493,6 +536,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         phase: previous.phase,
         sort: previous.sort,
         membership: _membership,
+        joinedFirst: _joinedFirst,
         items: previous.items,
         nextCursor: previous.nextCursor,
         recommendation: previous.recommendation,
@@ -501,16 +545,20 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
       );
     }
     try {
+      final cursor = append ? previous.nextCursor : null;
       final page = await communityFirstRead(
-        () => gateway.listCommunities(
-          sort: previous.sort,
-          // The joined view must include a caller's own unverified communities.
-          verification: _membership == CommunityMembershipFilter.joined
-              ? CommunityVerificationFilter.all
-              : CommunityVerificationFilter.verified,
-          membership: _membership,
-          cursor: append ? previous.nextCursor : null,
-        ),
+        () => _joinedFirst && _membership == CommunityMembershipFilter.all
+            ? _joinedFirstPage(gateway, cursor)
+            : gateway.listCommunities(
+                sort: previous.sort,
+                // The joined view must include a caller's own unverified
+                // communities.
+                verification: _membership == CommunityMembershipFilter.joined
+                    ? CommunityVerificationFilter.all
+                    : CommunityVerificationFilter.verified,
+                membership: _membership,
+                cursor: cursor,
+              ),
         firstRead: !append && previous.items.isEmpty,
       );
       if (!isCurrent(generation)) return;
@@ -540,6 +588,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
             : CommunityViewPhase.ready,
         sort: previous.sort,
         membership: _membership,
+        joinedFirst: _joinedFirst,
         items: List<CommunitySummary>.unmodifiable(merged),
         nextCursor: page.nextCursor,
         recommendation: page.recommendation,
@@ -555,6 +604,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
           phase: CommunityViewPhase.loading,
           sort: previous.sort,
           membership: _membership,
+          joinedFirst: _joinedFirst,
         );
         return;
       }
@@ -565,6 +615,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
             : CommunityViewPhase.ready,
         sort: previous.sort,
         membership: _membership,
+        joinedFirst: _joinedFirst,
         items: previous.items,
         nextCursor: previous.nextCursor,
         recommendation: previous.recommendation,
@@ -579,10 +630,80 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         phase: CommunityViewPhase.error,
         sort: previous.sort,
         membership: _membership,
+        joinedFirst: _joinedFirst,
         failureKind: CommunityFailureKind.unexpected,
       );
     }
   });
+
+  /// The cursor prefixes of 「加入优先」: a page of the reader's own
+  /// communities, then a page of the directory.
+  static const String joinedFirstJoinedCursor = 'joined:';
+  static const String joinedFirstDirectoryCursor = 'all:';
+
+  /// One page of 「加入优先」 (S364 · decision 0288). It walks the joined
+  /// read (`membership=joined`, the old 我加入的 question, by members) to its
+  /// end, then the verified directory by members from its first page; the
+  /// two server cursors travel behind [joinedFirstJoinedCursor] /
+  /// [joinedFirstDirectoryCursor]. The page that ends the joined read also
+  /// carries the directory's first page, so a reader with few or no
+  /// communities still gets a full first screen. A directory row already
+  /// shown as joined is dropped here on that page and by [_fetch]'s seen set
+  /// on later pages: one community is one row.
+  Future<CommunityDirectoryPage> _joinedFirstPage(
+    CommunityGateway gateway,
+    String? cursor,
+  ) async {
+    Future<CommunityDirectoryPage> directory(String? inner) =>
+        gateway.listCommunities(
+          sort: CommunityDirectorySort.members,
+          verification: CommunityVerificationFilter.verified,
+          membership: CommunityMembershipFilter.all,
+          cursor: inner,
+        );
+    String? wrap(String? inner) =>
+        inner == null ? null : '$joinedFirstDirectoryCursor$inner';
+    if (cursor != null && cursor.startsWith(joinedFirstDirectoryCursor)) {
+      final inner = cursor.substring(joinedFirstDirectoryCursor.length);
+      final page = await directory(inner.isEmpty ? null : inner);
+      return CommunityDirectoryPage(
+        items: page.items,
+        nextCursor: wrap(page.nextCursor),
+        recommendation: page.recommendation,
+        ordering: page.ordering,
+      );
+    }
+    final joinedCursor =
+        cursor != null && cursor.startsWith(joinedFirstJoinedCursor)
+        ? cursor.substring(joinedFirstJoinedCursor.length)
+        : null;
+    final joined = await gateway.listCommunities(
+      sort: CommunityDirectorySort.members,
+      verification: CommunityVerificationFilter.all,
+      membership: CommunityMembershipFilter.joined,
+      cursor: joinedCursor,
+    );
+    if (joined.nextCursor case final String next) {
+      return CommunityDirectoryPage(
+        items: joined.items,
+        nextCursor: '$joinedFirstJoinedCursor$next',
+        recommendation: joined.recommendation,
+        ordering: joined.ordering,
+      );
+    }
+    final rest = await directory(null);
+    final seen = <String>{for (final item in joined.items) item.communityId};
+    return CommunityDirectoryPage(
+      items: <CommunitySummary>[
+        ...joined.items,
+        for (final item in rest.items)
+          if (seen.add(item.communityId)) item,
+      ],
+      nextCursor: wrap(rest.nextCursor),
+      recommendation: rest.recommendation,
+      ordering: rest.ordering,
+    );
+  }
 }
 
 final communityDiscoverControllerProvider =

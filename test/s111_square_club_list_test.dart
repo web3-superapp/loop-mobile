@@ -6,7 +6,6 @@ import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
 import 'package:loop_mobile/widgets/loop_filter_chips.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
@@ -65,13 +64,6 @@ CommunityDirectoryPage _page(
   ),
 );
 
-FakeCommunityGateway _filtered({
-  required CommunityDirectoryPage all,
-  required CommunityDirectoryPage joined,
-}) =>
-    FakeCommunityGateway(directoryPage: all)
-      ..directoryPagesByMembership[CommunityMembershipFilter.joined] = joined;
-
 Future<void> _pump(
   WidgetTester tester,
   FakeCommunityGateway gateway, {
@@ -102,14 +94,6 @@ Future<void> _tapChip(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
 }
 
-bool _selected(WidgetTester tester, String key) =>
-    switch (tester.widget(find.byKey(ValueKey<String>(key)))) {
-      final LoopSeg seg => seg.selected,
-      // Decision 0277: 全部 / 我加入的 are the Figma filter chips.
-      final LoopFilterChip chip => chip.selected,
-      final Widget other => throw StateError('$key is a ${other.runtimeType}'),
-    };
-
 /// UX-013: the order is 「全部社区」's own dropdown, read from its label.
 String _sortLabel(WidgetTester tester) => tester
     .widget<Semantics>(
@@ -137,20 +121,38 @@ void main() {
   loopWatchGround();
 
   group('S111 · compact head and search entry', () {
-    testWidgets('no DISCOVERY DESK card; one rule line and 规则 opens the '
+    testWidgets('no DISCOVERY DESK card, no heading line; 入驻 opens the '
         'rules', (tester) async {
-      await _pump(
+      await pumpCommunityPage(
         tester,
-        FakeCommunityGateway(directoryPage: _page(<CommunitySummary>[_row()])),
+        Column(
+          children: <Widget>[
+            SquareCommunityApplyEntry(onOpenCommunity: (_) {}),
+            Expanded(
+              child: SquareCommunityList(
+                onOpenCommunity: (_) {},
+                onOpenSearch: () {},
+              ),
+            ),
+          ],
+        ),
+        community: FakeCommunityGateway(
+          directoryPage: _page(<CommunitySummary>[_row()]),
+        ),
       );
       expect(find.text('DISCOVERY DESK'), findsNothing);
       expect(find.textContaining('已载入'), findsNothing);
-      // UX-013: the page title and 「规则与入驻 ›」 replace the rule line.
-      expect(find.text('Discover communities'), findsOneWidget);
+      // S364 · decision 0288: no 「发现社区 / 规则与入驻 ›」 line.
+      expect(find.text('Discover communities'), findsNothing);
+      expect(find.text('Rules and listing'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('square-community-rules')),
+        findsNothing,
+      );
       expect(find.text(squareCommunityRuleLine), findsNothing);
 
       await tester.tap(
-        find.byKey(const ValueKey<String>('square-community-rules')),
+        find.byKey(const ValueKey<String>('square-community-apply-entry')),
       );
       await tester.pumpAndSettle();
       expect(
@@ -182,7 +184,7 @@ void main() {
   });
 
   group('S111 · chips', () {
-    testWidgets('the chips stay pinned while the head and rows scroll', (
+    testWidgets('the controls stay pinned while the rows scroll', (
       tester,
     ) async {
       await _pump(
@@ -198,8 +200,10 @@ void main() {
           ]),
         ),
       );
+      // S364 · decision 0288: the search field and the order are the
+      // pinned line, and nothing scrolls away above them.
       final chips = find.byKey(
-        const ValueKey<String>('square-community-chips'),
+        const ValueKey<String>('square-community-controls'),
       );
       final before = tester.getTopLeft(chips).dy;
       await tester.drag(
@@ -207,69 +211,37 @@ void main() {
         const Offset(0, -900),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Discover communities').hitTestable(), findsNothing);
+      expect(find.text('Club 0').hitTestable(), findsNothing);
       expect(chips.hitTestable(), findsOneWidget);
-      expect(tester.getTopLeft(chips).dy, lessThan(before));
+      expect(tester.getTopLeft(chips).dy, before);
       await _drain(tester);
     });
 
-    testWidgets('the two groups are each exclusive and combine in the '
-        'request', (tester) async {
+    testWidgets('no 全部 / 我加入的; the order alone asks the whole '
+        'directory', (tester) async {
       final gateway =
-          _filtered(
-              all: _page(<CommunitySummary>[_row()]),
-              joined: _page(<CommunitySummary>[
-                _row(viewer: _member),
-              ], sort: CommunityDirectorySort.newest),
-            )
+          FakeCommunityGateway(directoryPage: _page(<CommunitySummary>[_row()]))
             ..directoryPagesBySort[CommunityDirectorySort.newest] = _page(
               <CommunitySummary>[_row()],
               sort: CommunityDirectorySort.newest,
             );
       await _pump(tester, gateway);
       expect(gateway.commands.last, 'list:members:all:null');
-      expect(_selected(tester, 'square-filter-all'), isTrue);
-      expect(_selected(tester, 'square-filter-joined'), isFalse);
+      // S364 · decision 0288: the two chips are gone.
+      expect(
+        find.byKey(const ValueKey<String>('square-filter-all')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('square-filter-joined')),
+        findsNothing,
+      );
+      expect(find.byType(LoopFilterChip), findsNothing);
       expect(_sortLabel(tester), 'Most members');
 
       await _chooseSort(tester, 'square-sort-newest');
       expect(gateway.commands.last, 'list:newest:all:null');
       expect(_sortLabel(tester), 'Newest');
-      expect(_selected(tester, 'square-filter-all'), isTrue);
-
-      await _tapChip(tester, 'square-filter-joined');
-      // 我加入的 keeps the chosen order.
-      expect(gateway.commands.last, 'list:newest:joined:null');
-      expect(_selected(tester, 'square-filter-joined'), isTrue);
-      expect(_selected(tester, 'square-filter-all'), isFalse);
-      expect(_sortLabel(tester), 'Newest');
-
-      await _tapChip(tester, 'square-filter-all');
-      expect(gateway.commands.last, 'list:newest:all:null');
-      await _drain(tester);
-    });
-
-    testWidgets('我加入的 with nothing joined says so and goes back to 全部', (
-      tester,
-    ) async {
-      final gateway = _filtered(
-        all: _page(<CommunitySummary>[_row()]),
-        joined: _page(const <CommunitySummary>[]),
-      );
-      await _pump(tester, gateway);
-      await _tapChip(tester, 'square-filter-joined');
-      expect(
-        find.byKey(const ValueKey<String>('square-community-joined-empty')),
-        findsOneWidget,
-      );
-      expect(find.text('No joined communities yet'), findsOneWidget);
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('square-community-joined-empty-all')),
-      );
-      await tester.pumpAndSettle();
-      expect(gateway.commands.last, 'list:members:all:null');
-      expect(find.text('Frog Holders'), findsOneWidget);
       await _drain(tester);
     });
   });
@@ -511,7 +483,7 @@ void main() {
         find.byKey(const ValueKey<String>('square-community-state')),
         findsOneWidget,
       );
-      expect(find.text('Discover communities'), findsOneWidget);
+      expect(find.text('Discover communities'), findsNothing);
       await _drain(tester);
     });
 

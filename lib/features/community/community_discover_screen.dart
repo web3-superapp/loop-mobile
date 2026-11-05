@@ -28,7 +28,12 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// answer on that page, not a client-side switch: a segment whose order comes
 /// back unavailable states the reason and offers the member order instead.
 /// There is no 「增长最快」 segment, because nothing measures growth.
+///
+/// 「加入优先」 (S364 · decision 0288) is the one order the server does not
+/// have: the reader's own communities by members, then the rest by members,
+/// merged on the client ([CommunityDiscoverController.selectJoinedFirst]).
 enum CommunityDiscoverSegment {
+  joinedFirst(CommunityDirectorySort.members),
   members(CommunityDirectorySort.members),
   power(CommunityDirectorySort.miningPower),
   discussion(CommunityDirectorySort.activity),
@@ -37,6 +42,9 @@ enum CommunityDiscoverSegment {
   const CommunityDiscoverSegment(this.sort);
 
   String get label => switch (this) {
+    CommunityDiscoverSegment.joinedFirst =>
+      LoopL10n.current.community_discoverJoinedFirst,
+
     CommunityDiscoverSegment.members =>
       LoopL10n.current.community_discoverMembers,
 
@@ -50,12 +58,27 @@ enum CommunityDiscoverSegment {
   };
   final CommunityDirectorySort sort;
 
-  static CommunityDiscoverSegment of(CommunityDirectorySort sort) {
+  static CommunityDiscoverSegment of(
+    CommunityDirectorySort sort, {
+    bool joinedFirst = false,
+  }) {
+    if (joinedFirst) return CommunityDiscoverSegment.joinedFirst;
     for (final segment in values) {
+      if (segment == CommunityDiscoverSegment.joinedFirst) continue;
       if (segment.sort == sort) return segment;
     }
     return CommunityDiscoverSegment.members;
   }
+
+  /// The order [state] is on.
+  static CommunityDiscoverSegment ofState(CommunityDiscoverState state) =>
+      of(state.sort, joinedFirst: state.joinedFirst);
+
+  /// Puts [controller] on this order.
+  Future<void> select(CommunityDiscoverController controller) =>
+      this == CommunityDiscoverSegment.joinedFirst
+      ? controller.selectJoinedFirst()
+      : controller.selectSort(sort);
 }
 
 /// Collects a community application, confirms it, then submits it exactly
@@ -118,7 +141,9 @@ class CommunityDiscoverScreen extends ConsumerStatefulWidget {
   /// shell's tab-bar reserve at the foot.
   final bool embedded;
 
-  /// Entered from the home aggregate's "view all joined" action.
+  /// Entered from 「全部已加入的社区」 (`?membership=joined`). Since S364 ·
+  /// decision 0288 it opens the whole directory under 「加入优先」 once; the
+  /// reader may then pick any other order.
   final bool joinedOnly;
 
   @override
@@ -128,6 +153,10 @@ class CommunityDiscoverScreen extends ConsumerStatefulWidget {
 
 class _CommunityDiscoverScreenState
     extends ConsumerState<CommunityDiscoverScreen> {
+  /// Whether the 「加入优先」 arrival of [CommunityDiscoverScreen.joinedOnly]
+  /// was applied: it is an arrival, not a filter held for the visit.
+  bool _arrived = false;
+
   Future<void> _apply() => startCommunityApplication(
     context,
     ref,
@@ -144,17 +173,17 @@ class _CommunityDiscoverScreenState
     final controller = ref.read(communityDiscoverControllerProvider.notifier);
     // Decision 0101: the directory is retained across visits, so a visit
     // that asks the other filter than the one kept reads its own.
-    final wanted = widget.joinedOnly
-        ? CommunityMembershipFilter.joined
-        : CommunityMembershipFilter.all;
-    if (!communityCapabilityBlocks(mode, capability) &&
-        (state.phase == CommunityViewPhase.loading ||
-            state.membership != wanted)) {
+    final blocked = communityCapabilityBlocks(mode, capability);
+    if (!blocked && widget.joinedOnly && !_arrived) {
+      _arrived = true;
       scheduleMicrotask(() {
-        if (!mounted) return;
-        unawaited(
-          widget.joinedOnly ? controller.openJoined() : controller.openAll(),
-        );
+        if (mounted) unawaited(controller.openJoinedFirst());
+      });
+    } else if (!blocked &&
+        (state.phase == CommunityViewPhase.loading ||
+            state.membership != CommunityMembershipFilter.all)) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(controller.openAll());
       });
     }
 
@@ -162,13 +191,13 @@ class _CommunityDiscoverScreenState
     // The chip that reads as chosen is the order the controller is on, so a
     // segment can never look selected while the list beside it was ranked by
     // something else.
-    final selectedSegment = CommunityDiscoverSegment.of(state.sort);
+    final selectedSegment = CommunityDiscoverSegment.ofState(state);
     return LoopStreamPage(
       key: const ValueKey<String>('community-discover-screen'),
       archetype: LoopPageArchetype.listing,
-      title: widget.joinedOnly
-          ? context.l10n.community_discoverCommunityDiscoverScreenTitle
-          : context.l10n.community_discoverCommunityDiscoverScreenTitle2,
+      // S364 · decision 0288: the joined arrival is the whole directory
+      // under 加入优先, so it carries the directory's own title.
+      title: context.l10n.community_discoverCommunityDiscoverScreenTitle2,
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       embedded: widget.embedded,
@@ -212,8 +241,7 @@ class _CommunityDiscoverScreenState
                     // Decision 0210 (S241b): the selected state is purple.
                     quiet: true,
                     selected: segment == selectedSegment,
-                    onSelected: () =>
-                        unawaited(controller.selectSort(segment.sort)),
+                    onSelected: () => unawaited(segment.select(controller)),
                   ),
                 ),
             ],
