@@ -955,7 +955,7 @@ class ProfileIdentityCard extends StatelessWidget {
     );
     final counts = this.counts;
     // UX-017 (decision 0257, 图 47): avatar at the left; name, LOOP ID and
-    // the bio (or 「＋ 添加个人简介」) beside it; 奖励 at the right. Under
+    // the bio (nothing when empty, S374 · 0298) beside it; 奖励 at the right. Under
     // them one line: the follow counts, and the month LOOP ID was activated.
     return Column(
       key: const ValueKey<String>('profile-identity-card'),
@@ -1064,6 +1064,8 @@ class ProfileIdentityCard extends StatelessWidget {
                         key: const ValueKey<String>('profile-loop-id'),
                         style: idStyle,
                       ),
+                    // S374 · decision 0298: an empty bio draws nothing — no
+                    // 「+ Add a bio」 link; the bio is edited from profile-edit.
                     if (bio != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -1075,33 +1077,6 @@ class ProfileIdentityCard extends StatelessWidget {
                           // L25 R18 prose in text2 (decision 0191).
                           style: LoopType.body.copyWith(
                             color: LoopColors.text2,
-                          ),
-                        ),
-                      )
-                    else
-                      Semantics(
-                        button: true,
-                        label: context.l10n.profile_screensProfileAddBioLabel,
-                        excludeSemantics: true,
-                        child: LoopPressable(
-                          key: const ValueKey<String>('profile-add-bio'),
-                          onTap: onEdit,
-                          scale: false,
-                          // S350c: the words sit 6 under the LOOP ID, as a
-                          // bio does; the target keeps its 44 below them.
-                          child: Container(
-                            constraints: const BoxConstraints(
-                              minHeight: LoopTouch.minimum,
-                            ),
-                            padding: const EdgeInsets.only(top: 6),
-                            alignment: AlignmentDirectional.topStart,
-                            child: Text(
-                              context.l10n.profile_screensText,
-                              style: LoopTypography.withWeight(
-                                LoopType.label,
-                                FontWeight.w600,
-                              ).copyWith(color: LoopColors.yellow),
-                            ),
                           ),
                         ),
                       ),

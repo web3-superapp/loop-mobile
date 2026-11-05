@@ -118,16 +118,15 @@ void main() {
   loopWatchGround();
 
   group('我 · fomo layout (decision 0175)', () {
-    testWidgets('the person: name, LOOP ID, bio link, joined month', (
-      tester,
-    ) async {
+    testWidgets('the person: name, LOOP ID, joined month', (tester) async {
       final opened = <String>[];
       await _pump(tester, onNavigate: opened.add);
 
       expect(find.text('Boo123133'), findsOneWidget);
       expect(find.text(_loopId), findsOneWidget);
-      expect(_key('profile-add-bio'), findsOneWidget);
-      expect(find.text('+ Add a bio'), findsOneWidget);
+      // S374 · decision 0298: an empty bio draws no 「+ Add a bio」 link.
+      expect(_key('profile-add-bio'), findsNothing);
+      expect(find.text('+ Add a bio'), findsNothing);
       expect(
         tester.widget<Text>(_key('profile-joined')).data,
         'Joined Oct 2026',
@@ -136,19 +135,15 @@ void main() {
       expect(find.textContaining('持有时长'), findsNothing);
       expect(find.textContaining('笔交易'), findsNothing);
 
-      await tester.tap(_key('profile-add-bio'));
       await tester.tap(_key('profile-open-edit'));
       await tester.tap(_key('profile-open-settings'));
       expect(opened, <String>[
-        profileDestinationPath('profile-edit'),
         profileDestinationPath('profile-edit'),
         profileDestinationPath('settings'),
       ]);
     });
 
-    testWidgets('a written bio replaces the link; no activation, no month', (
-      tester,
-    ) async {
+    testWidgets('a written bio shows; no activation, no month', (tester) async {
       await _pump(
         tester,
         resource: _resource(bio: '只买 meme', activated: false),

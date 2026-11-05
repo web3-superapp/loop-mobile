@@ -18907,9 +18907,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get profile_screensPrivacyVisibilityNoteTitle => '可见性说明';
 
   @override
-  String get profile_screensProfileAddBioLabel => '添加个人简介';
-
-  @override
   String get profile_screensProfileAlias => '尚未设置别名';
 
   @override
@@ -19048,9 +19045,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get profile_screensSwitch5 => '好友可以把你拉进小群';
-
-  @override
-  String get profile_screensText => '＋ 添加个人简介';
 
   @override
   String get profile_screensTitle => '没有做任何更改';
