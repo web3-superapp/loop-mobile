@@ -13,6 +13,8 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/profile/profile_destinations.dart';
 import 'package:loop_mobile/features/square/square_community_list.dart';
 import 'package:loop_mobile/features/square/square_screen.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/loop_ground_probe.dart';
@@ -478,7 +480,17 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       final entry = _key('square-community-apply-entry');
       expect(entry, findsOneWidget);
-      expect(find.text('Apply'), findsOneWidget);
+      // S372 · decision 0296: a framed glyph button (the §8 plus), no word;
+      // the reader still hears 「规则与入驻」.
+      expect(find.text('Apply'), findsNothing);
+      final button = tester.widget<LoopIconButton>(entry);
+      expect(button.framed, isTrue);
+      expect(button.icon, SquareCommunityApplyEntry.icon);
+      expect(button.label, 'Rules and listing');
+      expect(
+        find.descendant(of: entry, matching: find.byType(LoopIcon)),
+        findsOneWidget,
+      );
       // On the title row: level with the segment words, at the right.
       final segment = tester.getRect(_key('square-segment-0'));
       final rect = tester.getRect(entry);

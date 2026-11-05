@@ -334,68 +334,30 @@ Future<void> showSquareCommunityRules(
   );
 }
 
-/// 「入驻 ›」 at the right end of the 广场 title row while 社区 is chosen
-/// (S364 · decision 0288, the requester's item 8): a quiet word with a
-/// chevron, 44 tall, opening [showSquareCommunityRules].
+/// 「入驻」 at the right end of the 广场 title row while 社区 is chosen
+/// (S364 · decision 0288, the requester's item 8), opening
+/// [showSquareCommunityRules]. S372 · decision 0296 (the requester 11-05):
+/// a framed glyph button like 我的's bell and gear and MEME's (i) — the
+/// docs/58 §8 line set has no apply glyph, so it is the set's plus — named
+/// 「规则与入驻」 for the reader and the long press.
 class SquareCommunityApplyEntry extends ConsumerWidget {
   const SquareCommunityApplyEntry({required this.onOpenCommunity, super.key});
 
   final ValueChanged<String> onOpenCommunity;
 
+  /// The glyph: docs/58 §8's plus (2001:196).
+  static const String icon = 'plus';
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final label = context.l10n.square_communityListApplyEntry;
-    // Its own transparent Material, so the ink has a surface wherever the
-    // title row is drawn.
-    return Material(
-      type: MaterialType.transparency,
-      child: Semantics(
-        button: true,
-        label: context.l10n.square_communityListSquareCommunityRulesLabel,
-        excludeSemantics: true,
-        child: InkWell(
-          key: const ValueKey<String>('square-community-apply-entry'),
-          onTap: () => unawaited(
-            showSquareCommunityRules(
-              context,
-              ref,
-              onOpenCommunity: onOpenCommunity,
-            ),
-          ),
-          borderRadius: BorderRadius.circular(LoopRadius.innerValue),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: LoopTouch.minimum,
-              minHeight: LoopTouch.minimum,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  // docs/58 §5.3: a quiet control, 12 / 500 in textSecondary.
-                  Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: LoopType.meta.copyWith(
-                      color: LoopColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  const LoopIcon(
-                    'chevron',
-                    size: 14,
-                    color: LoopColors.textSecondary,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context, WidgetRef ref) => LoopIconButton(
+    key: const ValueKey<String>('square-community-apply-entry'),
+    icon: icon,
+    label: context.l10n.square_communityListSquareCommunityRulesLabel,
+    framed: true,
+    onPressed: () => unawaited(
+      showSquareCommunityRules(context, ref, onOpenCommunity: onOpenCommunity),
+    ),
+  );
 }
 
 /// 「成员最多 ∨」: the current order as one quiet word at the end of the

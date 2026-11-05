@@ -1292,6 +1292,67 @@ double intelPodiumFaceSize(int place) => place == 1 ? 62 : 54;
 /// The width of the ring around a podium face.
 const double intelPodiumRing = 2;
 
+/// The face with its ring: the face, the 2 gap and the 2 ring each side
+/// (a Container adds its border to its padding) — 70 for the winner, 62
+/// for second and third.
+double intelPodiumRingExtent(int place) =>
+    intelPodiumFaceSize(place) + 4 * intelPodiumRing;
+
+/// How far a podium block rises under its face (docs/58 §5.15): the
+/// Editable's winner — a 62 face at y 354 over the middle block at y 400 —
+/// sits 16 into the block; the code keeps a quarter of the face (15.5 / 13.5)
+/// and 13 under the empty 52 ring. Decision 0296: the face is drawn over the
+/// block, so this is a visible overlap, never a cut.
+double intelPodiumFaceOverlap(int place) => intelPodiumFaceSize(place) / 4;
+
+/// The overlap under an empty place's 52 ring.
+const double intelPodiumEmptyOverlap = 13;
+
+/// A podium place laid out top to bottom — [head] (the crown, if any), the
+/// face, then the block raised [overlap] under it — but painted with the
+/// face last, over the block (decision 0296: TF 68 showed every face's lower
+/// part cut off by its block, which a Column paints after the face).
+class _FaceOverBlock extends StatelessWidget {
+  const _FaceOverBlock({
+    required this.face,
+    super.key,
+    required this.faceExtent,
+    required this.overlap,
+    required this.block,
+    this.head,
+    this.headExtent = 0,
+  });
+
+  final Widget? head;
+  final double headExtent;
+  final Widget face;
+  final double faceExtent;
+  final double overlap;
+  final Widget block;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    clipBehavior: Clip.none,
+    children: <Widget>[
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (head != null) SizedBox(height: headExtent, child: head),
+          SizedBox(height: faceExtent),
+          Transform.translate(offset: Offset(0, -overlap), child: block),
+        ],
+      ),
+      Positioned(
+        top: headExtent,
+        left: 0,
+        right: 0,
+        height: faceExtent,
+        child: Center(child: face),
+      ),
+    ],
+  );
+}
+
 /// A podium block: the dark ground the face stands on, holding the place,
 /// the name and the figure.
 class _PodiumBlock extends StatelessWidget {
@@ -1345,7 +1406,7 @@ class _PodiumPlace extends StatelessWidget {
     final first = place == 1;
     final size = intelPodiumFaceSize(place);
     final face = Container(
-      key: first ? const ValueKey<String>('intel-rank-ring-1') : null,
+      key: ValueKey<String>('intel-rank-ring-$place'),
       padding: const EdgeInsets.all(intelPodiumRing),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -1361,75 +1422,79 @@ class _PodiumPlace extends StatelessWidget {
       ),
     );
     final index = (entry.position ?? place).toString().padLeft(2, '0');
-    final content = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (first)
-          IgnorePointer(
-            child: SvgPicture.asset(
-              IntelRankPodium.crownAsset,
-              key: const ValueKey<String>('intel-rank-crown-1'),
-              width: 27,
-              height: 27,
-              excludeFromSemantics: true,
-            ),
-          ),
-        if (first) const SizedBox(height: 4),
-        face,
-        // The block starts under the face's lower half.
-        Transform.translate(
-          offset: Offset(0, -size / 4),
-          child: _PodiumBlock(
-            height: first
-                ? IntelRankPodium.firstBlock
-                : IntelRankPodium.otherBlock,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  index,
-                  key: ValueKey<String>('intel-rank-index-$place'),
+    final content = _FaceOverBlock(
+      head: first
+          ? Align(
+              alignment: Alignment.topCenter,
+              child: IgnorePointer(
+                child: SvgPicture.asset(
+                  IntelRankPodium.crownAsset,
+                  key: const ValueKey<String>('intel-rank-crown-1'),
+                  width: 27,
+                  height: 27,
+                  excludeFromSemantics: true,
+                ),
+              ),
+            )
+          : null,
+      // The crown, then 4 to the ring.
+      headExtent: first ? 27 + 4 : 0,
+      face: face,
+      faceExtent: intelPodiumRingExtent(place),
+      // The block starts under the face's lower quarter.
+      overlap: intelPodiumFaceOverlap(place),
+      block: KeyedSubtree(
+        key: ValueKey<String>('intel-rank-block-$place'),
+        child: _PodiumBlock(
+          height: first
+              ? IntelRankPodium.firstBlock
+              : IntelRankPodium.otherBlock,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                index,
+                key: ValueKey<String>('intel-rank-index-$place'),
+                maxLines: 1,
+                style: _podiumIndexStyle(place),
+              ),
+              Text(
+                entry.name,
+                key: ValueKey<String>('intel-rank-name-$place'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: LoopType.figureSm.copyWith(
+                  color: LoopColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  entry.figure,
+                  key: ValueKey<String>('intel-rank-figure-$place'),
                   maxLines: 1,
-                  style: _podiumIndexStyle(place),
+                  style: figureStyle.copyWith(color: LoopColors.text2),
                 ),
-                Text(
-                  entry.name,
-                  key: ValueKey<String>('intel-rank-name-$place'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: LoopType.figureSm.copyWith(
-                    color: LoopColors.textPrimary,
-                  ),
-                ),
+              ),
+              if (entry.weight != null && !entry.isSelf) ...<Widget>[
                 const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    entry.figure,
-                    key: ValueKey<String>('intel-rank-figure-$place'),
-                    maxLines: 1,
-                    style: figureStyle.copyWith(color: LoopColors.text2),
-                  ),
+                Text(
+                  context.l10n.intel_rankBoardText5(entry.weight!),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopType.progress,
                 ),
-                if (entry.weight != null && !entry.isSelf) ...<Widget>[
-                  const SizedBox(height: 2),
-                  Text(
-                    context.l10n.intel_rankBoardText5(entry.weight!),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LoopType.progress,
-                  ),
-                ],
-                if (entry.isSelf) ...<Widget>[
-                  const SizedBox(height: 4),
-                  LoopBadge(context.l10n.common_me),
-                ],
               ],
-            ),
+              if (entry.isSelf) ...<Widget>[
+                const SizedBox(height: 4),
+                LoopBadge(context.l10n.common_me),
+              ],
+            ],
           ),
         ),
-      ],
+      ),
     );
     final tap = entry.onTap;
     return Semantics(
@@ -1455,51 +1520,51 @@ class _PodiumEmpty extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     label: context.l10n.intel_rankBoardLabel(place),
     excludeSemantics: true,
-    child: Column(
+    child: _FaceOverBlock(
       key: ValueKey<String>('intel-rank-empty-slot-$place'),
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 52,
-          height: 52,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: LoopColors.surfaceElevated,
-            border: Border.all(color: LoopColors.text3),
+      faceExtent: 52,
+      overlap: intelPodiumEmptyOverlap,
+      face: Container(
+        key: ValueKey<String>('intel-rank-empty-ring-$place'),
+        width: 52,
+        height: 52,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: LoopColors.surfaceElevated,
+          border: Border.all(color: LoopColors.text3),
+        ),
+        child: Opacity(
+          opacity: 0.6,
+          child: ColorFiltered(
+            colorFilter: const ColorFilter.matrix(loopGreyMatrix),
+            child: SvgPicture.asset(
+              IntelRankPodium.crownAsset,
+              width: 23,
+              height: 23,
+              excludeFromSemantics: true,
+            ),
           ),
-          child: Opacity(
-            opacity: 0.6,
-            child: ColorFiltered(
-              colorFilter: const ColorFilter.matrix(loopGreyMatrix),
-              child: SvgPicture.asset(
-                IntelRankPodium.crownAsset,
-                width: 23,
-                height: 23,
-                excludeFromSemantics: true,
+        ),
+      ),
+      block: KeyedSubtree(
+        key: ValueKey<String>('intel-rank-empty-block-$place'),
+        child: _PodiumBlock(
+          height: IntelRankPodium.otherBlock,
+          child: Center(
+            heightFactor: 1,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                context.l10n.intel_rankBoardText6,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LoopType.meta.copyWith(color: LoopColors.text2),
               ),
             ),
           ),
         ),
-        Transform.translate(
-          offset: const Offset(0, -13),
-          child: _PodiumBlock(
-            height: IntelRankPodium.otherBlock,
-            child: Center(
-              heightFactor: 1,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  context.l10n.intel_rankBoardText6,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopType.meta.copyWith(color: LoopColors.text2),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     ),
   );
 }
