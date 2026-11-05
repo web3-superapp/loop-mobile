@@ -259,7 +259,12 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           // this the page looks like the whole list with rows missing.
           if (focusAssetId != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                4,
+                LoopSpacing.page,
+                12,
+              ),
               child: LoopButton(
                 key: const ValueKey<String>('alerts-show-every-asset'),
                 label:

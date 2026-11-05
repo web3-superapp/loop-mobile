@@ -75,7 +75,7 @@ class LoopPendingSurface extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Container(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.all(LoopSpacing.card),
                       decoration: BoxDecoration(
                         color: LoopColors.card,
                         borderRadius: LoopRadius.card,

@@ -466,7 +466,12 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             _PriceImpactNotice(quote: quote),
             if (quote.quote.priceImpact.requiresConfirmation)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  0,
+                  LoopSpacing.page,
+                  12,
+                ),
                 child: CheckboxListTile(
                   key: const ValueKey<String>('swap-confirm-price-impact'),
                   value: _confirmPriceImpact,
@@ -851,10 +856,10 @@ class SwapAssetPickButton extends StatelessWidget {
     excludeSemantics: true,
     child: Material(
       color: LoopColors.card2,
-      borderRadius: LoopRadius.control,
+      borderRadius: LoopRadius.button,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: LoopRadius.control,
+        borderRadius: LoopRadius.button,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 48),
           child: Padding(
@@ -948,7 +953,12 @@ class _QuoteFacts extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
+          ),
           child: LoopSurfaceCard(
             key: const ValueKey<String>('swap-quote-facts'),
             child: Column(
@@ -1078,7 +1088,12 @@ class SwapRouteScreen extends StatelessWidget {
       ),
       body: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
+          ),
           child: LoopSurfaceCard(
             key: const ValueKey<String>('swap-route-amounts'),
             child: Column(
@@ -1112,7 +1127,12 @@ class SwapRouteScreen extends StatelessWidget {
         ),
         LoopLabel(context.l10n.wallet_swapScreensLoopLabel),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
+          ),
           child: LoopSurfaceCard(
             key: const ValueKey<String>('swap-route-fees'),
             child: Column(

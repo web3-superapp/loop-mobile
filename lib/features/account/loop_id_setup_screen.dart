@@ -97,7 +97,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
           IdentityStepCopy(context.l10n.account_idSetupIdentityStepCopy),
           if (state.phase == LoopIdSetupPhase.loading && state.resource == null)
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: LoopSpacing.page),
               child: LoopSkeleton(
                 key: ValueKey<String>('loop-id-loading'),
                 type: LoopSkeletonType.detail,
@@ -159,7 +159,12 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                     : context.l10n.account_idSetupLoopIdActivatedBody2,
               ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                16,
+                LoopSpacing.page,
+                4,
+              ),
               child: LoopAvatarEditor(
                 key: const ValueKey<String>('loop-id-avatar-editor'),
                 avatarRef: state.avatarRef,
@@ -170,7 +175,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
             ),
             LoopLabel(context.l10n.account_idSetupLoopLabel),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
               // UX-008 (decision 0254): the card is the field's box, so the
               // focus edge sits on the card.
               child: LoopFocusRing(
@@ -219,7 +224,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
             ),
             LoopLabel(context.l10n.account_idSetupLoopLabel2),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
               child: LoopFocusRing(
                 borderRadius: LoopRadius.card,
                 enabled: editable,
@@ -247,7 +252,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
             ),
             const LoopLabel('LOOP ID'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
               child: LoopSurfaceCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

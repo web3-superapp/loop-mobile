@@ -237,7 +237,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                12,
+                LoopSpacing.page,
+                0,
+              ),
               child: LoopButton(
                 key: const ValueKey<String>('support-submit'),
                 label: state.busy
@@ -395,7 +400,12 @@ class _SupportTicketDetail extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            4,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -414,7 +424,12 @@ class _SupportTicketDetail extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            6,
+            LoopSpacing.page,
+            12,
+          ),
           child: Text(
             key: const ValueKey<String>('support-ticket-detail-body'),
             ticket.body,
@@ -423,7 +438,12 @@ class _SupportTicketDetail extends StatelessWidget {
         ),
         LoopLabel(context.l10n.profileSupport_screenLoopLabel5),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[

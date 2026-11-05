@@ -1897,7 +1897,12 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
             // network LOOP does not publish would be an address that does not
             // exist.
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                4,
+                LoopSpacing.page,
+                16,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
@@ -1923,7 +1928,12 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                20,
+                LoopSpacing.page,
+                16,
+              ),
               child: LoopButtonPair(
                 padded: false,
                 children: <Widget>[
@@ -1952,7 +1962,12 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
             // active embedded wallet.
             if (faucetWalletId != null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  0,
+                  LoopSpacing.page,
+                  16,
+                ),
                 child: LoopButton(
                   key: const ValueKey<String>('receive-faucet'),
                   label: testnetFaucetTitle,
@@ -2103,7 +2118,12 @@ class _ReceiveQrCard extends StatelessWidget {
         LoopChalkCard(
           key: const ValueKey<String>('receive-chalk-card'),
           light: true,
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.card,
+            18,
+            LoopSpacing.card,
+            10,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -2363,7 +2383,7 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
             // that rule and the identity rule sit behind the source's (i).
             LoopProvenanceFooter(
               key: const ValueKey<String>('wallets-source'),
-              margin: const EdgeInsets.fromLTRB(16, 8, 12, 4),
+              margin: const EdgeInsets.fromLTRB(LoopSpacing.page, 8, 12, 4),
               title: context.l10n.wallet_readScreensWalletsSourceTitle,
               text: context.l10n.wallet_readScreensWalletsSourceText(
                 loopRelativeTime(directory.observedAt),
@@ -3508,7 +3528,12 @@ class _ActivitySegments extends StatelessWidget {
               0,
               4,
             )
-          : const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          : const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              12,
+            ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: filter

@@ -555,7 +555,12 @@ class _OnboardingCommunitiesScreenState
           ),
         ],
         footnote: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            8,
+            LoopSpacing.page,
+            12,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -597,7 +602,12 @@ class _OnboardingCommunitiesScreenState
               resource: context.l10n.account_onboardingCommunitiesResource,
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                4,
+                LoopSpacing.page,
+                14,
+              ),
               child: Text(
                 context.l10n.account_onboardingCommunitiesIf2,
                 style: LoopType.body.copyWith(color: LoopColors.text2),
@@ -633,7 +643,12 @@ class _OnboardingCommunitiesScreenState
               ),
               if (state.appendFailed)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    12,
+                    LoopSpacing.page,
+                    0,
+                  ),
                   child: LoopButton(
                     key: const ValueKey<String>(
                       'onboarding-communities-retry-more',
@@ -653,7 +668,12 @@ class _OnboardingCommunitiesScreenState
                 ),
                 if (state.loadingMore)
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      LoopSpacing.page,
+                      12,
+                      LoopSpacing.page,
+                      0,
+                    ),
                     child: LoopSkeleton(type: LoopSkeletonType.record, rows: 1),
                   ),
               ] else

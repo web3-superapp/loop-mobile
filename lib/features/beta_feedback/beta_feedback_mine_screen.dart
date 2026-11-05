@@ -199,7 +199,7 @@ class _FeedbackCard extends StatelessWidget {
                     key: ValueKey<String>(
                       'beta-feedback-item-${item.id}-image-$index',
                     ),
-                    borderRadius: LoopRadius.tile,
+                    borderRadius: LoopRadius.card,
                     child: SizedBox.square(
                       dimension: thumbnail,
                       child: Image(

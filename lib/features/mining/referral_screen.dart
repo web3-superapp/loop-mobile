@@ -1328,7 +1328,7 @@ class _ClaimFormState extends State<_ClaimForm> {
             context.l10n.mining_referralReferralInfoBindingTitle,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

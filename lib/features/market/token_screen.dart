@@ -904,6 +904,9 @@ class TokenTradeRow extends StatelessWidget {
 
   final MarketTrade trade;
 
+  /// Row height · 51 (decision 0295, docs/58 §9.4 持仓行).
+  static const double height = LoopRowHeight.holdings;
+
   @override
   Widget build(BuildContext context) {
     final buy = trade.direction == MarketTradeDirection.buy;
@@ -919,8 +922,10 @@ class TokenTradeRow extends StatelessWidget {
         loopRelativeTime(trade.blockTimestamp),
       ].join(LoopL10n.current.common_listSeparator),
       excludeSemantics: true,
+      // Decision 0295 (类推 持仓行): 51 high; the line stays — a trade list
+      // is a ledger, read row by row.
       child: Container(
-        height: 52,
+        height: TokenTradeRow.height,
         padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(color: LoopColors.line)),

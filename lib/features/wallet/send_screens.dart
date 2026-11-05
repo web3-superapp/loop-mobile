@@ -1702,7 +1702,12 @@ class SendNftReviewCard extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            14,
+          ),
           child: LoopSurfaceCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1795,7 +1800,12 @@ class _SendDraftFacts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        12,
+      ),
       child: LoopSurfaceCard(
         key: const ValueKey<String>('send-confirm-draft-facts'),
         child: Column(
@@ -1855,7 +1865,12 @@ class _SendArrivalEstimate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        12,
+      ),
       child: LoopSurfaceCard(
         key: const ValueKey<String>('send-confirm-arrival'),
         child: Column(

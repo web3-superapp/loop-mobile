@@ -469,7 +469,7 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
         children: <Widget>[
           LoopSheetHeading(testnetFaucetTitle),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
             child: Text(
               status == null
                   ? context.l10n.walletTestnetFaucet_sheetTestnetFaucetIntro(
@@ -507,7 +507,12 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
       return <Widget>[
         Padding(
           key: const ValueKey<String>('testnet-faucet-loading'),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            12,
+            LoopSpacing.page,
+            12,
+          ),
           child: Semantics(
             liveRegion: true,
             child: Text(
@@ -549,7 +554,7 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
           child: LoopButton(
             key: const ValueKey<String>('testnet-faucet-retry'),
             label: context.l10n.common_retry,
@@ -591,7 +596,7 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
         ),
       const SizedBox(height: 8),
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: LoopButton(
           key: const ValueKey<String>('testnet-faucet-claim'),
           label: _claiming
@@ -637,7 +642,12 @@ class _TestnetFaucetSheetState extends ConsumerState<TestnetFaucetSheet> {
 
   List<Widget> _granted(TestnetFaucetGranted granted) => <Widget>[
     Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        8,
+      ),
       child: Semantics(
         liveRegion: true,
         child: Text(

@@ -576,7 +576,7 @@ class LoopUnavailableLine extends StatelessWidget {
     required this.label,
     required this.reasonCode,
     super.key,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.margin = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
     this.action,
   });
 
@@ -584,7 +584,9 @@ class LoopUnavailableLine extends StatelessWidget {
     required String label,
     required LoopUnavailable fact,
     Key? key,
-    EdgeInsets margin = const EdgeInsets.symmetric(horizontal: 16),
+    EdgeInsets margin = const EdgeInsets.symmetric(
+      horizontal: LoopSpacing.page,
+    ),
     Widget? action,
   }) : this(
          label: label,
@@ -861,7 +863,7 @@ class LoopProvenanceFooter extends StatelessWidget {
   const LoopProvenanceFooter({
     required this.text,
     super.key,
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 12, 4),
+    this.margin = const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 12, 4),
     this.label,
     this.title,
     this.notes = const <String>[],
@@ -940,7 +942,12 @@ class LoopFootnote extends StatelessWidget {
   const LoopFootnote({
     required this.text,
     super.key,
-    this.margin = const EdgeInsets.fromLTRB(16, 4, 16, 12),
+    this.margin = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      4,
+      LoopSpacing.page,
+      12,
+    ),
   });
 
   final String text;
@@ -1010,7 +1017,12 @@ class LoopTestnetNotice extends ConsumerWidget {
   const LoopTestnetNotice({
     required this.visible,
     super.key,
-    this.margin = const EdgeInsets.fromLTRB(16, 14, 16, 0),
+    this.margin = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      14,
+      LoopSpacing.page,
+      0,
+    ),
     this.compact = false,
   });
 

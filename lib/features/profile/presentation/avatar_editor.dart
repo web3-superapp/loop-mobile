@@ -162,7 +162,12 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                12,
+              ),
               child: Text(
                 context.l10n.profilePresentation_avatarEditorBuild,
                 // R19 sheet support copy (decision 0191 M17).
@@ -215,7 +220,12 @@ class _AvatarCropDialogState extends State<_AvatarCropDialog> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                12,
+                LoopSpacing.page,
+                12,
+              ),
               child: Row(
                 children: <Widget>[
                   Expanded(

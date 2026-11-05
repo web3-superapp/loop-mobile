@@ -413,7 +413,12 @@ class MoneyIntentReviewCard extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            14,
+          ),
           child: LoopSurfaceCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
