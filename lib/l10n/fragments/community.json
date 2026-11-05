@@ -930,6 +930,12 @@
     "where": "lib/features/community/community_discover_screen.dart:174",
     "zh": "已载入 {items} 个社区"
   },
+  "community_discoverJoinedFirst": {
+    "en": "Joined first",
+    "placeholders": {},
+    "where": "lib/features/community/community_discover_screen.dart",
+    "zh": "加入优先"
+  },
   "community_discoverKicker": {
     "en": "Community discovery",
     "placeholders": {},

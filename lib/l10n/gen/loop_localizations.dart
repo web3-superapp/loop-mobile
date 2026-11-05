@@ -8750,6 +8750,12 @@ abstract class LoopLocalizations {
   /// **'{items, plural, =1{1 community loaded} other{{items} communities loaded}}'**
   String community_discoverHeading2(num items);
 
+  /// lib/features/community/community_discover_screen.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Joined first'**
+  String get community_discoverJoinedFirst;
+
   /// lib/features/community/community_discover_screen.dart:165
   ///
   /// In en, this message translates to:
@@ -34665,6 +34671,12 @@ abstract class LoopLocalizations {
   /// **'View profile'**
   String get social_publicProfileSheetPublicProfileOpenPageLabel;
 
+  /// lib/features/square/square_community_list.dart
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get square_communityListApplyEntry;
+
   /// lib/features/square/square_community_list.dart:99
   ///
   /// In en, this message translates to:
@@ -34676,12 +34688,6 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Close sorting'**
   String get square_communityListBarrierLabel2;
-
-  /// lib/features/square/square_community_list.dart:354
-  ///
-  /// In en, this message translates to:
-  /// **'Discover communities'**
-  String get square_communityListBuild;
 
   /// lib/features/square/square_community_list.dart:1172
   ///
@@ -34706,12 +34712,6 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **', not joined'**
   String get square_communityListJoin;
-
-  /// lib/features/square/square_community_list.dart:584
-  ///
-  /// In en, this message translates to:
-  /// **'Joined'**
-  String get square_communityListJoined;
 
   /// lib/features/square/square_community_list.dart:720
   ///
@@ -34772,18 +34772,6 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Communities aren\'t available right now'**
   String get square_communityListSquareCommunityCapabilityUnavailableTitle;
-
-  /// lib/features/square/square_community_list.dart:201
-  ///
-  /// In en, this message translates to:
-  /// **'View all'**
-  String get square_communityListSquareCommunityJoinedEmptyAllLabel;
-
-  /// lib/features/square/square_community_list.dart:198
-  ///
-  /// In en, this message translates to:
-  /// **'No joined communities yet'**
-  String get square_communityListSquareCommunityJoinedEmptyTitle;
 
   /// lib/features/square/square_community_list.dart:186
   ///

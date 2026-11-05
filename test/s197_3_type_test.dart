@@ -448,7 +448,17 @@ void main() {
   ) async {
     await pumpCommunityPage(
       tester,
-      SquareCommunityList(onOpenCommunity: (_) {}, onOpenSearch: () {}),
+      Column(
+        children: <Widget>[
+          SquareCommunityApplyEntry(onOpenCommunity: (_) {}),
+          Expanded(
+            child: SquareCommunityList(
+              onOpenCommunity: (_) {},
+              onOpenSearch: () {},
+            ),
+          ),
+        ],
+      ),
       community: FakeCommunityGateway(),
     );
     // Decision 0277: 广场's search placeholder, body2Sm 14 textSecondary
@@ -459,7 +469,10 @@ void main() {
       color: LoopColors.textSecondary,
       reason: 'search placeholder',
     );
-    final rules = find.byKey(const ValueKey<String>('square-community-rules'));
+    // S364 · decision 0288: 入驻 is the 广场 title row's entry.
+    final rules = find.byKey(
+      const ValueKey<String>('square-community-apply-entry'),
+    );
     await tester.ensureVisible(rules);
     await tester.tap(rules);
     await tester.pumpAndSettle();

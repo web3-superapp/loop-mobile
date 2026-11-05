@@ -1,4 +1,10 @@
 {
+  "square_communityListApplyEntry": {
+    "en": "Apply",
+    "placeholders": {},
+    "where": "lib/features/square/square_community_list.dart",
+    "zh": "入驻"
+  },
   "square_communityListBarrierLabel": {
     "en": "Close sorting rules",
     "placeholders": {},
@@ -10,12 +16,6 @@
     "placeholders": {},
     "where": "lib/features/square/square_community_list.dart:119",
     "zh": "关闭排序"
-  },
-  "square_communityListBuild": {
-    "en": "Discover communities",
-    "placeholders": {},
-    "where": "lib/features/square/square_community_list.dart:354",
-    "zh": "发现社区"
   },
   "square_communityListBuild2": {
     "en": "Sorting uses only verifiable numbers: members, creation time, power and 7-day discussion count. Popular doesn't mean recommended.",
@@ -40,12 +40,6 @@
     "placeholders": {},
     "where": "lib/features/square/square_community_list.dart:719",
     "zh": "，未加入"
-  },
-  "square_communityListJoined": {
-    "en": "Joined",
-    "placeholders": {},
-    "where": "lib/features/square/square_community_list.dart:584",
-    "zh": "我加入的"
   },
   "square_communityListJoined2": {
     "en": ", joined",
@@ -111,18 +105,6 @@
     "placeholders": {},
     "where": "lib/features/square/square_community_list.dart:287",
     "zh": "社区模块当前不可用"
-  },
-  "square_communityListSquareCommunityJoinedEmptyAllLabel": {
-    "en": "View all",
-    "placeholders": {},
-    "where": "lib/features/square/square_community_list.dart:201",
-    "zh": "去看看全部"
-  },
-  "square_communityListSquareCommunityJoinedEmptyTitle": {
-    "en": "No joined communities yet",
-    "placeholders": {},
-    "where": "lib/features/square/square_community_list.dart:198",
-    "zh": "还没有加入社区"
   },
   "square_communityListSquareCommunityOrderingBackLabel": {
     "en": "Sort by most members",

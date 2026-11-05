@@ -101,6 +101,12 @@ class SquareScreen extends ConsumerWidget {
       // Decision 0181: the page opens on 社区; 动态 sits in front of it but
       // is a segment the reader picks.
       initialIndex: communityIndex(feed: feed),
+      // S364 · decision 0288: 入驻 at the right end of the title row, on the
+      // 社区 segment only (the 「发现社区 / 规则与入驻」 line is gone).
+      actionsBuilder: (context, index) => <Widget>[
+        if (index - offset == 0)
+          SquareCommunityApplyEntry(onOpenCommunity: onOpenCommunity),
+      ],
       // The segment bodies are embedded pages with no bar of their own, so
       // their 更新中 is drawn on the segment row (S106b).
       updating: (ref, index) => switch (index - offset) {

@@ -325,6 +325,15 @@ final class FakeCommunityGateway implements CommunityGateway {
   Map<CommunityDirectorySort, CommunityDirectoryPage> directoryPagesBySort =
       <CommunityDirectorySort, CommunityDirectoryPage>{};
 
+  /// Answers a directory read before every map below when it returns a
+  /// page (S364 · decision 0288: 加入优先 walks two reads by cursor).
+  CommunityDirectoryPage? Function(
+    CommunityMembershipFilter membership,
+    CommunityVerificationFilter verification,
+    String? cursor,
+  )?
+  directoryPageFor;
+
   /// Per-membership directory pages (decision 0116), consulted before
   /// [directoryPagesBySort]. A missing entry falls through.
   Map<CommunityMembershipFilter, CommunityDirectoryPage>
@@ -422,7 +431,8 @@ final class FakeCommunityGateway implements CommunityGateway {
   }) {
     commands.add('list:${sort.wireName}:${membership.wireName}:$cursor');
     return _read(
-      directoryPagesByMembership[membership] ??
+      directoryPageFor?.call(membership, verification, cursor) ??
+          directoryPagesByMembership[membership] ??
           directoryPagesBySort[sort] ??
           directoryPage,
     );

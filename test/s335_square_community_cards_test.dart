@@ -360,7 +360,8 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('我加入的 draws the same cards', (tester) async {
+    // S364 · decision 0288: 我加入的 is now the order 加入优先.
+    testWidgets('加入优先 draws the same cards', (tester) async {
       final gateway =
           FakeCommunityGateway(
               directoryPage: _page(<CommunitySummary>[_card(0), _card(1)]),
@@ -370,10 +371,16 @@ void main() {
                   _card(1, symbol: 'ETH', viewer: _member),
                 ]);
       await _pump(tester, gateway);
-      await tester.tap(_key('square-filter-joined'));
+      await tester.tap(_key('square-community-sort'));
+      await tester.pumpAndSettle();
+      await tester.tap(_key('square-sort-joinedFirst'));
       await tester.pumpAndSettle();
       expect(_key('square-community-card-${_id(1)}'), findsOneWidget);
-      expect(_key('square-community-card-${_id(0)}'), findsNothing);
+      expect(_key('square-community-card-${_id(0)}'), findsOneWidget);
+      expect(
+        tester.getTopLeft(_key('square-community-card-${_id(1)}')).dy,
+        lessThan(tester.getTopLeft(_key('square-community-card-${_id(0)}')).dy),
+      );
       expect(
         tester.getSize(_key('square-community-logo-${_id(1)}')),
         const Size(56, 56),

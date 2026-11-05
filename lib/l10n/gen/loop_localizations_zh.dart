@@ -4873,6 +4873,9 @@ class LoopLocalizationsZh extends LoopLocalizations {
   }
 
   @override
+  String get community_discoverJoinedFirst => '加入优先';
+
+  @override
   String get community_discoverKicker => '社区发现';
 
   @override
@@ -20115,13 +20118,13 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get social_publicProfileSheetPublicProfileOpenPageLabel => '查看资料';
 
   @override
+  String get square_communityListApplyEntry => '入驻';
+
+  @override
   String get square_communityListBarrierLabel => '关闭排序规则';
 
   @override
   String get square_communityListBarrierLabel2 => '关闭排序';
-
-  @override
-  String get square_communityListBuild => '发现社区';
 
   @override
   String get square_communityListBuild2 =>
@@ -20136,9 +20139,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get square_communityListJoin => '，未加入';
-
-  @override
-  String get square_communityListJoined => '我加入的';
 
   @override
   String get square_communityListJoined2 => '，已加入';
@@ -20172,12 +20172,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
   @override
   String get square_communityListSquareCommunityCapabilityUnavailableTitle =>
       '社区模块当前不可用';
-
-  @override
-  String get square_communityListSquareCommunityJoinedEmptyAllLabel => '去看看全部';
-
-  @override
-  String get square_communityListSquareCommunityJoinedEmptyTitle => '还没有加入社区';
 
   @override
   String get square_communityListSquareCommunityOrderingBackLabel => '按成员最多排序';

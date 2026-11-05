@@ -187,7 +187,8 @@ void main() {
   });
 
   group('广场 · 社区', () {
-    testWidgets('search and 全部 / 我加入的 share one pinned line', (tester) async {
+    // S364 · decision 0288: the order took 我加入的's place on the line.
+    testWidgets('search and the order share one pinned line', (tester) async {
       for (final width in <double>[390, 360]) {
         await pumpCommunityPage(
           tester,
@@ -209,20 +210,21 @@ void main() {
           size: Size(width, 900),
         );
         final search = tester.getRect(_key('square-community-search'));
-        final chips = tester.getRect(_key('square-community-chips'));
+        final chips = tester.getRect(_key('square-community-sort'));
         expect(search.height, squareCommunityControlHeight);
         expect(chips.height, squareCommunityControlHeight);
-        expect(search.top, chips.top, reason: '$width');
+        expect(search.center.dy, chips.center.dy, reason: '$width');
         expect(search.left, squareCommunityCardInset);
-        expect(chips.right, width - squareCommunityCardInset);
-        // 「我加入的」 is drawn whole.
-        final joined = find.descendant(
-          of: _key('square-filter-joined'),
-          matching: find.text('Joined'),
+        // The word's own 8 of hit padding ends on the gutter.
+        expect(chips.right, width - squareCommunityCardInset + 8);
+        expect(_key('square-filter-joined'), findsNothing);
+        final word = find.descendant(
+          of: _key('square-community-sort'),
+          matching: find.text('Most members'),
         );
-        expect(joined, findsOneWidget);
-        expect(tester.getRect(joined).right, lessThanOrEqualTo(chips.right));
-        // The first card starts under the line and the sort word only.
+        expect(word, findsOneWidget);
+        expect(tester.getRect(word).right, lessThanOrEqualTo(chips.right));
+        // The first card starts right under the line.
         final card = tester.getRect(
           _key('square-community-card-$testCommunityId'),
         );
