@@ -105,7 +105,10 @@ void main() {
       expect(identical(loopQuietSenderPrefix(plain), plain), isTrue);
     });
 
-    test('pin and mute marks sit at the end of the preview line', () {
+    // S376 · decision 0300: LOOP's rows draw the marks at the row's right
+    // end themselves (test/s376_chat_mute_icon_right_test.dart); the theme
+    // keeps them off the name line for any official tile.
+    test('pin and mute marks stay off the name line (theme fallback)', () {
       expect(
         loopStreamChatThemeData().channelListItemTheme.attributePosition,
         AttributePosition.trailingBottom,

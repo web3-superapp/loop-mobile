@@ -725,6 +725,63 @@ Widget loopStreamChannelListTrailing(Widget time, int unreadCount) {
   );
 }
 
+/// The inbox row's meta slot size (docs/58 §5.6: the right column's 16 high
+/// "Meta Space" under the time, where the do-not-disturb mark goes).
+const double loopChannelMetaIconSize = 16;
+
+/// The preview line of an inbox row with its marks at the row's right end
+/// (S376 · decision 0300, docs/58 §5.6).
+///
+/// Stream's own tile puts the mute and pin marks straight after the preview
+/// text (`AttributePosition.trailingBottom`), so on a short preview they sat
+/// in the middle of the row. The tile is therefore given `isMuted: false` /
+/// `isPinned: false`, and this line draws the marks itself: the preview
+/// takes the room that is left and ellipsises, the marks sit in the right
+/// column under the time, their right edge on the time's right edge.
+Widget loopStreamChannelListSubtitle(
+  Widget preview, {
+  required bool muted,
+  required bool pinned,
+}) {
+  if (!muted && !pinned) return preview;
+  return Row(
+    key: const ValueKey<String>('loop-channel-subtitle-line'),
+    children: <Widget>[
+      Expanded(child: preview),
+      const SizedBox(width: 8),
+      Builder(
+        builder: (context) {
+          final icons = context.streamIcons;
+          final a11y = context.translations.accessibility;
+          return Row(
+            key: const ValueKey<String>('loop-channel-meta-marks'),
+            mainAxisSize: MainAxisSize.min,
+            spacing: 4,
+            children: <Widget>[
+              if (muted)
+                Icon(
+                  icons.mute,
+                  key: const ValueKey<String>('loop-channel-muted-mark'),
+                  size: loopChannelMetaIconSize,
+                  color: LoopColors.text3,
+                  semanticLabel: a11y.channelMutedLabel,
+                ),
+              if (pinned)
+                Icon(
+                  icons.pin,
+                  key: const ValueKey<String>('loop-channel-pinned-mark'),
+                  size: loopChannelMetaIconSize,
+                  color: LoopColors.text3,
+                  semanticLabel: a11y.channelPinnedLabel,
+                ),
+            ],
+          );
+        },
+      ),
+    ],
+  );
+}
+
 Widget loopStreamChannelListTimestamp(Channel channel) =>
     ChannelLastMessageDate(
       channel: channel,
@@ -817,12 +874,18 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
                 // 2026-09-20 · D-10).
                 avatar: _directRowAvatar(context, identity),
                 title: Text(identity.title),
-                subtitle: lastMessage == null
-                    ? Text(context.translations.emptyMessagesText)
-                    : StreamMessagePreviewText(
-                        message: lastMessage,
-                        channel: loopDirectPreviewChannel(channelState.channel),
-                      ),
+                subtitle: loopStreamChannelListSubtitle(
+                  lastMessage == null
+                      ? Text(context.translations.emptyMessagesText)
+                      : StreamMessagePreviewText(
+                          message: lastMessage,
+                          channel: loopDirectPreviewChannel(
+                            channelState.channel,
+                          ),
+                        ),
+                  muted: mutedSnapshot.data ?? channel.isMuted,
+                  pinned: pinnedSnapshot.data ?? channel.isPinned,
+                ),
                 timestamp: loopStreamChannelListTrailing(
                   loopStreamChannelListTimestamp(channel),
                   unreadSnapshot.data ?? state.unreadCount,
@@ -830,8 +893,10 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
                 // Decision 0105 · 6: the count is LOOP's badge beside the
                 // time, not Stream's own.
                 unreadCount: 0,
-                isMuted: mutedSnapshot.data ?? channel.isMuted,
-                isPinned: pinnedSnapshot.data ?? channel.isPinned,
+                // S376 · decision 0300: the marks are drawn at the row's
+                // right end by [loopStreamChannelListSubtitle].
+                isMuted: false,
+                isPinned: false,
                 onTap: props.onTap,
                 onLongPress: props.onLongPress,
                 selected: props.selected,
@@ -955,24 +1020,29 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
               label,
               channelState.channel?.memberCount ?? channel.memberCount,
             ),
-            subtitle: displayMessage == null
-                ? Text(
-                    face?.firstSentence ?? loopChannelQuietLabel,
-                    key: const ValueKey<String>('loop-channel-quiet'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                : StreamMessagePreviewText(
-                    message: displayMessage,
-                    channel: channelState.channel,
-                  ),
+            subtitle: loopStreamChannelListSubtitle(
+              displayMessage == null
+                  ? Text(
+                      face?.firstSentence ?? loopChannelQuietLabel,
+                      key: const ValueKey<String>('loop-channel-quiet'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : StreamMessagePreviewText(
+                      message: displayMessage,
+                      channel: channelState.channel,
+                    ),
+              muted: mutedSnapshot.data ?? channel.isMuted,
+              pinned: pinnedSnapshot.data ?? channel.isPinned,
+            ),
             timestamp: loopStreamChannelListTrailing(
               loopStreamChannelListTimestamp(channel),
               unreadSnapshot.data ?? state.unreadCount,
             ),
             unreadCount: 0,
-            isMuted: mutedSnapshot.data ?? channel.isMuted,
-            isPinned: pinnedSnapshot.data ?? channel.isPinned,
+            // S376 · decision 0300: see [loopStreamChannelListSubtitle].
+            isMuted: false,
+            isPinned: false,
             onTap: props.onTap,
             onLongPress: props.onLongPress,
             selected: props.selected,
