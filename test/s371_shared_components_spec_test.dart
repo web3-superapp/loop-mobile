@@ -644,7 +644,9 @@ void main() {
       expect(projects, contains('Launch2SecondaryMetrics.tokenFace'));
       final holdings = _source('lib/features/launch2/launch2_wallet_rows.dart');
       expect(holdings, contains('height: LoopRowHeight.holdings'));
-      expect(holdings, contains('valueStyle: LoopType.figureSm'));
+      // S377 · decision 0301: the holdings amount is 16 / 600.
+      expect(holdings, contains('valueStyle: LoopType.figure,'));
+      expect(holdings, contains('titleStyle: LoopType.rowTitle'));
       final manage = _source(
         'lib/features/community/community_manage_screen.dart',
       );

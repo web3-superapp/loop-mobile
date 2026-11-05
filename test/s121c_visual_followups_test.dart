@@ -55,14 +55,15 @@ void main() {
         find.descendant(of: row, matching: find.text('BNB')).first,
       );
       // Decision 0190 H5 / H7: R4 / R6 / R7 (it was 14 bold / 14 bold / 11).
-      expect(symbol.style!.fontSize, LoopType.title.fontSize);
-      expect(symbol.style!.fontWeight, LoopType.title.fontWeight);
+      // S377 · decision 0301 (11-05 改稿): the holdings name is 16 / 500.
+      expect(symbol.style!.fontSize, LoopType.rowTitle.fontSize);
+      expect(symbol.style!.fontWeight, LoopType.rowTitle.fontWeight);
       final amount = tester.widget<Text>(
         key('wallet-balance-amount-$s5NativeAssetId'),
       );
-      // S353c (§5.13): the amount is 14 / 600.
-      expect(amount.style!.fontSize, LoopType.figureSm.fontSize);
-      expect(amount.style!.fontWeight, LoopType.figureSm.fontWeight);
+      // S377 · decision 0301 (§5.13, 11-05 改稿): the amount is 16 / 600.
+      expect(amount.style!.fontSize, LoopType.figure.fontSize);
+      expect(amount.style!.fontWeight, LoopType.figure.fontWeight);
       final value = tester.widget<Text>(
         key('wallet-balance-value-$s5NativeAssetId'),
       );

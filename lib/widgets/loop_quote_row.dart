@@ -127,6 +127,7 @@ class LoopQuoteRow extends StatelessWidget {
     this.valueMaxWidth,
     this.trailingSlotWidth,
     this.valueStyle,
+    this.titleStyle,
   });
 
   final Widget leading;
@@ -150,8 +151,14 @@ class LoopQuoteRow extends StatelessWidget {
   final double height;
 
   /// The right figure's step when a list wants another one (S353c: a
-  /// holdings row's 14 / 600, docs/58 §5.13); `null` keeps [LoopType.figureMd].
+  /// holdings row's 16 / 600 since 0301, docs/58 §5.13); `null` keeps
+  /// [LoopType.figureMd].
   final TextStyle? valueStyle;
+
+  /// The title's step (decision 0301: a token or holdings row passes
+  /// [LoopType.rowTitle] 16 / 500, the Figma's 11-05 revision); `null`
+  /// keeps [LoopType.titleLg].
+  final TextStyle? titleStyle;
 
   /// The width the title keeps however wide the figures are (decision 0146):
   /// the figure column gives way — a figure scales down, a caption ends in an
@@ -216,7 +223,7 @@ class LoopQuoteRow extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             softWrap: false,
-                            style: LoopType.titleLg,
+                            style: titleStyle ?? LoopType.titleLg,
                           ),
                         ),
                         if (titleTrailing != null) ...<Widget>[

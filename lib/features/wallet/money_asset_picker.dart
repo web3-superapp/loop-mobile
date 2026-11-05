@@ -98,6 +98,9 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
         fallbackMonogram: row.symbol,
       ),
       title: row.symbol,
+      // 0301 (11-05 改稿, docs/58 §5.13): the holdings row's name, 16 / 500;
+      // the amount is the row's figure, already 16 / 600.
+      titleStyle: LoopType.rowTitle,
       subtitle: switch (balance) {
         LoopBalanceUnavailable(reasonCode: final reasonCode) =>
           loopReasonCodeText(reasonCode),

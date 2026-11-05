@@ -197,7 +197,7 @@ void main() {
       expect(label.style!.fontWeight, FontWeight.w500);
     });
 
-    testWidgets('a holding is 51 tall with a 36 avatar, 14 / 600 amount', (
+    testWidgets('a holding is 51 tall with a 36 avatar, 16 / 600 amount', (
       tester,
     ) async {
       await pumpMePage(tester, size: _narrow);
@@ -222,7 +222,8 @@ void main() {
       final amount = tester.widget<Text>(
         _key('wallet-balance-amount-$assetId'),
       );
-      expect(amount.style!.fontSize, 14);
+      // S377 · decision 0301 (11-05 改稿): 16 / 600.
+      expect(amount.style!.fontSize, 16);
       expect(amount.style!.fontWeight, FontWeight.w600);
       final value = tester.widget<Text>(_key('wallet-balance-value-$assetId'));
       expect(value.style!.fontSize, 12);

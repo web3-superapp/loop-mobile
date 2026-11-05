@@ -1609,11 +1609,21 @@ class LoopRecordRow extends StatelessWidget {
   /// ledger page, 56 with 8 on a flat page.
   final LoopRecordRowKind? kind;
 
-  /// The title's step; `null` is [LoopType.title] (a conversation target
-  /// passes [LoopType.rowTitleLg], decision 0297).
+  /// The title's step; `null` follows [kind] (decision 0301, the Figma's
+  /// 11-05 revision): a token, community or holdings row is
+  /// [LoopType.rowTitle] 16 / 500; any other row is [LoopType.title]
+  /// 14 / 500 (a conversation target passes [LoopType.rowTitleLg],
+  /// decision 0297).
   final TextStyle? titleStyle;
 
-  TextStyle get _titleStyle => titleStyle ?? LoopType.title;
+  TextStyle get _titleStyle =>
+      titleStyle ??
+      switch (kind) {
+        LoopRecordRowKind.token ||
+        LoopRecordRowKind.community ||
+        LoopRecordRowKind.holdings => LoopType.rowTitle,
+        _ => LoopType.title,
+      };
 
   /// The row's minimum height and the space above and below its content.
   /// A drawn divider is counted inside a [kind]'s height, and inside a

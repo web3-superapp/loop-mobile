@@ -78,6 +78,10 @@ final walletNetWorthRangeProvider =
 /// What a masked amount prints.
 const String walletMaskedFigure = '****';
 
+/// The line height of a holdings row's name and amount (decision 0301):
+/// 16 on 19, so name + 4 + the 16 caption line fit the 51 row's 39.
+const double walletHoldingLineHeight = 19 / 16;
+
 /// A row the asset list leaves out (S259 · decision 0217): the chain read
 /// answered, the balance is exactly zero and nothing is on its way in. A row
 /// whose read failed is never zero and always stays.
@@ -1063,8 +1067,9 @@ class WalletAssetLine extends StatelessWidget {
       row.symbol,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      // H5: the same step as the healthy rows of the same list.
-      style: (recordRow ? LoopType.title : LoopType.titleLg).copyWith(
+      // H5: the same step as the healthy rows of the same list (the holdings
+      // row's 16 / 500 since decision 0301).
+      style: (recordRow ? LoopType.rowTitle : LoopType.titleLg).copyWith(
         color: ink,
       ),
     );
@@ -1557,8 +1562,10 @@ class WalletBalanceRow extends StatelessWidget {
         valueText = context.l10n.wallet_homeValueText;
     }
 
-    // S353c · decision 0280 (docs/58 §5.13): avatar 36, the symbol 14 / 500
-    // over a 12 / 300 line, the amount 14 / 600 over the 12 / 300 value.
+    // S353c · decision 0280 (docs/58 §5.13): avatar 36, the symbol over a
+    // 12 / 300 line, the amount over the 12 / 300 value. 0301 (11-05 改稿):
+    // the symbol 16 / 500 and the amount 16 / 600, each on a 19 line so the
+    // two lines and their 4 gap still fit the 51 row's 39 between its 6s.
     final top = LoopPressable(
       key: ValueKey<String>('wallet-balance-open-${row.assetId}'),
       scale: false,
@@ -1581,7 +1588,10 @@ class WalletBalanceRow extends StatelessWidget {
                   row.symbol,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.body1.copyWith(color: ink, height: 1.25),
+                  style: LoopType.rowTitle.copyWith(
+                    color: ink,
+                    height: walletHoldingLineHeight,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 // S343 · decision 0271: one short fact — the data quality
@@ -1611,7 +1621,10 @@ class WalletBalanceRow extends StatelessWidget {
                 amount,
                 key: ValueKey<String>('wallet-balance-amount-${row.assetId}'),
                 maxLines: 1,
-                style: LoopType.figureSm.copyWith(color: ink, height: 1.25),
+                style: LoopType.figure.copyWith(
+                  color: ink,
+                  height: walletHoldingLineHeight,
+                ),
               ),
               const SizedBox(height: 4),
               // v3 (decision 0229): the value and its 24 h move share the

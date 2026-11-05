@@ -754,7 +754,9 @@ Widget walletLaunchNativeRow(
   // Decision 0295: it stands in 我的 holdings list beside the 51 holdings
   // row (0280, docs/58 §5.13), so it takes the same height and figure.
   height: LoopRowHeight.holdings,
-  valueStyle: LoopType.figureSm,
+  // 0301 (11-05 改稿, docs/58 §5.13): name 16 / 500, amount 16 / 600.
+  titleStyle: LoopType.rowTitle,
+  valueStyle: LoopType.figure,
   semanticLabel:
       '$walletLaunchChainLabel ${loopDisplaySymbol(native.symbol)} '
       '${hidden ? walletMaskedFigure : loopFormatDecimal(native.displayBalance)}',
@@ -796,7 +798,9 @@ Widget walletLaunchUsd1Row(
             style: walletHoldingCaption,
           ),
     height: LoopRowHeight.holdings,
-    valueStyle: LoopType.figureSm,
+    // 0301 (11-05 改稿, docs/58 §5.13): name 16 / 500, amount 16 / 600.
+    titleStyle: LoopType.rowTitle,
+    valueStyle: LoopType.figure,
     semanticLabel: <String>[
       '$walletLaunchChainLabel $usd1Symbol $usd1Figure',
       ?usd1Reason,

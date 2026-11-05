@@ -389,8 +389,9 @@ class MemeTokenCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             softWrap: false,
-            // The quote-row title (decision 0190 H4): the same 16 as 情报·行情.
-            style: LoopType.titleLg,
+            // The token row's name (decision 0301, docs/58 §5.4 11-05 改稿):
+            // 16 / 500 on 22.
+            style: LoopType.rowTitle,
           ),
         ),
         if (row.isGraduated) ...<Widget>[
