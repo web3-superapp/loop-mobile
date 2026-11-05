@@ -374,8 +374,9 @@ const double squareFeedPostGap = 12;
 
 /// `.feed-post` in the Figma's form (docs/58 §5.7): a 48 face with the name
 /// at 18 / 600 and the kind tag beside it, the age at 12 / 300 under the
-/// name; the text across the full width; the token's quote card; ♡ at the
-/// right end. A hairline closes the post.
+/// name, ♡ at the head's right end on the name line (S365 · decision 0289);
+/// the text across the full width; the token's quote card. A hairline closes
+/// the post.
 class SquareFeedPostRow extends StatelessWidget {
   const SquareFeedPostRow({
     required this.post,
@@ -400,7 +401,7 @@ class SquareFeedPostRow extends StatelessWidget {
   /// Between the face and the name column.
   static const double avatarGap = 12;
 
-  /// The text, the quote and ♡ use the whole width under the head, flush
+  /// The text and the quote use the whole width under the head, flush
   /// with the face's left edge (S350a · decision 0274).
   static const double indent = 0;
 
@@ -417,7 +418,10 @@ class SquareFeedPostRow extends StatelessWidget {
     final content = Container(
       key: const ValueKey<String>('square-post-card'),
       margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-      padding: const EdgeInsets.only(top: squareFeedPostGap, bottom: 4),
+      padding: const EdgeInsets.only(
+        top: squareFeedPostGap - _LikeButton.headOverhang,
+        bottom: squareFeedPostGap,
+      ),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: LoopColors.divider)),
       ),
@@ -425,69 +429,86 @@ class SquareFeedPostRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Flexible(
-                child: InkWell(
-                  key: const ValueKey<String>('square-post-author'),
-                  borderRadius: LoopRadius.inner,
-                  onTap: author == null
-                      ? null
-                      : () =>
-                            onOpen(userProfileLocation(author.publicProfileId)),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      if (author == null)
-                        const _OfficialAvatar()
-                      else
-                        LoopProfileAvatar(
-                          avatarRef: author.avatarRef,
-                          alias: author.displayName,
-                          size: avatarSize,
-                        ),
-                      const SizedBox(width: avatarGap),
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            // S268 (decision 0228): the name ellipsizes
-                            // first, so the kind tag stays.
-                            Row(
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: _LikeButton.headOverhang),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    heightFactor: 1,
+                    child: InkWell(
+                      key: const ValueKey<String>('square-post-author'),
+                      borderRadius: LoopRadius.inner,
+                      onTap: author == null
+                          ? null
+                          : () => onOpen(
+                              userProfileLocation(author.publicProfileId),
+                            ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          if (author == null)
+                            const _OfficialAvatar()
+                          else
+                            LoopProfileAvatar(
+                              avatarRef: author.avatarRef,
+                              alias: author.displayName,
+                              size: avatarSize,
+                            ),
+                          const SizedBox(width: avatarGap),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                Flexible(
-                                  child: Text(
-                                    name,
-                                    key: const ValueKey<String>(
-                                      'square-post-name',
+                                // S268 (decision 0228): the name ellipsizes
+                                // first, so the kind tag stays.
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Flexible(
+                                      child: Text(
+                                        name,
+                                        key: const ValueKey<String>(
+                                          'square-post-name',
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: LoopType.postAuthor,
+                                      ),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: LoopType.postAuthor,
-                                  ),
+                                    if (badge != null) ...<Widget>[
+                                      const SizedBox(width: 8),
+                                      badge,
+                                    ],
+                                  ],
                                 ),
-                                if (badge != null) ...<Widget>[
-                                  const SizedBox(width: 8),
-                                  badge,
-                                ],
+                                const SizedBox(height: 2),
+                                Text(
+                                  squareFeedAgeLabel(post.createdAt, now: now),
+                                  key: const ValueKey<String>(
+                                    'square-post-age',
+                                  ),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: LoopType.caption,
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              squareFeedAgeLabel(post.createdAt, now: now),
-                              key: const ValueKey<String>('square-post-age'),
-                              maxLines: 1,
-                              softWrap: false,
-                              style: LoopType.caption,
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
+              // S365 (decision 0289): ♡ stands at the head's right end,
+              // centred on the name line; the name ellipsizes first so ♡ is
+              // never pushed out. Its 44 target rises above the face into
+              // the post's top room (the head drops by the same amount).
+              const SizedBox(width: 8),
+              _LikeButton(post: post, onTap: onLike),
             ],
           ),
           if (sentence != null)
@@ -512,18 +533,6 @@ class SquareFeedPostRow extends StatelessWidget {
                 },
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Align(
-              alignment: Alignment.centerRight,
-              // ♡ stands at the post's right end (docs/58 §5.7); its tap
-              // padding sits in the page gutter.
-              child: Transform.translate(
-                offset: const Offset(8, 0),
-                child: _LikeButton(post: post, onTap: onLike),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -1074,9 +1083,20 @@ class _SquareFeedTextState extends State<SquareFeedText> {
 class _LikeButton extends StatelessWidget {
   const _LikeButton({required this.post, required this.onTap});
 
-  /// The foot line: 32 high, so a post stays compact; the full row width
-  /// beside it is free for the long-press (decision 0187).
-  static const double likeHeight = 32;
+  /// The tap target: 44 × 44 (S365 · decision 0289); the heart and the
+  /// count draw as before inside it.
+  static const double likeHeight = 44;
+
+  /// The name line's middle under the head's top: the name / age column
+  /// sits centred on the 48 face, so the name's middle is the face's middle
+  /// less half of the age line (12 × 16 / 12) and the 2 gap above it.
+  static const double nameLineCentre =
+      SquareFeedPostRow.avatarSize / 2 - (2 + 16) / 2;
+
+  /// How far the 44 target stands above the face's top when it is centred
+  /// on the name line; the post's top room gives this up so the target is
+  /// inside the head row and wholly tappable.
+  static const double headOverhang = likeHeight / 2 - nameLineCentre;
 
   /// The heart (docs/58 §3.3: 22).
   static const double heartSize = 22;
@@ -1106,8 +1126,10 @@ class _LikeButton extends StatelessWidget {
             minHeight: likeHeight,
             minWidth: likeHeight,
           ),
+          // The count ends flush with the post's right edge; the 8 lead
+          // pads the heart inside the target.
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsetsDirectional.only(start: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
