@@ -389,9 +389,13 @@ const double launch2DeskCampaignHeight = 162;
 /// The height of the dot row under the pager (decision 0211).
 const double launch2DeskDotsHeight = 18;
 
-/// How far the banner's chrome hand may hang below its card (S264); the
-/// pager keeps this much room under every page.
-const double launch2DeskOverhang = 16;
+/// From two pages on, the dot row under the card: 8 above the dots, the
+/// dots 6 high (S361 · decision 0286 — nothing hangs past the card any more).
+const double launch2DeskDotsRow = 14;
+
+/// docs/58 §9 (S361 · decision 0286): the banner's foot to the trade band's
+/// top, 16.
+const double launch2DeskBandGap = 16;
 
 /// `.ledger-card.folio-primary` as a sideways pager: one flat card per
 /// page, the page width the screen less the two 16 gutters, dots at the
@@ -455,15 +459,18 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
         .scale(launch2DeskCampaignHeight);
     final count = pages.length;
     final current = _current.clamp(0, count == 0 ? 0 : count - 1);
-    // S264: the pager is the card's height plus the hand's overhang; the
-    // dots sit in that overhang, 12 under the card.
-    // v3 (decision 0229): 28 from the card's foot to the trade band's.
+    // S361 · decision 0286: the pager is the card's height (plus the dot
+    // row from two pages on); the band's top stands 16 under it — the band
+    // sits centred in its 44 tap row, so the pager keeps the rest.
+    final dots = count >= 2 ? launch2DeskDotsRow : 0.0;
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      padding: const EdgeInsets.only(
+        top: 8,
+        bottom: launch2DeskBandGap - (44 - Launch2TradeTicker.bandHeight) / 2,
+      ),
       child: SizedBox(
-        height: height + launch2DeskOverhang + (count >= 2 ? 6 : 0),
+        height: height + dots,
         child: Stack(
-          clipBehavior: Clip.none,
           children: <Widget>[
             Positioned.fill(
               child: PageView.builder(
@@ -476,7 +483,7 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
                     LoopSpacing.page,
                     0,
                     LoopSpacing.page,
-                    launch2DeskOverhang + (count >= 2 ? 6 : 0),
+                    dots,
                   ),
                   child: _card(pages.isEmpty ? null : pages[index]),
                 ),
@@ -488,7 +495,7 @@ class _Launch2DeskPagerState extends State<Launch2DeskPager> {
               Positioned(
                 left: 0,
                 right: 0,
-                top: height + 12,
+                top: height + launch2DeskDotsRow - 6,
                 child: Center(
                   child: _DeskDots(count: count, current: current),
                 ),
@@ -732,9 +739,11 @@ class Launch2DeskEventFace extends StatelessWidget {
 /// The banner's default art (decisions 0220 §4, 0222, 0223) under every
 /// page of the desk — campaign, event or the empty desk alike: the wall at
 /// 90 %, Purple and Yellow fog, the left-to-right Ink wash, the chrome hand
-/// hanging 14 / 16 past the card's right and bottom edges (its sheen every
-/// 6 s), its Yellow crown and the tilted 「IN THE LOOP」 tag. A page lays
-/// its words over the left column, [Launch2BannerBackdrop.textWidth] wide.
+/// in the card's bottom right corner (its sheen every 6 s), its Yellow crown
+/// and the tilted 「IN THE LOOP」 tag. S361 · decision 0286 (docs/58 §5.5):
+/// all of it inside the card's 8 corner — nothing hangs past its edges. A
+/// page lays its words over the left column,
+/// [Launch2BannerBackdrop.textWidth] wide.
 class Launch2BannerBackdrop extends StatelessWidget {
   const Launch2BannerBackdrop({super.key});
 
@@ -753,6 +762,12 @@ class Launch2BannerBackdrop extends StatelessWidget {
   /// The narrowest the words' column gets.
   static const double textMinWidth = 140;
 
+  /// The chrome hand's box in the card's bottom right corner (S361 ·
+  /// decision 0286): about 45 % of a 353 card's width, its art's 171 : 170
+  /// shape, short of the 162 card's height.
+  static const double handWidth = 158;
+  static const double handHeight = 157;
+
   /// S350b · decision 0275: the words' column for a card [cardWidth] wide —
   /// it stops short of the chrome hand, which keeps its size, so on a 360
   /// screen the words wrap instead of running under the hand.
@@ -769,93 +784,91 @@ class Launch2BannerBackdrop extends StatelessWidget {
       gaplessPlayback: true,
       errorBuilder: (context, error, stackTrace) => SizedBox(width: width),
     );
-    return Stack(
+    return ClipRRect(
       key: const ValueKey<String>('launch2-campaign-default-art'),
-      clipBehavior: Clip.none,
-      fit: StackFit.expand,
-      children: <Widget>[
-        ClipRRect(
-          borderRadius: LoopRadius.chip,
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              const ColoredBox(color: Color(0xFF0E0D12)),
-              const _CampaignGround(),
-              Positioned(
-                left: -60,
-                top: -110,
-                width: 420,
-                height: 420,
-                child: Opacity(
-                  opacity: 0.55,
-                  child: art(LoopAtmoAssets.sprayPurple),
-                ),
-              ),
-              Positioned(
-                right: -140,
-                bottom: -200,
-                width: 360,
-                height: 360,
-                child: Opacity(
-                  opacity: 0.12,
-                  child: art(LoopAtmoAssets.sprayYellow),
-                ),
-              ),
-              const DecoratedBox(
-                key: ValueKey<String>('launch2-campaign-scrim'),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: <Color>[
-                      Color(0xD1070809),
-                      Color(0x8C070809),
-                      Color(0x00070809),
-                    ],
-                    stops: <double>[0, 0.52, 0.75],
-                  ),
-                ),
-              ),
-              // docs/58 §5.5: an 8 corner and a 1 px white 15 % edge.
-              const DecoratedBox(
-                key: ValueKey<String>('launch2-banner-edge'),
-                decoration: BoxDecoration(
-                  borderRadius: LoopRadius.chip,
-                  border: Border.fromBorderSide(
-                    BorderSide(color: LoopColors.bannerEdge),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Positioned(
-          right: -14,
-          bottom: -16,
-          width: 171,
-          height: 170,
-          child: Launch2ChromeHand(),
-        ),
-        Positioned(
-          right: 118,
-          top: 28,
-          width: 62,
-          child: Transform.rotate(
-            angle: -14 * math.pi / 180,
-            child: art(LoopAtmoAssets.crownYellow, width: 62),
-          ),
-        ),
-        Positioned(
-          right: 12,
-          top: 12,
-          width: 42,
-          child: Transform.rotate(
-            angle: -5 * math.pi / 180,
+      borderRadius: LoopRadius.chip,
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          const ColoredBox(color: Color(0xFF0E0D12)),
+          const _CampaignGround(),
+          Positioned(
+            left: -60,
+            top: -110,
+            width: 420,
+            height: 420,
             child: Opacity(
-              opacity: 0.95,
-              child: art(LoopAtmoAssets.tagInLoop, width: 42),
+              opacity: 0.55,
+              child: art(LoopAtmoAssets.sprayPurple),
             ),
           ),
-        ),
-      ],
+          Positioned(
+            right: -140,
+            bottom: -200,
+            width: 360,
+            height: 360,
+            child: Opacity(
+              opacity: 0.12,
+              child: art(LoopAtmoAssets.sprayYellow),
+            ),
+          ),
+          const DecoratedBox(
+            key: ValueKey<String>('launch2-campaign-scrim'),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: <Color>[
+                  Color(0xD1070809),
+                  Color(0x8C070809),
+                  Color(0x00070809),
+                ],
+                stops: <double>[0, 0.52, 0.75],
+              ),
+            ),
+          ),
+          // S361 · decision 0286: the hand sits in the bottom right corner,
+          // inside the card.
+          const Positioned(
+            right: 0,
+            bottom: 0,
+            width: handWidth,
+            height: handHeight,
+            child: Launch2ChromeHand(),
+          ),
+          Positioned(
+            right: 118,
+            top: 28,
+            width: 62,
+            child: Transform.rotate(
+              key: const ValueKey<String>('launch2-banner-crown'),
+              angle: -14 * math.pi / 180,
+              child: art(LoopAtmoAssets.crownYellow, width: 62),
+            ),
+          ),
+          Positioned(
+            right: 12,
+            top: 12,
+            width: 42,
+            child: Transform.rotate(
+              key: const ValueKey<String>('launch2-banner-tag'),
+              angle: -5 * math.pi / 180,
+              child: Opacity(
+                opacity: 0.95,
+                child: art(LoopAtmoAssets.tagInLoop, width: 42),
+              ),
+            ),
+          ),
+          // docs/58 §5.5: an 8 corner and a 1 px white 15 % edge, over all.
+          const DecoratedBox(
+            key: ValueKey<String>('launch2-banner-edge'),
+            decoration: BoxDecoration(
+              borderRadius: LoopRadius.chip,
+              border: Border.fromBorderSide(
+                BorderSide(color: LoopColors.bannerEdge),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

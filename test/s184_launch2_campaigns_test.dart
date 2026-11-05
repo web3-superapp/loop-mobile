@@ -580,11 +580,12 @@ void main() {
       expect(title.style?.fontSize, 28);
       final subtitle = tester.widget<Text>(find.text('一句副标题'));
       expect(subtitle.maxLines, 2);
-      // The chrome hand hangs 14 / 16 past the card's right and bottom edges.
+      // S361 · decision 0286: the chrome hand sits in the card's bottom
+      // right corner, inside its edges.
       final card = tester.getRect(_key('launch2-campaign-card-c1'));
       final hand = tester.getRect(_key('launch2-atmo-hand'));
-      expect(hand.right, moreOrLessEquals(card.right + 14));
-      expect(hand.bottom, moreOrLessEquals(card.bottom + 16));
+      expect(hand.right, moreOrLessEquals(card.right));
+      expect(hand.bottom, moreOrLessEquals(card.bottom));
       expect(tester.takeException(), isNull);
       final foot = tester.widget<Text>(_key('launch2-campaign-stamp-c1'));
       expect(foot.style?.color, LoopColors.text2);
@@ -718,12 +719,13 @@ void main() {
       }
       final eventRect = tester.getRect(eventPage);
       expect(eventRect.height, launch2DeskCampaignHeight);
-      // The hand hangs past the event card the way it does past a campaign.
+      // S361 · decision 0286: the hand sits inside the event card the way it
+      // does inside a campaign.
       final hand = tester.getRect(
         find.descendant(of: eventPage, matching: _key('launch2-atmo-hand')),
       );
-      expect(hand.right, moreOrLessEquals(eventRect.right + 14));
-      expect(hand.bottom, moreOrLessEquals(eventRect.bottom + 16));
+      expect(hand.right, moreOrLessEquals(eventRect.right));
+      expect(hand.bottom, moreOrLessEquals(eventRect.bottom));
       // The words stay in the left column, clear of the hand.
       final title = tester.getRect(
         find.descendant(

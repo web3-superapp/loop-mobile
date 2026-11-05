@@ -146,6 +146,13 @@ void main() {
     );
     final card = tester.getRect(page);
     expect(card.height, launch2DeskCampaignHeight);
+    // S361 · decision 0286: the hand sits inside the card, not past it.
+    final hand = tester.getRect(
+      find.descendant(of: page, matching: _key('launch2-atmo-hand')),
+    );
+    expect(card.contains(hand.topLeft), isTrue);
+    expect(hand.right, lessThanOrEqualTo(card.right));
+    expect(hand.bottom, lessThanOrEqualTo(card.bottom));
     final countdown = tester.getRect(
       find.descendant(of: page, matching: _key('launch2-desk-event-countdown')),
     );
