@@ -212,8 +212,10 @@ void main() {
     });
   });
 
-  group('B · each tab stands on its own wall', () {
-    testWidgets('聊天 / 广场 / 情报 / 钱包: the wall, the crown, no loop', (
+  // S367 · decision 0291: the wall, its fogs and the title crown are gone;
+  // the backdrop seam stays and paints plain Ink.
+  group('B · each tab stands on its own backdrop (plain Ink since 0291)', () {
+    testWidgets('聊天 / 广场 / 情报 / 钱包: an Ink backdrop, no crown, no loop', (
       tester,
     ) async {
       await _pumpApp(tester);
@@ -227,7 +229,11 @@ void main() {
         await tester.pumpAndSettle();
         expect(_key('$prefix-atmo-backdrop'), findsWidgets, reason: label);
         expect(_key('$prefix-atmo-wall'), findsWidgets, reason: label);
-        expect(_key('$prefix-atmo-title-crown'), findsOneWidget, reason: label);
+        expect(_key('$prefix-atmo-title-crown'), findsNothing, reason: label);
+        final ground = tester.widget<ColoredBox>(
+          _key('$prefix-atmo-wall').first,
+        );
+        expect(ground.color, LoopColors.ink, reason: label);
         final backdrop = tester.widget<LoopWallBackdrop>(
           _key('$prefix-atmo-backdrop').first,
         );
@@ -239,15 +245,6 @@ void main() {
       await tester.tap(find.widgetWithText(LoopTabItem, 'Chat'));
       await tester.pumpAndSettle();
       expect(_key('chat-inbox-filters'), findsNothing);
-      // The five walls are not one copy.
-      expect(
-        LoopWallFog.values.map((fog) => fog.spots.first.left).toSet().length +
-            LoopWallFog.values
-                .map((fog) => fog.spots.first.right)
-                .toSet()
-                .length,
-        greaterThan(2),
-      );
     });
 
     testWidgets('情报: the wall stays while the board scrolls; 我的名次 is '
@@ -338,7 +335,8 @@ void main() {
       );
       // The page's wall, and the same wall cut to the pinned chips' box.
       expect(_key('square-atmo-backdrop'), findsNWidgets(2));
-      expect(_key('square-atmo-title-crown'), findsOneWidget);
+      // Decision 0291: no crown behind the title.
+      expect(_key('square-atmo-title-crown'), findsNothing);
       // S335 (decision 0264): one card per community, no shared board.
       expect(_key('square-community-board'), findsNothing);
       final first = '4b96a75e-6828-4a6b-8c1d-${0.toString().padLeft(12, '0')}';
@@ -391,7 +389,8 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
       expect(_key('wallet-atmo-backdrop'), findsWidgets);
-      expect(_key('wallet-atmo-title-crown'), findsOneWidget);
+      // Decision 0291: no crown behind the title.
+      expect(_key('wallet-atmo-title-crown'), findsNothing);
       final plate = _key('wallet-total-plate');
       expect(plate, findsOneWidget);
       expect(

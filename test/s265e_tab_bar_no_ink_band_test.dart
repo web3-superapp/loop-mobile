@@ -168,8 +168,9 @@ void main() {
     }
   });
 
-  testWidgets('the wall\'s wash stops at Ink 45 % — the foot behind the bar '
-      'is wall, not the old Ink 70 % band', (tester) async {
+  // S367 · decision 0291: the wall and its wash are gone — the backdrop is
+  // plain Ink, so no band of any shade sits behind the bar.
+  testWidgets('the backdrop is plain Ink with no wash over it', (tester) async {
     await _pumpApp(tester);
     GoRouter.of(tester.element(find.byType(LoopTabBar))).go('/square');
     await tester.pumpAndSettle();
@@ -183,13 +184,10 @@ void main() {
         .map((box) => (box.decoration as BoxDecoration).gradient)
         .whereType<LinearGradient>()
         .toList();
-    expect(washes, hasLength(1));
-    expect(washes.single.colors.last.a, closeTo(0.45, 0.01));
+    expect(washes, isEmpty);
     expect(
-      washes.single.colors
-          .map((colour) => colour.a)
-          .reduce((a, b) => a > b ? a : b),
-      lessThan(0.5),
+      tester.widget<ColoredBox>(_key('square-atmo-wall').first).color,
+      LoopColors.ink,
     );
   });
 

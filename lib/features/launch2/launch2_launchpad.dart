@@ -737,8 +737,9 @@ class Launch2DeskEventFace extends StatelessWidget {
 }
 
 /// The banner's default art (decisions 0220 §4, 0222, 0223) under every
-/// page of the desk — campaign, event or the empty desk alike: the wall at
-/// 90 %, Purple and Yellow fog, the left-to-right Ink wash, the chrome hand
+/// page of the desk — campaign, event or the empty desk alike: a dark ground
+/// (the wall and the fogs went in decision 0291), the left-to-right Ink
+/// wash, the chrome hand
 /// in the card's bottom right corner (its sheen every 6 s), its Yellow crown
 /// and the tilted 「IN THE LOOP」 tag. S361 · decision 0286 (docs/58 §5.5):
 /// all of it inside the card's 8 corner — nothing hangs past its edges. A
@@ -790,28 +791,9 @@ class Launch2BannerBackdrop extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: <Widget>[
+          // S367 · decision 0291: no wall, no fogs — the card's own dark
+          // ground under the hand.
           const ColoredBox(color: Color(0xFF0E0D12)),
-          const _CampaignGround(),
-          Positioned(
-            left: -60,
-            top: -110,
-            width: 420,
-            height: 420,
-            child: Opacity(
-              opacity: 0.55,
-              child: art(LoopAtmoAssets.sprayPurple),
-            ),
-          ),
-          Positioned(
-            right: -140,
-            bottom: -200,
-            width: 360,
-            height: 360,
-            child: Opacity(
-              opacity: 0.12,
-              child: art(LoopAtmoAssets.sprayYellow),
-            ),
-          ),
           const DecoratedBox(
             key: ValueKey<String>('launch2-campaign-scrim'),
             decoration: BoxDecoration(
@@ -1078,25 +1060,6 @@ class _Launch2DeskCampaignCardState
       ),
     );
   }
-}
-
-/// The campaign card's ground: the wall texture at 90 % (S264).
-class _CampaignGround extends StatelessWidget {
-  const _CampaignGround();
-
-  @override
-  Widget build(BuildContext context) => const DecoratedBox(
-    key: ValueKey<String>('launch2-campaign-ground'),
-    decoration: BoxDecoration(
-      image: DecorationImage(
-        image: AssetImage(LoopAtmoAssets.wall),
-        fit: BoxFit.cover,
-        alignment: Alignment(-0.4, -0.2),
-        opacity: 0.9,
-      ),
-    ),
-    child: SizedBox.expand(),
-  );
 }
 
 // ---- the record card ---------------------------------------------------------

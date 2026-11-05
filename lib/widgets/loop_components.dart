@@ -2504,9 +2504,9 @@ class LoopSeg extends StatelessWidget {
     this.splat = false,
   });
 
-  /// The chosen capsule wears the small Yellow splat sticker on its top-left
-  /// corner, as MEME's stage chips do (decisions 0220 §6, 0221). On by
-  /// default since decision 0222: every solid Purple choice wears it.
+  /// The chosen capsule wore the small Yellow splat sticker on its top-left
+  /// corner (decisions 0220 §6, 0221, 0222). S367 · decision 0291: no chip
+  /// wears spray any more, so this draws nothing; kept for its callers.
   final bool splat;
 
   /// The drawn height of the capsule, when it is lower than the finger's
@@ -2578,9 +2578,6 @@ class LoopSeg extends StatelessWidget {
           ground: selected ? LoopColors.chipActive : LoopColors.chipIdle,
           block: block,
           onTap: onTap,
-          sticker: splat && selected
-              ? const LoopSplatSticker(key: ValueKey<String>('loop-seg-splat'))
-              : null,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: ExcludeSemantics(child: _segLabel()),
@@ -2675,7 +2672,6 @@ class _LoopSegCapsule extends StatefulWidget {
     required this.block,
     required this.onTap,
     required this.child,
-    this.sticker,
   });
 
   final double height;
@@ -2683,9 +2679,6 @@ class _LoopSegCapsule extends StatefulWidget {
   final bool block;
   final VoidCallback? onTap;
   final Widget child;
-
-  /// A sticker on the capsule's top-left corner (the chosen chip's splat).
-  final Widget? sticker;
 
   @override
   State<_LoopSegCapsule> createState() => _LoopSegCapsuleState();
@@ -2698,18 +2691,6 @@ class _LoopSegCapsuleState extends State<_LoopSegCapsule> {
   void didUpdateWidget(covariant _LoopSegCapsule oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.onTap == null) _pressed = false;
-  }
-
-  Widget _stickered(Widget capsule) {
-    final sticker = widget.sticker;
-    if (sticker == null) return capsule;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: <Widget>[
-        capsule,
-        Positioned(left: -7, top: -8, width: 24, child: sticker),
-      ],
-    );
   }
 
   @override
@@ -2730,24 +2711,22 @@ class _LoopSegCapsuleState extends State<_LoopSegCapsule> {
           padding: EdgeInsets.symmetric(
             vertical: math.max(0, (LoopSeg.segmentTarget - widget.height) / 2),
           ),
-          child: _stickered(
-            DecoratedBox(
-              key: const ValueKey<String>('loop-seg-capsule'),
-              decoration: BoxDecoration(
-                color: ground,
-                borderRadius: LoopRadius.pill,
+          child: DecoratedBox(
+            key: const ValueKey<String>('loop-seg-capsule'),
+            decoration: BoxDecoration(
+              color: ground,
+              borderRadius: LoopRadius.pill,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: LoopSeg.segmentTarget,
+                minHeight: widget.height,
               ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: LoopSeg.segmentTarget,
-                  minHeight: widget.height,
-                ),
-                child: Align(
-                  // As [LoopSeg]: the capsule measures its label unless the
-                  // page asks for the whole line.
-                  widthFactor: widget.block ? null : 1,
-                  child: widget.child,
-                ),
+              child: Align(
+                // As [LoopSeg]: the capsule measures its label unless the
+                // page asks for the whole line.
+                widthFactor: widget.block ? null : 1,
+                child: widget.child,
               ),
             ),
           ),

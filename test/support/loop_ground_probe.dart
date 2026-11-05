@@ -413,22 +413,16 @@ List<LoopPaintedColour> loopVanishedPaint(
 /// that was supposed to be seen.
 const loopGroundProbeExemptions = <String, String>{
   "Launch2BannerBackdrop · DecoratedBox-[<'launch2-campaign-scrim'>]":
-      'S264 / S265c (decisions 0220, 0223): every banner page\'s '
-      'left-to-right Ink wash darkens the wall picture under the words. A test '
+      'S264 / S265c (decisions 0220, 0223, 0291): every banner page\'s '
+      'left-to-right Ink wash darkens the card ground under the words. A test '
       'decodes no picture, so it lands on the Ink ground and moves '
       'nothing; the banner\'s words are judged against that same Ink.',
   "Launch2NftArtBackdrop · DecoratedBox-[<'launch2-nft-card-scrim'>]":
       'S273 (decision 0232): an NFT card\'s default face is the banner art at '
-      'card size, and its Ink wash darkens the wall picture under the ticker '
+      'card size, and its Ink wash darkens the card ground under the ticker '
       'exactly as the banner\'s does. A test decodes no picture, so it lands '
       'on the Ink ground and moves nothing; the ticker is judged against '
       'that same Ink.',
-  'LoopWallBackdrop · DecoratedBox':
-      'S264 / S265 (decisions 0220, 0221): the tab wall\'s darkening wash — '
-      'Ink at 15 % → 70 % — exists to darken the wall picture under it. A '
-      'test decodes no picture, so the wash lands on bare Ink and moves '
-      'nothing; on a device it lands on the wall. The pages\' copy sits on '
-      'cards or is judged against the Ink ground on its own.',
   'ModalBarrier · ColoredBox':
       'the route veil is `LoopColors.veil`, Ink at 76%, and it fades in from '
       'nothing. Over the Ink page it darkens close to nothing, which is '

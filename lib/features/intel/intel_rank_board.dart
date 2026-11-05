@@ -816,14 +816,7 @@ class IntelPowerCard extends StatelessWidget {
     ),
     child: Stack(
       children: <Widget>[
-        Positioned.fill(
-          child: IgnorePointer(
-            child: Opacity(
-              opacity: 0.3,
-              child: loopAtmoArt(LoopAtmoAssets.wall, fit: BoxFit.cover),
-            ),
-          ),
-        ),
+        // The doodle wall at 30 % went in decision 0291.
         Padding(
           padding: const EdgeInsets.fromLTRB(17, 14, 16, 16),
           child: child,
