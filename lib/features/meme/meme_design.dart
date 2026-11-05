@@ -205,10 +205,7 @@ class _MemeStatCell extends StatelessWidget {
                       : null,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.captionSm.copyWith(
-                    color: LoopColors.muted,
-                    fontSize: 12,
-                  ),
+                  style: LoopType.captionSm.copyWith(color: LoopColors.muted),
                 ),
               ],
             ],
@@ -238,15 +235,15 @@ enum MemeTagTone {
 BoxDecoration memeTagDecoration(MemeTagTone tone) => switch (tone) {
   MemeTagTone.live => const BoxDecoration(
     color: LoopColors.yellowSoft,
-    borderRadius: LoopRadius.pill,
+    borderRadius: LoopRadius.stage,
   ),
   MemeTagTone.done => const BoxDecoration(
     color: LoopColors.purpleTint,
-    borderRadius: LoopRadius.pill,
+    borderRadius: LoopRadius.stage,
   ),
   MemeTagTone.idle => const BoxDecoration(
     color: LoopColors.card2,
-    borderRadius: LoopRadius.pill,
+    borderRadius: LoopRadius.stage,
   ),
 };
 

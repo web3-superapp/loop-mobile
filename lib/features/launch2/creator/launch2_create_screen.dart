@@ -573,7 +573,12 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              8,
+              LoopSpacing.page,
+              4,
+            ),
             child: Text(
               lead == null
                   ? context
@@ -589,7 +594,12 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              16,
+              LoopSpacing.page,
+              16,
+            ),
             child: LoopButton(
               key: const ValueKey<String>('launch2-sale-start-confirm'),
               label: context.l10n.common_ok,
@@ -863,7 +873,9 @@ class _Launch2CreateScreenState extends ConsumerState<Launch2CreateScreen> {
       child: Text(
         text,
         key: ValueKey<String>('launch2-create-group-$text'),
-        style: LoopType.title,
+        // S370a · decision 0293: a small block's title, 16 / 700
+        // (docs/58 §9.2 headlineSm, 类推 热门社区).
+        style: LoopType.headlineSm,
       ),
     ),
   );

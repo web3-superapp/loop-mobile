@@ -329,7 +329,12 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
         ),
         Padding(
           key: const ValueKey<String>('meme-trade-panel'),
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            4,
+            LoopSpacing.page,
+            16,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -342,7 +347,8 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                     context.l10n.common_buy,
                     context.l10n.common_sell,
                   ],
-                  padding: const EdgeInsets.only(bottom: 14),
+                  // S370a · decision 0293: chips to what they set, 12.
+                  padding: const EdgeInsets.only(bottom: LoopSpacing.chipGap),
                   selectedIndex: _side == MemeTradeSide.buy ? 0 : 1,
                   onSelected: (index) {
                     _selectSide(
@@ -458,7 +464,7 @@ class _MemeTradePanelState extends ConsumerState<MemeTradePanel> {
                         _slippageBps = bps;
                       }),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: LoopSpacing.chipSpacing),
                   ],
                   LoopSeg(
                     key: const ValueKey<String>('meme-trade-slippage-custom'),

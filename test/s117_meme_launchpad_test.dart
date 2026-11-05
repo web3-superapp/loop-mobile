@@ -30,6 +30,7 @@ import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 import 'package:loop_mobile/widgets/loop_step_track.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
@@ -1623,6 +1624,9 @@ void main() {
       );
       expect(_key('meme-row-$memeTokenIdA'), findsOneWidget);
       expect(_key('meme-search-entry'), findsOneWidget);
+      // S370a · decision 0293: the shared 44 / r12 search field.
+      expect(find.byType(LoopSearchEntry), findsOneWidget);
+      expect(tester.getSize(_key('meme-search-entry')).height, 44);
       expect(_key('meme-create-entry'), findsNothing);
       expect(find.text('创建代币'), findsNothing);
       // An existing classic token still opens.

@@ -715,7 +715,12 @@ class _MemeTokenScreenState extends ConsumerState<MemeTokenScreen> {
       if (detail.description.isNotEmpty)
         Padding(
           key: const ValueKey<String>('meme-about-description'),
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            6,
+            LoopSpacing.page,
+            10,
+          ),
           child: Text(detail.description, style: LoopType.body),
         ),
       if (!links.isEmpty)
@@ -890,7 +895,12 @@ class _BarShell extends StatelessWidget {
     child: SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          10,
+          LoopSpacing.page,
+          10,
+        ),
         child: child,
       ),
     ),
@@ -1097,7 +1107,12 @@ class _PriceBlock extends StatelessWidget {
     final cap = row.marketCapUsd1;
     return Padding(
       key: const ValueKey<String>('meme-token-price'),
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        6,
+        LoopSpacing.page,
+        4,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
@@ -1209,7 +1224,12 @@ class _HoldingRow extends StatelessWidget {
     final value = price == null ? null : memeUnits(balance) * price;
     return Padding(
       key: const ValueKey<String>('meme-token-holding'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        8,
+      ),
       child: Text(
         <String>[
           context.l10n.meme_tokenBuild2(
@@ -1278,7 +1298,12 @@ class _ProgressStats extends StatelessWidget {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
+          ),
           // Decision 0169: the family's 6 px `.bar`.
           child: LoopProgressBar(
             key: const ValueKey<String>('meme-token-progress-bar'),
@@ -1641,7 +1666,12 @@ List<Widget> memeHolderSections(
   return <Widget>[
     Padding(
       key: ValueKey<String>('$keyPrefix-count'),
-      padding: EdgeInsets.fromLTRB(16, 4, onOpenAll == null ? 16 : 4, 4),
+      padding: EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        onOpenAll == null ? LoopSpacing.page : 4,
+        4,
+      ),
       child: Row(
         children: <Widget>[
           Expanded(
@@ -1878,8 +1908,13 @@ class _TradeRow extends StatelessWidget {
           ? null
           : () => onOpenProfile(account.publicProfileId),
       child: Container(
-        constraints: const BoxConstraints(minHeight: 52),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        // S370a · decision 0293: a holding / leaderboard row, 51 high, 6
+        // above and below (docs/58 §9.4, 类推).
+        constraints: const BoxConstraints(minHeight: LoopRowHeight.holdings),
+        padding: const EdgeInsets.symmetric(
+          horizontal: LoopSpacing.page,
+          vertical: 6,
+        ),
         child: Row(
           children: <Widget>[
             SizedBox(
@@ -1956,7 +1991,12 @@ class _MemeShareSheet extends StatelessWidget {
         LoopSheetHeading(context.l10n.meme_tokenLoopSheetHeading),
         Padding(
           key: const ValueKey<String>('meme-share-sheet'),
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            4,
+            LoopSpacing.page,
+            16,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[

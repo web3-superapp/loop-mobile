@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_hero.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_recent_trades.dart';
+import 'package:loop_mobile/features/launch2/launch2_secondary_metrics.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
@@ -20,6 +21,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_info_sheet.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_tab_strip.dart';
 
 // ---------------------------------------------------------------------------
 // S285 · decision 0240: the project page's compact head, price area, holding
@@ -84,7 +86,9 @@ class Launch2InstanceHead extends StatelessWidget {
             symbol: row.ticker,
             imageUrl: row.logoUrl,
             identity: detail.instanceId,
-            size: 44,
+            // S370a · decision 0293: a token's face, 44 round (§9.4).
+            size: Launch2SecondaryMetrics.tokenFace,
+            radius: Launch2SecondaryMetrics.tokenFace / 2,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -188,22 +192,24 @@ class _StageCapsule extends StatelessWidget {
   final String? countdown;
   final bool lit;
 
+  /// S370a · decision 0293: the home board's stage capsule (docs/58 §4 /
+  /// §9.4 阶段胶囊 r4, 11 / 400) — Yellow on its soft ground while it takes
+  /// orders, Text2 on white 8 % otherwise; no longer a Purple pill.
+  static const BorderRadius radius = LoopRadius.stage;
+
   @override
   Widget build(BuildContext context) {
-    final style = LoopTypography.withWeight(
-      LoopType.caption,
-      FontWeight.w600,
-    ).copyWith(color: lit ? LoopColors.purpleInk : LoopColors.text2);
+    final ink = lit ? LoopColors.yellow : LoopColors.text2;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 136),
       child: DecoratedBox(
         key: const ValueKey<String>('launch2-stage-capsule'),
         decoration: BoxDecoration(
-          color: lit ? LoopColors.purpleCapsule : LoopColors.plateRaised,
-          borderRadius: LoopRadius.pill,
+          color: lit ? LoopColors.yellowSoft : LoopColors.white8,
+          borderRadius: radius,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -212,18 +218,18 @@ class _StageCapsule extends StatelessWidget {
                 stage,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: style,
+                style: LoopType.stageTag.copyWith(color: ink),
               ),
-              if (countdown case final String text)
+              if (countdown case final String text) ...<Widget>[
+                const SizedBox(height: 2),
                 Text(
                   text,
                   key: const ValueKey<String>('launch2-stage-countdown'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.figureSm.copyWith(
-                    color: lit ? LoopColors.purpleInk : LoopColors.text2,
-                  ),
+                  style: LoopType.figureXs.copyWith(color: ink),
                 ),
+              ],
             ],
           ),
         ),
@@ -286,7 +292,9 @@ class Launch2PriceHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: figure == null
                       ? LoopType.body2.copyWith(color: LoopColors.text2)
-                      : LoopType.statFigure,
+                      // S370a · decision 0293: the page's one key figure at
+                      // the power card's 30 / 700 (docs/58 §9.2, 类推).
+                      : LoopType.heroFigure,
                 ),
               ),
               if (aside case final String line) ...<Widget>[
@@ -639,9 +647,10 @@ enum Launch2InstanceTab {
   };
 }
 
-/// The page's tab bar: S279's pill bar (decision 0237) without the index
-/// and the count — the chosen tab solid Purple with white words, the others
-/// on the block ground.
+/// The page's tab bar. S370a · decision 0293 (docs/58 §9.4): the
+/// first-level text tabs — the chosen one white 16 / 600 over a 2 px Yellow
+/// line across its cell, the others Text2, a 1 px white 10 % rule across —
+/// in place of S279's Purple pill bar (decision 0237). 16 to the list.
 class Launch2InstanceTabs extends StatelessWidget {
   const Launch2InstanceTabs({
     required this.tabs,
@@ -654,77 +663,23 @@ class Launch2InstanceTabs extends StatelessWidget {
   final Launch2InstanceTab selected;
   final ValueChanged<Launch2InstanceTab> onSelected;
 
+  /// The strip to the tab's first line (docs/58 §9.4 tab 条 → 列表 16).
+  static const double listGap = LoopSpacing.segmentGap;
+
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      LoopSpacing.page,
-      8,
-      LoopSpacing.page,
-      LoopSpacing.rowGap,
-    ),
+    padding: const EdgeInsets.only(top: 8, bottom: listGap),
     child: Semantics(
       container: true,
       explicitChildNodes: true,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: LoopColors.card,
-          borderRadius: LoopRadius.pill,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: <Widget>[
-              for (final tab in tabs)
-                Expanded(
-                  child: _InstanceTab(
-                    tab: tab,
-                    on: tab == selected,
-                    onTap: () => onSelected(tab),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-class _InstanceTab extends StatelessWidget {
-  const _InstanceTab({
-    required this.tab,
-    required this.on,
-    required this.onTap,
-  });
-
-  final Launch2InstanceTab tab;
-  final bool on;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    selected: on,
-    label: tab.title,
-    excludeSemantics: true,
-    child: LoopPressable(
-      key: ValueKey<String>('launch2-tab-${tab.name}'),
-      onTap: onTap,
-      scale: false,
-      child: Container(
-        height: LoopTouch.minimum,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: on ? LoopColors.purple : const Color(0x00000000),
-          borderRadius: LoopRadius.pill,
-        ),
-        child: Text(
-          tab.title,
-          maxLines: 1,
-          style: LoopType.button.copyWith(
-            color: on ? LoopColors.onPurple : LoopColors.text2,
-          ),
-        ),
+      child: LoopTabStrip(
+        labels: <String>[for (final tab in tabs) tab.title],
+        keys: <Key>[
+          for (final tab in tabs) ValueKey<String>('launch2-tab-${tab.name}'),
+        ],
+        selectedIndex: tabs.indexOf(selected).clamp(0, tabs.length - 1),
+        onSelected: (index) => onSelected(tabs[index]),
+        scaleDownLabels: true,
       ),
     ),
   );
@@ -759,11 +714,18 @@ class Launch2PublicTradeRow extends StatelessWidget {
     final memeLine = ticker.trim().isEmpty
         ? launch2MemeCompact(trade.memeAmount)
         : '${launch2MemeCompact(trade.memeAmount)} ${loopTickerLabel(ticker)}';
-    return Padding(
+    // S370a · decision 0293: a holding / leaderboard row (docs/58 §9.4,
+    // 类推) — 51 high, 6 above and below, body1 over caption, the amount at
+    // 14 / 600 over its caption, no line.
+    return Container(
+      constraints: const BoxConstraints(
+        minHeight: Launch2SecondaryMetrics.recordRow,
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: LoopSpacing.page,
-        vertical: 9,
+        vertical: Launch2SecondaryMetrics.recordInset,
       ),
+      alignment: AlignmentDirectional.centerStart,
       child: Row(
         children: <Widget>[
           Expanded(
@@ -779,7 +741,7 @@ class Launch2PublicTradeRow extends StatelessWidget {
                             : context.l10n.common_sell,
                         style:
                             LoopTypography.withWeight(
-                              LoopType.body2,
+                              LoopType.body1,
                               FontWeight.w600,
                             ).copyWith(
                               color: buy ? LoopColors.rise : LoopColors.fall,
@@ -792,7 +754,7 @@ class Launch2PublicTradeRow extends StatelessWidget {
                             context.l10n.launch2_launch2InstancePartsText,
                         style:
                             (trade.wallet == null
-                                    ? LoopType.body2
+                                    ? LoopType.body1
                                     : LoopType.codeSm)
                                 .copyWith(color: LoopColors.text2),
                       ),
@@ -821,10 +783,10 @@ class Launch2PublicTradeRow extends StatelessWidget {
               Text(
                 launch2Usd1Label(trade.usd1Amount),
                 maxLines: 1,
-                style: LoopType.figureBody,
+                style: LoopType.figureSm.copyWith(color: LoopColors.chalk),
               ),
               const SizedBox(height: 2),
-              Text(memeLine, maxLines: 1, style: LoopType.figureSm),
+              Text(memeLine, maxLines: 1, style: LoopType.caption),
             ],
           ),
         ],
@@ -882,7 +844,7 @@ class Launch2MineOnlyToggle extends StatelessWidget {
                     height: 18,
                     decoration: BoxDecoration(
                       color: value ? LoopColors.purple : LoopColors.plateRaised,
-                      borderRadius: LoopRadius.badge,
+                      borderRadius: LoopRadius.tag,
                     ),
                     alignment: Alignment.center,
                     child: value

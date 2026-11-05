@@ -1071,7 +1071,12 @@ class _Launch2SignSheetState extends State<Launch2SignSheet>
                 ),
                 if (_refreshed)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    padding: const EdgeInsets.fromLTRB(
+                      LoopSpacing.page,
+                      0,
+                      LoopSpacing.page,
+                      4,
+                    ),
                     child: Text(
                       launch2RefreshedText,
                       key: const ValueKey<String>('launch2-sign-refreshed'),
@@ -1253,8 +1258,14 @@ class _Launch2NftConfirmState extends State<_Launch2NftConfirm> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
       LoopSheetHeading(widget.heading),
+      // S370a · decision 0293: the sheet's words on the heading's 20 edge.
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          16,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
