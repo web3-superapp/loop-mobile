@@ -5569,13 +5569,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get community_widgetsCommunityMiningPowerParticipantsTitle => '有算力的成员';
 
   @override
-  String community_widgetsCommunityMiningPowerRowSubtitle(
-    Object? communitySettlementLabel,
-  ) {
-    return '最近一次算力快照 · $communitySettlementLabel';
-  }
-
-  @override
   String get community_widgetsCommunityMiningPowerWeightTitle => '社区权重';
 
   @override
@@ -5774,11 +5767,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
     Object? communityBoundAssetUniqueHint,
   ) {
     return '$communityBoundAssetChainNote$communityBoundAssetUniqueHint提交后进入审核，你是所有者；验证标记由运维核验后设置。';
-  }
-
-  @override
-  String community_widgetsValue(Object? communityObservedAtLabel) {
-    return '$communityObservedAtLabel · 未更新';
   }
 
   @override
@@ -7287,14 +7275,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
 
   @override
   String get intel_rankBoardMiningFormulaPending => '算力公式待生效';
-
-  @override
-  String intel_rankBoardMiningSnapshotComputed(
-    Object? intelRankLedgerKickerBase,
-    Object? intelRankMonthDayClock,
-  ) {
-    return '$intelRankLedgerKickerBase，快照 $intelRankMonthDayClock';
-  }
 
   @override
   String intel_rankBoardNull(Object? name) {
@@ -16158,9 +16138,7 @@ class LoopLocalizationsZh extends LoopLocalizations {
       '这个邀请码不能绑定：不能邀请自己，也不能绑定自己下级的邀请码。';
 
   @override
-  String mining_copyHead(Object? computedAtLabel) {
-    return '显示的是 $computedAtLabel 的算力快照';
-  }
+  String get mining_copyHead => '显示的是上一次完整的算力快照';
 
   @override
   String get mining_copyIf => '下一次算力快照之后，这里会显示区块与时间。';
@@ -16760,19 +16738,8 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get mining_screenMiningRulesActionTitle => '挖矿说明';
 
   @override
-  String mining_screenMiningSnapshotComputed(
-    Object? groupedFigure,
-    Object? launchTimestampLabel,
-  ) {
-    return '区块 $groupedFigure · $launchTimestampLabel · 这是算出算力的时间';
-  }
-
-  @override
-  String mining_screenMiningSnapshotComputed2(
-    Object? launchTimestampLabel,
-    Object? stale,
-  ) {
-    return '快照 · $launchTimestampLabel$stale';
+  String mining_screenMiningSnapshotComputed(Object? groupedFigure) {
+    return '区块 $groupedFigure';
   }
 
   @override
@@ -17038,9 +17005,6 @@ class LoopLocalizationsZh extends LoopLocalizations {
   String get mining_secondaryScreensTrailingCaption3 => '当日产量';
 
   @override
-  String get mining_widgetsCurrentRank => '当前排名';
-
-  @override
   String mining_widgetsLoopRecordRow(Object? amountFigure) {
     return '持有 $amountFigure';
   }
@@ -17116,6 +17080,12 @@ class LoopLocalizationsZh extends LoopLocalizations {
   @override
   String get mining_widgetsMiningSummaryHeroClaimSemanticLabel =>
       '挖矿奖励，打开挖矿奖励页';
+
+  @override
+  String get mining_widgetsMyRank => '我的排名';
+
+  @override
+  String get mining_widgetsNoRank => '暂无排名';
 
   @override
   String mining_widgetsRankPlace(Object? position) {

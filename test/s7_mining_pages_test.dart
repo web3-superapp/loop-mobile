@@ -1227,56 +1227,54 @@ void main() {
     /// What every stale page prints, with the asset named as the composition
     /// page names it.
     final staleLine = miningStaleLine(
-      computedAtLabel: '2026-09-15 14:58 UTC',
       attempt: s7MiningUnreadAttempt(),
       symbols: const <String, String>{s7UsdtAssetId: 'USDT'},
     );
 
-    test('the line dates the numbers and names what stopped the next run', () {
-      expect(
-        staleLine,
-        "Showing the power snapshot from 2026-09-15 14:58 UTC · The latest snapshot didn't finish (USDT has no available quote right now)",
-      );
-      // Without the composition page's symbols the asset is still named by
-      // the id it stands for, never by a guess.
-      expect(
-        miningStaleLine(
-          computedAtLabel: '2026-09-15 14:58 UTC',
-          attempt: s7MiningUnreadAttempt(),
-        ),
-        contains('0x55d3…7955 has no available quote right now'),
-      );
-      // A run an operator withdrew is not a run that did not finish.
-      expect(
-        miningStaleLine(
-          computedAtLabel: '2026-09-15 14:58 UTC',
-          attempt: s7MiningUnreadAttempt(
-            status: 'invalidated',
-            reasonCode: 'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE',
-            unreadInputs: const <MiningUnreadInput>[],
+    test(
+      'the line names what stopped the next run, undated (decision 0302)',
+      () {
+        expect(
+          staleLine,
+          "Showing the last complete power snapshot · The latest snapshot didn't finish (USDT has no available quote right now)",
+        );
+        // Without the composition page's symbols the asset is still named by
+        // the id it stands for, never by a guess.
+        expect(
+          miningStaleLine(attempt: s7MiningUnreadAttempt()),
+          contains('0x55d3…7955 has no available quote right now'),
+        );
+        // A run an operator withdrew is not a run that did not finish.
+        expect(
+          miningStaleLine(
+            attempt: s7MiningUnreadAttempt(
+              status: 'invalidated',
+              reasonCode: 'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE',
+              unreadInputs: const <MiningUnreadInput>[],
+            ),
           ),
-        ),
-        "Showing the power snapshot from 2026-09-15 14:58 UTC · The latest snapshot was invalidated (That snapshot's data was incomplete)",
-      );
-      // No internal word reaches the reader.
-      for (final line in <String>[
-        staleLine,
-        miningSnapshotAbsenceReason(
-          'MINING_SNAPSHOT_INCOMPLETE',
-          attempt: s7MiningUnreadAttempt(),
-        ),
-      ]) {
-        for (final internal in <String>[
-          'incomplete',
-          'latestAttempt',
-          'unreadInputs',
-          'MINING_',
-          'stale',
+          "Showing the last complete power snapshot · The latest snapshot was invalidated (That snapshot's data was incomplete)",
+        );
+        // No internal word reaches the reader.
+        for (final line in <String>[
+          staleLine,
+          miningSnapshotAbsenceReason(
+            'MINING_SNAPSHOT_INCOMPLETE',
+            attempt: s7MiningUnreadAttempt(),
+          ),
         ]) {
-          expect(line.contains(internal), isFalse, reason: internal);
+          for (final internal in <String>[
+            'incomplete',
+            'latestAttempt',
+            'unreadInputs',
+            'MINING_',
+            'stale',
+          ]) {
+            expect(line.contains(internal), isFalse, reason: internal);
+          }
         }
-      }
-    });
+      },
+    );
 
     testWidgets('the summary dates its figures and keeps them', (tester) async {
       await pumpS7Page(
@@ -1294,8 +1292,8 @@ void main() {
         ),
       );
 
-      // S315: the hero's one snapshot line dates the figure and marks it
-      // 未更新; the run that did not finish is in the source (i)'s sheet.
+      // S315: the hero marks the figure 未更新 (S378 · decision 0302: without
+      // dating it); the run that did not finish is in the source (i)'s sheet.
       expect(
         find.byKey(const ValueKey<String>('mining-stale-summary')),
         findsNothing,
@@ -1306,7 +1304,7 @@ void main() {
               find.byKey(const ValueKey<String>('mining-summary-hero-caption')),
             )
             .data,
-        endsWith('· Not updated'),
+        'Not updated',
       );
       // Reading nothing was never published as a zero: the figure the last
       // complete snapshot settled is still on the page.

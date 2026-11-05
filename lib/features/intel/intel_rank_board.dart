@@ -478,12 +478,7 @@ class _IntelRankBoardState extends ConsumerState<IntelRankBoard> {
             ? LoopL10n.current.intel_rankBoardLoopProvenanceLine
             : LoopL10n.current.intel_rankBoardS,
       ],
-      observedAt: referrals
-          ? null
-          : switch (snapshot) {
-              MiningSnapshotComputed(:final computedAt) => computedAt,
-              MiningSnapshotUnavailable() => null,
-            },
+      // S378 · decision 0302: no snapshot time, not even in the sheet.
       detail: <String>[
         if (referrals)
           LoopL10n.current.intel_rankBoardLoopProvenanceLine2
@@ -554,28 +549,14 @@ String? intelRankParticipantsDetail(MiningRank rank) {
 String get intelRankLedgerKickerBase =>
     LoopL10n.current.intel_rankBoardIntelRankBoardTitle;
 
-/// 「算力榜，快照 10-15 04:00」 on the two power boards (the snapshot's own
-/// computation time, local), 「算力榜 · 实时」 on 推广, which reads the invite
-/// relation live (「算力榜，实时」), and the bare 「算力榜」 when no snapshot was computed.
+/// 「算力榜」 on the two power boards and 「算力榜，实时」 on 推广, which reads
+/// the invite relation live. S378 · decision 0302 (需求方 2026-11-05): the
+/// snapshot's computation time is no longer printed on the plate.
 String intelRankLedgerKicker(MiningRank rank) {
   if (rank.scope == MiningRankScope.referrals) {
     return LoopL10n.current.intel_rankBoardIf2(intelRankLedgerKickerBase);
   }
-  return switch (rank.snapshot) {
-    MiningSnapshotComputed(:final computedAt) =>
-      LoopL10n.current.intel_rankBoardMiningSnapshotComputed(
-        intelRankLedgerKickerBase,
-        intelRankMonthDayClock(computedAt),
-      ),
-    MiningSnapshotUnavailable() => intelRankLedgerKickerBase,
-  };
-}
-
-/// "MM-dd HH:mm" in the device's local time.
-String intelRankMonthDayClock(DateTime at) {
-  final local = at.toLocal();
-  String two(int value) => value.toString().padLeft(2, '0');
-  return '${two(local.month)}-${two(local.day)} ${loopClockLabel(local)}';
+  return intelRankLedgerKickerBase;
 }
 
 /// [sentence] (「第 12 名」 / "Rank #12") cut around [place], so the figure
@@ -763,6 +744,7 @@ class IntelRankLedger extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     intelRankLedgerKicker(rank),
+                    key: const ValueKey<String>('intel-rank-me-kicker'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LoopType.eyebrow.copyWith(color: LoopColors.text2),

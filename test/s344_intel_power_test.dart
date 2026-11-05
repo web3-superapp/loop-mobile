@@ -467,7 +467,8 @@ void main() {
       expect(_key('mining-summary-hero-split'), findsNothing);
       expect(_key('mining-summary-hero-token-power'), findsNothing);
       expect(_key('mining-summary-hero-stamp'), findsNothing);
-      expect(_key('mining-summary-hero-caption'), findsOneWidget);
+      // S378 · decision 0302: no snapshot time at the top right.
+      expect(_key('mining-summary-hero-caption'), findsNothing);
       expect(_text(tester, 'mining-summary-hero-last-hour-power'), '1,237,577');
       final claim = _key('mining-summary-hero-claim');
       expect(

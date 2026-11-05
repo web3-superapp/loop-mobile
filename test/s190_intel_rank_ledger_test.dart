@@ -156,13 +156,12 @@ int _filledBoxes(WidgetTester tester, Color colour, {double side = 44}) {
 
 void main() {
   group('ledger card copy', () {
-    test('kicker: snapshot time, 实时 on 推广, bare without a snapshot', () {
-      final snapshot = s7MiningSnapshot();
+    test('kicker: no snapshot time (decision 0302), 实时 on 推广', () {
       expect(
         intelRankLedgerKicker(
           _rank(MiningRankScope.communities, _communities()),
         ),
-        'Power Ranking, snapshot ${intelRankMonthDayClock(snapshot.computedAt)}',
+        'Power Ranking',
       );
       expect(
         intelRankLedgerKicker(_rank(MiningRankScope.referrals, _referrals)),
@@ -177,10 +176,6 @@ void main() {
           ),
         ),
         'Power Ranking',
-      );
-      expect(
-        intelRankMonthDayClock(DateTime(2026, 10, 5, 4, 7)),
-        '10-05 04:07',
       );
     });
 
@@ -349,13 +344,9 @@ void main() {
       expect(find.text('My rank\nRank #12'), findsOneWidget);
       expect(find.text('Power 1,240'), findsOneWidget);
       expect(find.text('TOP 8%'), findsOneWidget);
-      expect(
-        find.text(
-          'Power Ranking, snapshot '
-          '${intelRankMonthDayClock(s7MiningSnapshot().computedAt)}',
-        ),
-        findsOneWidget,
-      );
+      // Decision 0302: the kicker carries no snapshot time.
+      expect(find.text('Power Ranking'), findsOneWidget);
+      expect(find.textContaining('snapshot'), findsNothing);
       // The old capsule is gone.
       expect(_key('intel-rank-me-heading'), findsNothing);
       // The chips sit under the card.

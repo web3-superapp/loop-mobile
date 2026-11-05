@@ -2496,9 +2496,7 @@ void main() {
           ],
         );
 
-    testWidgets('我的挖矿 counts power, place and invites before the token', (
-      tester,
-    ) async {
+    testWidgets('我的挖矿 counts power and place before the token', (tester) async {
       final rewards = closedWith(reason);
       await pumpMining(tester, rewards);
       expect(rewards.rewardReads, 1);
@@ -2517,10 +2515,8 @@ void main() {
         tester.widget<Text>(_key('mining-summary-hero-last-hour-power')).data,
         '1,236',
       );
-      expect(
-        tester.widget<Text>(_key('mining-summary-hero-active-invites')).data,
-        '15 people',
-      );
+      // S378 · decision 0302: 有效邀请 left the hero (the 邀请 tab has it).
+      expect(_key('mining-summary-hero-active-invites'), findsNothing);
       // Decision 0272: 全网算力 is the network card's, not a hero cell.
       expect(_key('mining-summary-hero-network-power'), findsNothing);
       expect(_key('mining-network-card'), findsOneWidget);

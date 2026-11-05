@@ -1158,7 +1158,7 @@ void main() {
     // Decision 0057: the number stays, and the card says which moment it is
     // from, because the run after it could not value a holding and was never
     // published.
-    testWidgets('a community power a later run overtook is dated', (
+    testWidgets('a community power a later run overtook is marked, undated', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -1175,14 +1175,14 @@ void main() {
         const ValueKey<String>('community-mining-summary'),
       );
       await scrollToCommunitySection(tester, card);
-      // S315: one dated row inside the card instead of a sentence under it.
+      // S315: one row inside the card; S378 · decision 0302: undated.
       expect(
         tester
             .widget<Text>(
               find.byKey(const ValueKey<String>('community-mining-stale')),
             )
             .data,
-        endsWith('· Not updated'),
+        'Not updated',
       );
       // The figure is still the one the last complete snapshot settled.
       expect(_communityPowerFigure(tester), startsWith('0'));

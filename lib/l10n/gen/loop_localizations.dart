@@ -9918,14 +9918,6 @@ abstract class LoopLocalizations {
   /// **'Members with power'**
   String get community_widgetsCommunityMiningPowerParticipantsTitle;
 
-  /// lib/features/community/community_widgets.dart:709
-  ///
-  /// In en, this message translates to:
-  /// **'Latest power snapshot · {communitySettlementLabel}'**
-  String community_widgetsCommunityMiningPowerRowSubtitle(
-    Object? communitySettlementLabel,
-  );
-
   /// lib/features/community/community_widgets.dart:756
   ///
   /// In en, this message translates to:
@@ -10251,12 +10243,6 @@ abstract class LoopLocalizations {
     Object? communityBoundAssetChainNote,
     Object? communityBoundAssetUniqueHint,
   );
-
-  /// lib/features/community/community_widgets.dart:470
-  ///
-  /// In en, this message translates to:
-  /// **'{communityObservedAtLabel} · Not updated'**
-  String community_widgetsValue(Object? communityObservedAtLabel);
 
   /// lib/features/community/community_widgets.dart:833
   ///
@@ -12997,15 +12983,6 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Power formula not yet in effect'**
   String get intel_rankBoardMiningFormulaPending;
-
-  /// lib/features/intel/intel_rank_board.dart:519
-  ///
-  /// In en, this message translates to:
-  /// **'{intelRankLedgerKickerBase}, snapshot {intelRankMonthDayClock}'**
-  String intel_rankBoardMiningSnapshotComputed(
-    Object? intelRankLedgerKickerBase,
-    Object? intelRankMonthDayClock,
-  );
 
   /// lib/features/intel/intel_rank_board.dart:596
   ///
@@ -27821,8 +27798,8 @@ abstract class LoopLocalizations {
   /// lib/features/mining/mining_copy.dart:150
   ///
   /// In en, this message translates to:
-  /// **'Showing the power snapshot from {computedAtLabel}'**
-  String mining_copyHead(Object? computedAtLabel);
+  /// **'Showing the last complete power snapshot'**
+  String get mining_copyHead;
 
   /// lib/features/mining/mining_copy.dart:66
   ///
@@ -28859,20 +28836,8 @@ abstract class LoopLocalizations {
   /// lib/features/mining/mining_screen.dart:374, lib/features/mining/mining_secondary_screens.dart:486
   ///
   /// In en, this message translates to:
-  /// **'Block {groupedFigure} · {launchTimestampLabel} · when power was calculated'**
-  String mining_screenMiningSnapshotComputed(
-    Object? groupedFigure,
-    Object? launchTimestampLabel,
-  );
-
-  /// lib/features/mining/mining_screen.dart:419
-  ///
-  /// In en, this message translates to:
-  /// **'Snapshot · {launchTimestampLabel}{stale}'**
-  String mining_screenMiningSnapshotComputed2(
-    Object? launchTimestampLabel,
-    Object? stale,
-  );
+  /// **'Block {groupedFigure}'**
+  String mining_screenMiningSnapshotComputed(Object? groupedFigure);
 
   /// lib/features/mining/mining_screen.dart:345
   ///
@@ -29327,12 +29292,6 @@ abstract class LoopLocalizations {
   /// **'Daily output'**
   String get mining_secondaryScreensTrailingCaption3;
 
-  /// lib/features/mining/mining_widgets.dart
-  ///
-  /// In en, this message translates to:
-  /// **'Current rank'**
-  String get mining_widgetsCurrentRank;
-
   /// lib/features/mining/mining_widgets.dart:1137
   ///
   /// In en, this message translates to:
@@ -29455,6 +29414,18 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Mining rewards, open the mining rewards page'**
   String get mining_widgetsMiningSummaryHeroClaimSemanticLabel;
+
+  /// lib/features/mining/mining_widgets.dart
+  ///
+  /// In en, this message translates to:
+  /// **'My rank'**
+  String get mining_widgetsMyRank;
+
+  /// lib/features/mining/mining_widgets.dart
+  ///
+  /// In en, this message translates to:
+  /// **'No rank yet'**
+  String get mining_widgetsNoRank;
 
   /// lib/features/mining/mining_widgets.dart
   ///

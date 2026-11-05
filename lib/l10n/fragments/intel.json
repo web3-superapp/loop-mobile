@@ -283,21 +283,6 @@
     "where": "lib/features/intel/intel_rank_board.dart:442",
     "zh": "算力公式待生效"
   },
-  "intel_rankBoardMiningSnapshotComputed": {
-    "en": "{intelRankLedgerKickerBase}, snapshot {intelRankMonthDayClock}",
-    "placeholders": {
-      "intelRankLedgerKickerBase": {
-        "example": "intelRankLedgerKickerBase",
-        "type": "Object"
-      },
-      "intelRankMonthDayClock": {
-        "example": "intelRankMonthDayClock(computedAt)",
-        "type": "Object"
-      }
-    },
-    "where": "lib/features/intel/intel_rank_board.dart:519",
-    "zh": "{intelRankLedgerKickerBase}，快照 {intelRankMonthDayClock}"
-  },
   "intel_rankBoardNull": {
     "en": "Community {name}",
     "placeholders": {

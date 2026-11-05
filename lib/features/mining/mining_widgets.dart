@@ -197,11 +197,7 @@ class MiningStaleNotice extends StatelessWidget {
     return LoopNotice(
       key: ValueKey<String>('mining-stale-$slug'),
       icon: 'clock',
-      body: miningStaleLine(
-        computedAtLabel: launchTimestampLabel(source.computedAt),
-        attempt: source.latestAttempt,
-        symbols: symbols,
-      ),
+      body: miningStaleLine(attempt: source.latestAttempt, symbols: symbols),
       margin: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
         14,
@@ -245,7 +241,7 @@ String get miningDemoHoldingsDetail =>
     LoopL10n.current.mining_widgetsMiningDemoHoldingsDetail;
 
 /// The 11px source line under a mining page's figures: the snapshot they
-/// came from and when it was computed, with [miningProvenanceDetail] in its
+/// came from (S378: not when it was computed), with [miningProvenanceDetail] in its
 /// sheet. A snapshot that was never computed prints nothing.
 class MiningSnapshotProvenanceLine extends StatelessWidget {
   const MiningSnapshotProvenanceLine({
@@ -272,11 +268,7 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
     final source = snapshot;
     final stale = markStale && source is MiningSnapshotComputed && source.stale;
     final detail = <String>[
-      if (stale)
-        miningStaleLine(
-          computedAtLabel: launchTimestampLabel(source.computedAt),
-          attempt: source.latestAttempt,
-        ),
+      if (stale) miningStaleLine(attempt: source.latestAttempt),
       ?miningProvenanceDetail(source, formula: formula),
     ].join('\n');
     if (source is! MiningSnapshotComputed) {
@@ -299,7 +291,7 @@ class MiningSnapshotProvenanceLine extends StatelessWidget {
       child: LoopProvenanceLine(
         key: ValueKey<String>('mining-provenance-$slug'),
         sources: <String>[context.l10n.intel_rankBoardS],
-        observedAt: source.computedAt,
+        // S378 · decision 0302: the snapshot's time is not shown.
         detail: detail.isEmpty ? null : detail,
         marker: stale ? context.l10n.mining_widgetsMarker : null,
       ),
@@ -357,7 +349,8 @@ class MiningSummaryHero extends StatelessWidget {
   /// `.mining-power-value small`: the unit that follows a settled figure.
   final String? unit;
 
-  /// The snapshot line; null draws none (S344: no 「快照 · —」).
+  /// The top-right marker (未更新 on a stale snapshot); null draws none.
+  /// S378 · decision 0302: never the snapshot's time.
   final String? caption;
 
   /// `.mining-rank`: the reader's place, when the server settled one.
@@ -459,8 +452,8 @@ class MiningSummaryHero extends StatelessWidget {
                           ),
                         ),
                       ),
-                      // docs/58 §5.14: the snapshot at the top right,
-                      // 10 / 400 white 30 %.
+                      // docs/58 §5.14: the top-right slot, 10 / 400 white
+                      // 30 %; S378 · decision 0302: 未更新 only, no time.
                       if (caption case final String caption) ...<Widget>[
                         const SizedBox(width: 8),
                         Flexible(
@@ -486,20 +479,34 @@ class MiningSummaryHero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
+                // S378 · decision 0302 (需求方 2026-11-05): the way into 算力榜
+                // sits at the right end of the figure's row, centred on it,
+                // with words that say what the crown means.
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
-                  child: settled
-                      ? FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: figure,
-                        )
-                      : figure,
-                ),
-                MiningRankEntry(
-                  rank: rank,
-                  position: rankPosition,
-                  onTap: onOpenRank,
+                  child: Row(
+                    key: const ValueKey<String>(
+                      'mining-summary-hero-figure-row',
+                    ),
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Expanded(
+                        child: settled
+                            ? FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: figure,
+                              )
+                            : figure,
+                      ),
+                      const SizedBox(width: 8),
+                      MiningRankEntry(
+                        rank: rank,
+                        position: rankPosition,
+                        onTap: onOpenRank,
+                      ),
+                    ],
+                  ),
                 ),
                 if (stamp != null) ...<Widget>[
                   const SizedBox(height: 8),
@@ -591,12 +598,12 @@ class MiningSummaryHero extends StatelessWidget {
   }
 }
 
-/// The way into 算力榜 (S350b · decision 0275), drawn as the power card's
-/// 「当前排名 第 N 名」 line since S353b · decision 0279 (docs/58 §5.14): the
-/// label 12 / 500, the place 13 / 600 with its number in Inter Black Italic
-/// 16 — Yellow for the first, bronze for the third — and the crown bitmap
-/// after it, inside a 44 target. With no place it is the crown and a
-/// chevron, read aloud as 「算力榜」.
+/// The way into 算力榜 (S350b · decision 0275), at the right end of the power
+/// card's figure row since S378 · decision 0302: 「我的排名 第 N 名」 — the
+/// label `meta` 12 / 500 in the second text colour, the place 13 / 600 with
+/// its number in Inter Black Italic 16 (Yellow for the first, bronze for the
+/// third, decision 0279) — then the crown bitmap and a chevron, inside a 44
+/// target. With no place it reads 「暂无排名」 before the crown.
 class MiningRankEntry extends StatelessWidget {
   const MiningRankEntry({super.key, this.rank, this.position, this.onTap});
 
@@ -607,10 +614,10 @@ class MiningRankEntry extends StatelessWidget {
   final int? position;
 
   /// Null while no 算力榜 is reachable from here: the entry is drawn but
-  /// does nothing, as the crown icon it replaces did.
+  /// does nothing.
   final VoidCallback? onTap;
 
-  /// The crown bitmap's box (the Figma's 61 × 37).
+  /// The crown bitmap's box (the Figma's 61 × 37, drawn at 60 %).
   static const Size crownSize = Size(61, 37);
 
   /// The place number's colour.
@@ -654,7 +661,10 @@ class MiningRankEntry extends StatelessWidget {
       button: true,
       enabled: onTap != null,
       label: place == null
-          ? context.l10n.intel_rankBoardIntelRankBoardTitle
+          ? <String>[
+              context.l10n.intel_rankBoardIntelRankBoardTitle,
+              context.l10n.mining_widgetsNoRank,
+            ].join(context.l10n.common_listSeparator)
           : context.l10n.mining_widgetsMiningNetworkRankActionLabel2(place),
       excludeSemantics: true,
       child: LoopPressable(
@@ -670,40 +680,33 @@ class MiningRankEntry extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              if (place == null) ...<Widget>[
-                // No place: the crown and a chevron, read as 「算力榜」.
-                SizedBox.fromSize(
-                  size: crownSize * 0.8,
-                  child: loopAtmoArt(
-                    LoopFigmaAssets.crownPowerCard,
-                    fit: BoxFit.contain,
-                    key: const ValueKey<String>('mining-summary-hero-crown'),
-                  ),
-                ),
-                const LoopIcon('chevron', size: 14, color: LoopColors.text3),
-              ] else ...<Widget>[
-                Text(
-                  context.l10n.mining_widgetsCurrentRank,
-                  maxLines: 1,
-                  style: label,
-                ),
-                const SizedBox(width: 8),
-                // 「第 12 名」 / 「#12」: the label already says 当前排名.
+              Text(
+                place == null
+                    ? context.l10n.mining_widgetsNoRank
+                    : context.l10n.mining_widgetsMyRank,
+                key: const ValueKey<String>('mining-summary-hero-rank-label'),
+                maxLines: 1,
+                style: label,
+              ),
+              if (place != null) ...<Widget>[
+                const SizedBox(width: 6),
+                // 「第 12 名」 / 「#12」: the label already says 我的排名.
                 placeText(
                   number == null
                       ? place
                       : context.l10n.mining_widgetsRankPlace(number),
                 ),
-                const SizedBox(width: 2),
-                SizedBox.fromSize(
-                  size: crownSize * 0.8,
-                  child: loopAtmoArt(
-                    LoopFigmaAssets.crownPowerCard,
-                    fit: BoxFit.contain,
-                    key: const ValueKey<String>('mining-summary-hero-crown'),
-                  ),
-                ),
               ],
+              const SizedBox(width: 2),
+              SizedBox.fromSize(
+                size: crownSize * 0.6,
+                child: loopAtmoArt(
+                  LoopFigmaAssets.crownPowerCard,
+                  fit: BoxFit.contain,
+                  key: const ValueKey<String>('mining-summary-hero-crown'),
+                ),
+              ),
+              const LoopIcon('chevron', size: 14, color: LoopColors.text3),
             ],
           ),
         ),
