@@ -297,9 +297,11 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
     titleStyle: LoopType.rowTitleLg,
     subtitleStyle: LoopType.captionMd,
     timestampStyle: LoopType.caption,
-    // S350a · decision 0274: the pin and mute marks sit at the end of the
-    // preview line, so the name line carries only the name, the time and
-    // the unread count.
+    // S350a · decision 0274: the name line carries only the name, the time
+    // and the unread count. S376 · decision 0300: LOOP's inbox rows draw
+    // the pin and mute marks themselves at the row's right end
+    // (`loopStreamChannelListSubtitle`); this stays as the fallback for any
+    // official tile that still passes them.
     attributePosition: AttributePosition.trailingBottom,
   ),
 );
