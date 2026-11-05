@@ -59,6 +59,8 @@ class IntelScreen extends ConsumerStatefulWidget {
         ref.read(loopTabSegmentMemoryProvider.notifier).select('intel', 0);
       case '/square' || '/meme':
         GoRouter.maybeOf(context)?.go(location);
+      // `/mining/rank` (S368 · decision 0292) and a community profile are
+      // pages over the tab: pushed.
       default:
         push(location);
     }
