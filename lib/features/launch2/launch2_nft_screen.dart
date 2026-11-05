@@ -778,7 +778,12 @@ class _Launch2NftScreenState extends ConsumerState<Launch2NftScreen> {
           LoopL10n.current.launch2_launch2InstanceLoopProvenanceLine,
         ],
         observedAt: detail.projectedAt,
-        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 4),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          6,
+          LoopSpacing.page,
+          4,
+        ),
         detail: LoopL10n.current.launch2_launch2NftLaunch2NftProvenanceDetail,
       ),
     ];

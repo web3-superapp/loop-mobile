@@ -189,7 +189,12 @@ class Launch2DynamicRoundCard extends StatelessWidget {
         key: const ValueKey<String>('launch2-dyn-provenance'),
         sources: const <String>['LoopHook'],
         observedAt: observedAt,
-        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 4),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          4,
+        ),
         detail:
             context.l10n.launch2_launch2DynamicPoolLaunch2DynProvenanceDetail,
       ),
@@ -322,7 +327,12 @@ class Launch2DynamicUnavailableBlock extends StatelessWidget {
         next: context.l10n.launch2_launch2DynamicPoolNext,
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          8,
+        ),
         child: LoopButton(
           key: const ValueKey<String>('launch2-dyn-unavailable-retry'),
           label: context.l10n.common_retry,

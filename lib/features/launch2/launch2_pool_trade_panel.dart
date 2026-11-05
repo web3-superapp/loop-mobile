@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
+import 'package:loop_mobile/features/launch2/launch2_secondary_metrics.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
@@ -458,7 +459,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
                   quiet: true,
                   onSelected: () => _setMode(Launch2PoolMode.exactIn),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: Launch2SecondaryMetrics.chipSpacing),
                 LoopSeg(
                   key: const ValueKey<String>('launch2-pool-mode-exactOut'),
                   label: outLabel,
@@ -588,7 +589,7 @@ class _Launch2PoolTradePanelState extends ConsumerState<Launch2PoolTradePanel> {
                   _inputsChanged();
                 },
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: Launch2SecondaryMetrics.chipSpacing),
             ],
             LoopSeg(
               key: const ValueKey<String>('launch2-pool-slippage-custom'),

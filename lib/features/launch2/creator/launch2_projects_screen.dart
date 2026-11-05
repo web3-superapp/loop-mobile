@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_controllers
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
+import 'package:loop_mobile/features/launch2/launch2_secondary_metrics.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -170,8 +171,8 @@ LoopRecordRow _projectRow(Launch2CreatorRow row, VoidCallback onTap) {
     leading: MemeLogo(
       symbol: project.ticker,
       imageUrl: row.draft?.logoAssetUrl,
-      size: 36,
-      radius: 18,
+      size: Launch2SecondaryMetrics.recordFace,
+      radius: Launch2SecondaryMetrics.recordFace / 2,
     ),
     title: project.name,
     subtitle: _projectSubtitle(row),
@@ -190,7 +191,11 @@ LoopRecordRow _projectRow(Launch2CreatorRow row, VoidCallback onTap) {
 LoopRecordRow _unreadableRow(LaunchProject project, VoidCallback onTap) {
   return LoopRecordRow(
     key: ValueKey<String>('launch2-project-unreadable-${project.projectId}'),
-    leading: MemeLogo(symbol: project.ticker, size: 36, radius: 18),
+    leading: MemeLogo(
+      symbol: project.ticker,
+      size: Launch2SecondaryMetrics.recordFace,
+      radius: Launch2SecondaryMetrics.recordFace / 2,
+    ),
     title: project.name,
     subtitle: LoopL10n.current.launch2Creator_launch2ProjectsSubtitle,
     semanticLabel: LoopL10n.current.launch2Creator_launch2ProjectsSemanticLabel(

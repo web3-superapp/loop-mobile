@@ -498,7 +498,12 @@ class _Launch2DynamicRewardsScreenState
         key: const ValueKey<String>('launch2-dyn-rewards-provenance'),
         sources: const <String>['LoopHook'],
         observedAt: ref.read(provider.notifier).valueObservedAt,
-        padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 6, 16, 4),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          6,
+          LoopSpacing.page,
+          4,
+        ),
         detail: LoopL10n
             .current
             .launch2_launch2DynamicRewardsLaunch2DynRewardsProvenanceDetail,
@@ -634,11 +639,21 @@ class _RoundRow extends StatelessWidget {
           if (failure case final String text)
             Launch2ActionFailureLine(
               key: ValueKey<String>('launch2-dyn-claim-failed-$id'),
-              padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 0, 16, 0),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                0,
+              ),
               message: text,
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 2, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              2,
+              LoopSpacing.page,
+              0,
+            ),
             child: LoopButton(
               key: ValueKey<String>('launch2-dyn-claim-$id'),
               label: _label,

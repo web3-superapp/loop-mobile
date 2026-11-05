@@ -397,9 +397,11 @@ class Launch2FixedRecipient extends StatelessWidget {
             Container(
               constraints: const BoxConstraints(minHeight: 44),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              // S370a · decision 0293: a read-only field at the search
+              // field's r12 (docs/58 §9.4, 类推).
               decoration: const BoxDecoration(
                 color: LoopColors.card,
-                borderRadius: LoopRadius.inner,
+                borderRadius: LoopRadius.control,
               ),
               child: Row(
                 children: <Widget>[

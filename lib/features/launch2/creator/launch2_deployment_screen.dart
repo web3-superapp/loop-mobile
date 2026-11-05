@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_models.dart
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_sign_screen.dart'
     show Launch2AddressTail;
+import 'package:loop_mobile/features/launch2/launch2_secondary_metrics.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_copy.dart';
@@ -264,10 +265,12 @@ class _EventRow extends StatelessWidget {
       if (event.blockNumber != null)
         context.l10n.launch2Creator_launch2DeploymentBuild2(event.blockNumber),
     ].join(' · ');
+    // S370a · decision 0293: a record row's 6 above and below (docs/58
+    // §9.4 持仓 / 榜单行, 类推).
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: LoopSpacing.page,
-        vertical: 8,
+        vertical: Launch2SecondaryMetrics.recordInset,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -30,6 +30,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 
 /// Whether the `meme` reads are closed for this build: no transport, or the
 /// server said the capability is not available.
@@ -399,43 +400,13 @@ class _LaunchpadTools extends StatelessWidget {
     ),
     child: Row(
       children: <Widget>[
+        // S370a · decision 0293: the shared 44 / r12 search field with its
+        // 1 px edge (docs/58 §9.4) in place of the local 44 grey box.
         Expanded(
-          child: Semantics(
-            button: true,
-            label: context.l10n.meme_launchpadMemeSearchEntryLabel,
-            excludeSemantics: true,
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                key: const ValueKey<String>('meme-search-entry'),
-                onTap: onSearch,
-                borderRadius: LoopRadius.control,
-                child: Container(
-                  height: LoopTouch.minimum,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: const BoxDecoration(
-                    color: LoopColors.input,
-                    borderRadius: LoopRadius.control,
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      const LoopIcon('search', size: 16),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          context.l10n.meme_launchpadMemeSearchEntryLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopType.body.copyWith(
-                            color: LoopColors.text3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          child: LoopSearchEntry(
+            placeholder: context.l10n.meme_launchpadMemeSearchEntryLabel,
+            inkKey: const ValueKey<String>('meme-search-entry'),
+            onTap: onSearch,
           ),
         ),
         if (onCreate case final create?) ...<Widget>[

@@ -33,6 +33,7 @@ import 'package:loop_mobile/features/launch2/launch2_controllers.dart'
     show launch2ClockProvider;
 import 'package:loop_mobile/features/meme/meme_gateway.dart';
 import 'package:loop_mobile/features/meme/meme_models.dart';
+import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_media.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch2_creator/loop_v2_launch2_creator_codec.dart';
@@ -888,6 +889,21 @@ void main() {
         isA<LoopRecordRow>(),
       );
       expect(find.byType(LoopRecordGroup), findsOneWidget);
+      // S370a · decision 0293: a project's face is a record row's 36 round
+      // (a 44 token face pushed the English state badge off a 390 row).
+      final faces = tester
+          .widgetList<MemeLogo>(
+            find.descendant(
+              of: _key('launch2-projects-list'),
+              matching: find.byType(MemeLogo),
+            ),
+          )
+          .toList();
+      expect(faces, isNotEmpty);
+      for (final face in faces) {
+        expect(face.size, 36);
+        expect(face.radius, 18);
+      }
       expect(find.text('请补充社区链接。'), findsOneWidget);
       // An approved project resumes on the signing page.
       await tester.tap(_key('launch2-project-row-$_projectId'));
@@ -975,6 +991,10 @@ void main() {
       expect(track.failed, isTrue);
       expect(track.segmentColor(track.current), LoopColors.chalk);
       expect(track.segmentColor(track.current + 1), LoopColors.line2);
+      // S370a · decision 0293: the head's face is a token's 44 round.
+      final face = tester.widget<MemeLogo>(find.byType(MemeLogo).first);
+      expect(face.size, 44);
+      expect(face.radius, 22);
       expect(find.text('请补充社区链接。'), findsOneWidget);
       await tester.tap(_key('launch2-project-resubmit'));
       expect(opened.single, Launch2CreatorRoute.edit(_projectId));

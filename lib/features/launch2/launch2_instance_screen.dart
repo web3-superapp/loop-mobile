@@ -29,6 +29,7 @@ import 'package:loop_mobile/features/launch2/launch2_pool_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_pool_view_model.dart';
 import 'package:loop_mobile/features/launch2/launch2_recent_trades.dart';
 import 'package:loop_mobile/features/launch2/launch2_routes.dart';
+import 'package:loop_mobile/features/launch2/launch2_secondary_metrics.dart';
 import 'package:loop_mobile/features/launch2/launch2_signing.dart';
 import 'package:loop_mobile/features/launch2/launch2_trade_panel.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
@@ -1531,9 +1532,11 @@ class _CurveProgress extends StatelessWidget {
           Row(
             children: <Widget>[
               Expanded(
+                // S370a · decision 0293: a card's label at the power
+                // card's 13 / 500 (docs/58 §5.14, 类推).
                 child: Text(
                   context.l10n.launch2_launch2HeroSwitch6,
-                  style: LoopType.body2.copyWith(color: LoopColors.text2),
+                  style: LoopType.eyebrow,
                 ),
               ),
               const SizedBox(width: 10),
@@ -1587,14 +1590,14 @@ Widget _tradeRow(Launch2Trade trade, String ticker) {
               ? LoopL10n.current.common_buy
               : LoopL10n.current.common_sell,
           style: LoopTypography.withWeight(
-            LoopType.body2,
+            LoopType.body1,
             FontWeight.w600,
           ).copyWith(color: buy ? LoopColors.rise : LoopColors.fall),
         ),
         const TextSpan(text: '  '),
         TextSpan(
           text: name,
-          style: LoopType.body2.copyWith(color: LoopColors.text2),
+          style: LoopType.body1.copyWith(color: LoopColors.text2),
         ),
       ],
     ),
@@ -1604,12 +1607,18 @@ Widget _tradeRow(Launch2Trade trade, String ticker) {
   final memeLine = ticker.trim().isEmpty
       ? launch2MemeCompact(trade.memeAmount)
       : '${launch2MemeCompact(trade.memeAmount)} ${loopTickerLabel(ticker)}';
-  return Padding(
+  // S370a · decision 0293: a holding / leaderboard row (docs/58 §9.4,
+  // 类推) — 51 high, 6 above and below, the face 36, no line.
+  return Container(
     key: ValueKey<String>('launch2-trade-${trade.tradeId}'),
+    constraints: const BoxConstraints(
+      minHeight: Launch2SecondaryMetrics.recordRow,
+    ),
     padding: const EdgeInsets.symmetric(
       horizontal: LoopSpacing.page,
-      vertical: 10,
+      vertical: Launch2SecondaryMetrics.recordInset,
     ),
+    alignment: AlignmentDirectional.centerStart,
     child: Row(
       children: <Widget>[
         if (account != null) ...<Widget>[
@@ -1620,10 +1629,10 @@ Widget _tradeRow(Launch2Trade trade, String ticker) {
             child: LoopProfileAvatar(
               avatarRef: account.avatarRef,
               alias: account.displayName,
-              size: 28,
+              size: Launch2SecondaryMetrics.recordFace,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: Launch2SecondaryMetrics.faceGap),
         ],
         Expanded(child: who),
         const SizedBox(width: 12),
@@ -1633,10 +1642,10 @@ Widget _tradeRow(Launch2Trade trade, String ticker) {
             Text(
               launch2Usd1Label(trade.usd1Gross),
               maxLines: 1,
-              style: LoopType.figureBody,
+              style: LoopType.figureSm.copyWith(color: LoopColors.chalk),
             ),
             const SizedBox(height: 2),
-            Text(memeLine, maxLines: 1, style: LoopType.figureSm),
+            Text(memeLine, maxLines: 1, style: LoopType.caption),
           ],
         ),
       ],

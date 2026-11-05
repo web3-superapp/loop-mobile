@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart'
     show Launch2CountdownBuilder;
+import 'package:loop_mobile/features/launch2/launch2_secondary_metrics.dart';
 import 'package:loop_mobile/features/meme/meme_widgets.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -114,18 +115,21 @@ class Launch2ProjectScreen extends ConsumerWidget {
     final status = value.status;
     return <Widget>[
       Padding(
+        // S370a · decision 0293: the head to the first block 12, the face
+        // a token's 44 round (docs/58 §9.4, 类推 MEME 详情页头).
         padding: const EdgeInsets.fromLTRB(
           LoopSpacing.page,
           8,
           LoopSpacing.page,
-          16,
+          LoopSpacing.headingGap,
         ),
         child: Row(
           children: <Widget>[
             MemeLogo(
               symbol: project.ticker,
               imageUrl: draft?.logoAssetUrl,
-              size: 56,
+              size: Launch2SecondaryMetrics.tokenFace,
+              radius: Launch2SecondaryMetrics.tokenFace / 2,
             ),
             const SizedBox(width: 12),
             Expanded(

@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
 import 'package:loop_mobile/features/launch2/launch2_gateway.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
+import 'package:loop_mobile/features/launch2/launch2_secondary_metrics.dart';
 import 'package:loop_mobile/features/launch2/launch2_widgets.dart';
 import 'package:loop_mobile/features/meme/meme_trade_panel.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
@@ -447,7 +448,10 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
                 context.l10n.common_buy,
                 context.l10n.common_sell,
               ],
-              padding: const EdgeInsets.only(bottom: 14),
+              // S370a · decision 0293: chips to what they set, 12.
+              padding: const EdgeInsets.only(
+                bottom: Launch2SecondaryMetrics.chipToContent,
+              ),
               selectedIndex: _side == Launch2Side.buy ? 0 : 1,
               onSelected: (index) {
                 final next = index == 0 ? Launch2Side.buy : Launch2Side.sell;
@@ -461,7 +465,6 @@ class _Launch2TradePanelState extends ConsumerState<Launch2TradePanel> {
               },
             ),
           ),
-          const SizedBox(height: 8),
         ],
         TextField(
           key: const ValueKey<String>('launch2-trade-amount'),
@@ -655,7 +658,8 @@ class _QuotaBar extends StatelessWidget {
           children: <Widget>[
             Text(
               context.l10n.launch2_launch2TradePanelBuild2,
-              style: LoopType.body2.copyWith(color: LoopColors.text2),
+              // S370a · decision 0293: a label at 13 / 500 (类推 §5.14).
+              style: LoopType.eyebrow,
             ),
             const SizedBox(width: 12),
             // A long cap scales down rather than overflowing (decision 0229).
