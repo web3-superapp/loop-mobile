@@ -2616,7 +2616,21 @@ class LoopSeg extends StatelessWidget {
     this.dimmed = false,
     this.capsuleHeight,
     this.splat = false,
+    this.compact = false,
   });
+
+  /// S375 · decision 0299: the chart's small chip. The capsule hugs its
+  /// word — [compactPadding] (2 above and below, 4 either side) at the same
+  /// 13 pt chip step, the same grounds and the same r8 corner — and sits
+  /// centred in a transparent box at least [LoopTouch.minimum] on each side
+  /// that answers the finger as the capsule does. Ignores [capsuleHeight].
+  final bool compact;
+
+  /// The room between a [compact] capsule's edge and its word.
+  static const EdgeInsets compactPadding = EdgeInsets.symmetric(
+    horizontal: 4,
+    vertical: 2,
+  );
 
   /// The chosen capsule wore the small Yellow splat sticker on its top-left
   /// corner (decisions 0220 §6, 0221, 0222). S367 · decision 0291: no chip
@@ -2681,6 +2695,19 @@ class LoopSeg extends StatelessWidget {
   Widget build(BuildContext context) {
     final capsule = capsuleHeight;
     final onTap = _onTap;
+    if (compact) {
+      return Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        enabled: onSelected != null,
+        child: LoopCompactChip(
+          ground: selected ? LoopColors.chipActive : LoopColors.chipIdle,
+          onTap: onTap,
+          child: ExcludeSemantics(child: _segLabel()),
+        ),
+      );
+    }
     if (capsule != null) {
       return Semantics(
         button: true,
@@ -2767,6 +2794,87 @@ class LoopSeg extends StatelessWidget {
         const SizedBox(width: 6),
         text,
       ],
+    );
+  }
+}
+
+/// A small capsule centred in a transparent finger target (S375 · decision
+/// 0299): the chart's periods and its K线 / MA / VOL switches.
+///
+/// The capsule is [LoopSeg.compactPadding] around [child] on [ground] with
+/// the r8 [LoopRadius.pill] corner. The target is at least
+/// [LoopTouch.minimum] wide and tall (or [expand]s to the width it is
+/// handed); a tap anywhere in it chooses, and the pressed state is painted
+/// on the capsule itself, never as a ripple across the target.
+class LoopCompactChip extends StatefulWidget {
+  const LoopCompactChip({
+    required this.ground,
+    required this.onTap,
+    required this.child,
+    super.key,
+    this.expand = false,
+  });
+
+  final Color ground;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  /// Take the whole width the parent hands down (a filled period row); the
+  /// capsule stays centred and as wide as its word.
+  final bool expand;
+
+  /// The key of the drawn capsule.
+  static const Key capsuleKey = ValueKey<String>('loop-compact-chip-capsule');
+
+  @override
+  State<LoopCompactChip> createState() => _LoopCompactChipState();
+}
+
+class _LoopCompactChipState extends State<LoopCompactChip> {
+  bool _pressed = false;
+
+  @override
+  void didUpdateWidget(covariant LoopCompactChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onTap == null) _pressed = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ground = _pressed
+        ? Color.alphaBlend(LoopColors.pressHighlight, widget.ground)
+        : widget.ground;
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: widget.onTap,
+        onHighlightChanged: (pressed) {
+          if (pressed != _pressed) setState(() => _pressed = pressed);
+        },
+        splashFactory: NoSplash.splashFactory,
+        overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: widget.expand ? double.infinity : LoopTouch.minimum,
+            minHeight: LoopTouch.minimum,
+          ),
+          child: Align(
+            widthFactor: widget.expand ? null : 1,
+            heightFactor: 1,
+            child: DecoratedBox(
+              key: LoopCompactChip.capsuleKey,
+              decoration: BoxDecoration(
+                color: ground,
+                borderRadius: LoopRadius.pill,
+              ),
+              child: Padding(
+                padding: LoopSeg.compactPadding,
+                child: widget.child,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
