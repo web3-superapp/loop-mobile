@@ -607,8 +607,8 @@ void main() {
         tester.getRect(_key('launch2-campaign-card-c1')).height,
         launch2DeskCampaignHeight,
       );
-      // No cover: the Purple-to-Ink ground fills the card.
-      expect(_key('launch2-campaign-ground'), findsOneWidget);
+      // No cover, and no wall under the words since decision 0291.
+      expect(_key('launch2-campaign-ground'), findsNothing);
       expect(_key('launch2-campaign-scrim'), findsOneWidget);
       expect(find.text('View'), findsOneWidget);
       // One page: no dots.
@@ -669,9 +669,9 @@ void main() {
       expect(requested, 0);
       expect(_key('launch2-campaign-cover-c1'), findsNothing);
       expect(_key('launch2-campaign-cover-layer'), findsNothing);
-      // The default art: wall, fog wash, hand.
+      // The default art: the Ink wash and the hand (the wall went in 0291).
       expect(_key('launch2-campaign-default-art'), findsOneWidget);
-      expect(_key('launch2-campaign-ground'), findsOneWidget);
+      expect(_key('launch2-campaign-ground'), findsNothing);
       expect(_key('launch2-campaign-scrim'), findsOneWidget);
       expect(_key('launch2-atmo-hand'), findsOneWidget);
       // Only the words are the campaign's.
@@ -706,9 +706,16 @@ void main() {
       await tester.pump();
       final eventPage = _key('launch2-desk-page-${_id(1)}');
       expect(eventPage, findsOneWidget);
+      // Decision 0291: no wall under either page.
+      expect(
+        find.descendant(
+          of: eventPage,
+          matching: _key('launch2-campaign-ground'),
+        ),
+        findsNothing,
+      );
       for (final key in <String>[
         'launch2-campaign-default-art',
-        'launch2-campaign-ground',
         'launch2-atmo-hand',
       ]) {
         expect(

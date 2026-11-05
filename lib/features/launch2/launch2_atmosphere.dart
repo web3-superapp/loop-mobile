@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch2/launch2_controllers.dart';
@@ -55,51 +54,24 @@ Widget _art(
 
 // ---- the wall -------------------------------------------------------------
 
-/// The still layer under the MEME home (decision 0220): the shared
-/// [LoopWallBackdrop] with the MEME fog — Purple top left, Yellow bottom
-/// right.
+/// The still layer under the MEME home. S367 · decision 0291: plain Ink —
+/// the shared [LoopWallBackdrop] without its wall and fogs, and without the
+/// Figma's Purple ambient glow (decision 0279) that lay over it.
 class Launch2AtmosphereBackdrop extends StatelessWidget {
   const Launch2AtmosphereBackdrop({
     super.key = const ValueKey<String>('launch2-atmo-backdrop'),
   });
 
-  /// The design's reference width; the fog sizes scale with the screen.
+  /// The design's reference width.
   static const double referenceWidth = LoopWallBackdrop.referenceWidth;
 
-  /// The Figma's ambient glow (2001:22): a 420 round Purple light at
-  /// (−175, 70) of the 393 frame, behind the banner's left half.
-  static const String glowAsset = 'assets/figma/ambient-glow.svg';
-
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final k = constraints.maxWidth / 393;
-      return Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          const LoopWallBackdrop(keyPrefix: 'launch2-atmo'),
-          // S353b · decision 0279 (docs/58 §9.4): the Figma's Purple
-          // #a62eff glow over the wall.
-          Positioned(
-            left: -175 * k,
-            top: 70 * k,
-            width: 420 * k,
-            height: 420 * k,
-            child: IgnorePointer(
-              child: SvgPicture.asset(
-                glowAsset,
-                key: const ValueKey<String>('launch2-atmo-glow'),
-                excludeFromSemantics: true,
-              ),
-            ),
-          ),
-        ],
-      );
-    },
-  );
+  Widget build(BuildContext context) =>
+      const LoopWallBackdrop(keyPrefix: 'launch2-atmo');
 }
 
-/// The MEME title with the wall crown peeking out behind it (60 %, −8°).
+/// The MEME title over the Purple doodle; the wall crown that peeked out
+/// behind it is gone (decision 0291).
 class Launch2AtmoTitle extends StatelessWidget {
   const Launch2AtmoTitle({required this.title, super.key});
 
@@ -584,7 +556,7 @@ class _StarPainter extends CustomPainter {
 typedef Launch2ChipSpec = ({String id, String title, int count, bool selected});
 
 /// The stage chips under the band: the chosen one Purple with white words
-/// and a small Yellow splat on its top-left corner.
+/// (its splat gone, decision 0291).
 class Launch2StageChips extends StatelessWidget {
   const Launch2StageChips({
     required this.chips,
@@ -638,50 +610,34 @@ class _StageChip extends StatelessWidget {
         child: SizedBox(
           height: LoopTouch.minimum,
           child: Center(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                Container(
-                  height: 36,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: on ? LoopColors.purple : null,
-                    borderRadius: LoopRadius.pill,
-                  ),
-                  child: Text.rich(
+            child: Container(
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: on ? LoopColors.purple : null,
+                borderRadius: LoopRadius.pill,
+              ),
+              child: Text.rich(
+                TextSpan(
+                  children: <InlineSpan>[
+                    TextSpan(text: chip.title),
+                    const TextSpan(text: ' '),
                     TextSpan(
-                      children: <InlineSpan>[
-                        TextSpan(text: chip.title),
-                        const TextSpan(text: ' '),
-                        TextSpan(
-                          text: '${chip.count}',
-                          style: LoopTypography.withWeight(
-                            LoopType.figureSm,
-                            FontWeight.w600,
-                          ).copyWith(color: ink),
-                        ),
-                      ],
+                      text: '${chip.count}',
+                      style: LoopTypography.withWeight(
+                        LoopType.figureSm,
+                        FontWeight.w600,
+                      ).copyWith(color: ink),
                     ),
-                    maxLines: 1,
-                    style: LoopTypography.withWeight(
-                      LoopType.titleSm,
-                      FontWeight.w600,
-                    ).copyWith(color: ink),
-                  ),
+                  ],
                 ),
-                if (on)
-                  Positioned(
-                    left: -7,
-                    top: -8,
-                    width: 24,
-                    child: LoopSplatSticker(
-                      key: ValueKey<String>(
-                        'launch2-desk-seg-splat-${chip.id}',
-                      ),
-                    ),
-                  ),
-              ],
+                maxLines: 1,
+                style: LoopTypography.withWeight(
+                  LoopType.titleSm,
+                  FontWeight.w600,
+                ).copyWith(color: ink),
+              ),
             ),
           ),
         ),

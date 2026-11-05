@@ -11,9 +11,6 @@ import 'package:loop_mobile/widgets/loop_remote_avatar.dart';
 /// The pieces [Launch2NftCard]'s default face draws, for [LoopAtmoPrecache]
 /// on every page that shows a card (S273 · decision 0232).
 const List<String> launch2NftCardAssets = <String>[
-  LoopAtmoAssets.wall,
-  LoopAtmoAssets.sprayPurple,
-  LoopAtmoAssets.sprayYellow,
   LoopAtmoAssets.crownYellow,
   LoopAtmoAssets.handChrome,
 ];
@@ -258,9 +255,9 @@ class Launch2NftCard extends StatelessWidget {
 }
 
 /// The card's default face (S273 · decision 0232): the MEME banner's
-/// default art (decisions 0220 §4 / 0222 / 0223) scaled to a square — the
-/// wall at 90 %, Purple fog from the top left, Yellow from the bottom right,
-/// an Ink wash under the words, and the chrome hand with its Yellow crown at
+/// default art (decisions 0220 §4 / 0222 / 0223) scaled to a square — a
+/// dark ground (the wall and the fogs went in decision 0291), an Ink wash
+/// under the words, and the chrome hand with its Yellow crown at
 /// the bottom right. Still: the hand carries no sheen here.
 class Launch2NftArtBackdrop extends StatelessWidget {
   const Launch2NftArtBackdrop({
@@ -279,38 +276,8 @@ class Launch2NftArtBackdrop extends StatelessWidget {
       key: const ValueKey<String>('launch2-nft-card-default-art'),
       fit: StackFit.expand,
       children: <Widget>[
+        // S367 · decision 0291: no wall, no fogs under the hand.
         const ColoredBox(color: Color(0xFF0E0D12)),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage(LoopAtmoAssets.wall),
-              fit: BoxFit.cover,
-              alignment: Alignment(-0.4, -0.2),
-              opacity: 0.9,
-            ),
-          ),
-          child: SizedBox.expand(),
-        ),
-        Positioned(
-          left: -w * 0.45,
-          top: -w * 0.55,
-          width: w * 1.6,
-          height: w * 1.6,
-          child: Opacity(
-            opacity: 0.55,
-            child: loopAtmoArt(LoopAtmoAssets.sprayPurple),
-          ),
-        ),
-        Positioned(
-          right: -w * 0.6,
-          bottom: -w * 0.7,
-          width: w * 1.4,
-          height: w * 1.4,
-          child: Opacity(
-            opacity: 0.14,
-            child: loopAtmoArt(LoopAtmoAssets.sprayYellow),
-          ),
-        ),
         const DecoratedBox(
           key: ValueKey<String>('launch2-nft-card-scrim'),
           decoration: BoxDecoration(

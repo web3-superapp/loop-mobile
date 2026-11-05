@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/text/loop_power_text.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -422,8 +421,8 @@ class MiningSummaryHero extends StatelessWidget {
           ? LoopType.heroFigure.copyWith(color: LoopColors.textPrimary)
           : LoopType.displayXl.copyWith(color: LoopColors.chalk),
     );
-    // docs/58 §5.14: the power card — a 12 corner, the 107° gradient
-    // #14151a → #1b1028 and the doodle wall at 30 % over it.
+    // docs/58 §5.14: the power card — a 12 corner and the 107° gradient
+    // #14151a → #1b1028. The doodle wall over it went in decision 0291.
     return Container(
       key: const ValueKey<String>('mining-summary-hero'),
       margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
@@ -434,18 +433,6 @@ class MiningSummaryHero extends StatelessWidget {
       ),
       child: Stack(
         children: <Widget>[
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.3,
-                child: loopAtmoArt(
-                  LoopAtmoAssets.wall,
-                  fit: BoxFit.cover,
-                  key: const ValueKey<String>('mining-summary-hero-watermark'),
-                ),
-              ),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               LoopSpacing.card + 1,

@@ -17,11 +17,12 @@ import 'package:loop_mobile/widgets/loop_title_doodle.dart';
 // 氛围层 · shared pieces (S264 → S265, decisions 0220 / 0221)
 // ---------------------------------------------------------------------------
 //
-// The wall is black and the only two materials are chrome and spray paint.
-// Spray lands on brand pieces only — the title crown, a section index, the
-// chosen chip, a default face, a progress bar's drip — and data rows stay
-// flat and readable. Yellow is for what asks to be tapped; Purple is the
-// brand band and the chosen state.
+// S367 · decision 0291 (需求方 2026-11-05 第 5 条：「不要那个涂鸦背景」):
+// the wall, its two fogs, the crown behind a title and the splat on a chosen
+// chip are gone. Every page stands on plain Ink; [LoopWallBackdrop] and the
+// backdrop stage / slice stay as the seam a page hangs its ground on, and
+// paint Ink. The pieces that are content — the banner's chrome hand, the
+// default chrome face, a top-three crown, the empty-state crown — stay.
 //
 // Nothing here loops: the MEME home's moving pieces (the band, the hand's
 // sheen) stay in `launch2_atmosphere.dart`.
@@ -188,14 +189,10 @@ void loopPrecacheAtmosphere(
   }
 }
 
-/// The pieces a tab page's wall, crown and chips use.
-const List<String> loopAtmosphereTabAssets = <String>[
-  LoopAtmoAssets.wall,
-  LoopAtmoAssets.sprayPurple,
-  LoopAtmoAssets.sprayYellow,
-  LoopAtmoAssets.crownWall,
-  LoopAtmoAssets.splatYellow,
-];
+/// The pieces every tab page draws. S367 · decision 0291: none — the wall,
+/// the fogs, the title crown and the chip splat are gone; a page adds what
+/// it still draws itself (a chrome face, a rank crown).
+const List<String> loopAtmosphereTabAssets = <String>[];
 
 /// Decodes [paths] once, before [child]'s first frame (decision 0221: each
 /// tab page with a wall precaches what it draws).
@@ -249,127 +246,30 @@ Widget loopAtmoArt(
 
 // ---- the wall -------------------------------------------------------------
 
-/// One fog spot on the wall, in the design's 390-wide coordinates.
-@immutable
-final class LoopFogSpot {
-  const LoopFogSpot({
-    required this.asset,
-    required this.opacity,
-    required this.size,
-    this.left,
-    this.top,
-    this.right,
-    this.bottom,
-  });
-
-  final String asset;
-  final double opacity;
-  final double size;
-  final double? left;
-  final double? top;
-  final double? right;
-  final double? bottom;
-}
-
-/// Where the two fogs sit on each tab, so the five walls are not one copy.
+/// Which tab a [LoopWallBackdrop] stands under. S367 · decision 0291: the
+/// fogs that told the five walls apart are gone, so the value only names
+/// the page; every wall paints the same Ink.
 enum LoopWallFog {
-  /// MEME: Purple top left 15 %, Yellow bottom right 11 % (decision 0220).
-  meme(<LoopFogSpot>[
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayPurple,
-      opacity: 0.15,
-      size: 560,
-      left: -190,
-      top: -150,
-    ),
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayYellow,
-      opacity: 0.11,
-      size: 540,
-      right: -220,
-      bottom: 60,
-    ),
-  ]),
+  /// MEME.
+  meme,
 
-  /// 聊天: Purple top right, Yellow bottom left.
-  chat(<LoopFogSpot>[
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayPurple,
-      opacity: 0.15,
-      size: 560,
-      right: -200,
-      top: -160,
-    ),
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayYellow,
-      opacity: 0.10,
-      size: 520,
-      left: -240,
-      bottom: 40,
-    ),
-  ]),
+  /// 聊天.
+  chat,
 
-  /// 广场: Yellow top right, Purple low on the left.
-  square(<LoopFogSpot>[
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayYellow,
-      opacity: 0.10,
-      size: 500,
-      right: -210,
-      top: -170,
-    ),
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayPurple,
-      opacity: 0.14,
-      size: 540,
-      left: -230,
-      bottom: 120,
-    ),
-  ]),
+  /// 广场.
+  square,
 
-  /// 情报: Yellow top left, Purple bottom right.
-  intel(<LoopFogSpot>[
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayYellow,
-      opacity: 0.10,
-      size: 500,
-      left: -200,
-      top: -160,
-    ),
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayPurple,
-      opacity: 0.15,
-      size: 560,
-      right: -220,
-      bottom: 40,
-    ),
-  ]),
+  /// 情报.
+  intel,
 
-  /// 钱包: Yellow top right behind the chrome plate, Purple low on the left.
-  wallet(<LoopFogSpot>[
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayYellow,
-      opacity: 0.11,
-      size: 520,
-      right: -190,
-      top: -140,
-    ),
-    LoopFogSpot(
-      asset: LoopAtmoAssets.sprayPurple,
-      opacity: 0.14,
-      size: 540,
-      left: -200,
-      bottom: 100,
-    ),
-  ]);
-
-  const LoopWallFog(this.spots);
-
-  final List<LoopFogSpot> spots;
+  /// 钱包.
+  wallet,
 }
 
-/// The still layer under a tab page: the wall at 85 % over Ink, a darkening
-/// wash down the page (Ink 15 % → 70 %) and two fogs placed per tab.
+/// The still layer under a tab page. S367 · decision 0291: plain Ink — the
+/// wall texture, the darkening wash and the two fogs (decisions 0220 / 0221)
+/// are gone. It stays a widget so a page's backdrop seam (the stage, the
+/// pinned bar's slice) keeps one ground to cut from.
 class LoopWallBackdrop extends StatelessWidget {
   const LoopWallBackdrop({
     super.key,
@@ -379,68 +279,17 @@ class LoopWallBackdrop extends StatelessWidget {
 
   final LoopWallFog fog;
 
-  /// Prefix of the wall layer's key (`<prefix>-wall`).
+  /// Prefix of the ground layer's key (`<prefix>-wall`).
   final String keyPrefix;
 
-  /// The design's reference width; the fog sizes scale with the screen.
+  /// The design's reference width.
   static const double referenceWidth = 390;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final k = constraints.maxWidth / referenceWidth;
-      double? at(double? value) => value == null ? null : value * k;
-      return ClipRect(
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            DecoratedBox(
-              key: ValueKey<String>('$keyPrefix-wall'),
-              decoration: const BoxDecoration(
-                color: LoopColors.ink,
-                image: DecorationImage(
-                  image: AssetImage(LoopAtmoAssets.wall),
-                  fit: BoxFit.fitWidth,
-                  alignment: Alignment.topCenter,
-                  repeat: ImageRepeat.repeatY,
-                  opacity: 0.85,
-                ),
-              ),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  // Decision 0226: the wash stops deepening past the middle,
-                  // so the foot of the page — behind the floating tab bar —
-                  // is wall, not a black band (it went to Ink 70 %).
-                  colors: <Color>[
-                    Color(0x26070809),
-                    Color(0x73070809),
-                    Color(0x73070809),
-                  ],
-                  stops: <double>[0, 0.55, 1],
-                ),
-              ),
-            ),
-            for (final spot in fog.spots)
-              Positioned(
-                left: at(spot.left),
-                top: at(spot.top),
-                right: at(spot.right),
-                bottom: at(spot.bottom),
-                width: spot.size * k,
-                height: spot.size * k,
-                child: Opacity(
-                  opacity: spot.opacity,
-                  child: loopAtmoArt(spot.asset),
-                ),
-              ),
-          ],
-        ),
-      );
-    },
+  Widget build(BuildContext context) => ColoredBox(
+    key: ValueKey<String>('$keyPrefix-wall'),
+    color: LoopColors.ink,
+    child: const SizedBox.expand(),
   );
 }
 
@@ -620,7 +469,9 @@ class _RenderBackdropSlice extends RenderBox
 
 // ---- the title crown --------------------------------------------------------
 
-/// [child] with the wall crown peeking out behind it (60 %, −8°).
+/// [child], once with the wall crown peeking out behind it (60 %, −8°).
+/// S367 · decision 0291: the crown is gone; [child] stands alone, and the
+/// placement fields stay so callers need not change.
 class LoopTitleCrown extends StatelessWidget {
   const LoopTitleCrown({
     required this.child,
@@ -638,29 +489,11 @@ class LoopTitleCrown extends StatelessWidget {
   final double width;
 
   @override
-  Widget build(BuildContext context) => Stack(
-    clipBehavior: Clip.none,
-    children: <Widget>[
-      Positioned(
-        left: left,
-        top: top,
-        width: width,
-        child: IgnorePointer(
-          child: Transform.rotate(
-            angle: -8 * math.pi / 180,
-            child: Opacity(
-              opacity: 0.6,
-              child: loopAtmoArt(LoopAtmoAssets.crownWall, key: crownKey),
-            ),
-          ),
-        ),
-      ),
-      child,
-    ],
-  );
+  Widget build(BuildContext context) => child;
 }
 
-/// A tab title with the wall crown behind it (decision 0220 §3).
+/// A tab title over the Purple doodle (decision 0277). The wall crown that
+/// stood behind it (decision 0220 §3) is gone (decision 0291).
 class LoopAtmoTitle extends StatelessWidget {
   const LoopAtmoTitle({required this.title, super.key, this.crownKey});
 
@@ -684,8 +517,9 @@ class LoopAtmoTitle extends StatelessWidget {
 
 // ---- spray pieces -------------------------------------------------------------
 
-/// The small Yellow splat sticker a chosen chip wears on its top-left corner
-/// (−18°, 24 wide).
+/// The small Yellow splat sticker a chosen chip wore on its top-left corner
+/// (decision 0222). S367 · decision 0291: no more spray on chips — it draws
+/// nothing; the type stays so the chips that place it need not change.
 class LoopSplatSticker extends StatelessWidget {
   const LoopSplatSticker({super.key, this.width = 24, this.angle = -18});
 
@@ -693,35 +527,17 @@ class LoopSplatSticker extends StatelessWidget {
   final double angle;
 
   @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: Transform.rotate(
-      angle: angle * math.pi / 180,
-      child: loopAtmoArt(LoopAtmoAssets.splatYellow, width: width),
-    ),
-  );
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-/// [chosen] with the Yellow splat sticker on its top-left corner (−7, −8,
-/// 24 wide, −18°): the mark every solid Purple choice wears (decision 0222).
-Widget loopSplatted(Widget chosen, {Key? key}) => Stack(
-  clipBehavior: Clip.none,
-  children: <Widget>[
-    chosen,
-    Positioned(
-      left: -7,
-      top: -8,
-      width: 24,
-      child: LoopSplatSticker(
-        key: key ?? const ValueKey<String>('loop-seg-splat'),
-      ),
-    ),
-  ],
-);
+/// [chosen] as it is. It once wore the Yellow splat on its top-left corner
+/// (decision 0222); S367 · decision 0291 took the spray off every chip.
+Widget loopSplatted(Widget chosen, {Key? key}) => chosen;
 
-/// A section heading: with an [index] the Inter Bold number in Yellow with a
-/// small splat at its top right (only for an order or a ranking), without
-/// one the 18 / 700 [LoopType.headline] with the splat after it. A Yellow 「全部」 when the
-/// section has somewhere to go.
+/// A section heading: with an [index] the Inter Bold number in Yellow (only
+/// for an order or a ranking), without one the 18 / 700 [LoopType.headline].
+/// A Yellow 「全部」 when the section has somewhere to go. The splats that
+/// sat on both are gone (decision 0291).
 class LoopSprayHeading extends StatelessWidget {
   const LoopSprayHeading({
     required this.title,
@@ -735,14 +551,6 @@ class LoopSprayHeading extends StatelessWidget {
   final String title;
   final VoidCallback? onMore;
   final Key? moreKey;
-
-  static Widget _splat() => Opacity(
-    opacity: 0.75,
-    child: Transform.rotate(
-      angle: 12 * math.pi / 180,
-      child: loopAtmoArt(LoopAtmoAssets.splatYellow),
-    ),
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -779,29 +587,7 @@ class LoopSprayHeading extends StatelessWidget {
               ),
             ),
           ] else
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(right: 14),
-                      child: heading,
-                    ),
-                    Positioned(
-                      right: -4,
-                      top: -6,
-                      width: 18,
-                      child: KeyedSubtree(
-                        key: const ValueKey<String>('loop-spray-heading-splat'),
-                        child: _splat(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            Expanded(child: heading),
           if (more != null)
             Semantics(
               button: true,
@@ -1102,11 +888,9 @@ enum LoopChromePlateMark {
 /// - The edge: a 2 px chrome bevel (chrome1 → chrome3 → chrome2) with a 1 px
 ///   Ink 30 % line inside it, two boxes deep and no blurred shadow.
 /// - The face: brushed dark metal (`#2A2A31 → #141418 → #1F1F25` on the
-///   diagonal), the wall at 20 %, a Purple fog at 15 % in the top-right
-///   corner and a chrome light band (chrome1 12 % → clear, −20°, about 40 %
-///   wide).
-/// - The corner: a faded grey crown or tag at 25 %, its corner under the
-///   figure.
+///   diagonal) and a chrome light band (chrome1 12 % → clear, −20°, about
+///   40 % wide). The wall at 20 %, the Purple fog and the faded corner mark
+///   it once wore are gone (decision 0291); [mark] is kept for callers.
 /// - The motion: the banner hand's sheen across the face every 6 s
 ///   ([LoopSheen]), never under reduced motion; the words are not swept.
 class LoopChromePlate extends StatelessWidget {
@@ -1150,36 +934,7 @@ class LoopChromePlate extends StatelessWidget {
     const faceRadius = BorderRadius.all(
       Radius.circular(LoopRadius.cardValue - edge - innerLine),
     );
-    final corner = mark == LoopChromePlateMark.crown
-        ? LoopAtmoAssets.crownFlat
-        : LoopAtmoAssets.tagInLoop;
     final layers = <Widget>[
-      // The wall at 20 % — the plate is cut from the same wall.
-      const Positioned.fill(
-        child: DecoratedBox(
-          key: ValueKey<String>('loop-chrome-plate-wall'),
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage(LoopAtmoAssets.wall),
-              fit: BoxFit.cover,
-              opacity: 0.2,
-            ),
-          ),
-        ),
-      ),
-      Positioned(
-        right: -90,
-        top: -110,
-        width: 260,
-        height: 260,
-        child: Opacity(
-          opacity: 0.15,
-          child: loopAtmoArt(
-            LoopAtmoAssets.sprayPurple,
-            key: const ValueKey<String>('loop-chrome-plate-fog'),
-          ),
-        ),
-      ),
       // The chrome light band: chrome1 12 % to clear, tilted −20°.
       const Positioned.fill(
         child: DecoratedBox(
@@ -1193,24 +948,6 @@ class LoopChromePlate extends StatelessWidget {
               ],
               stops: <double>[0.1, 0.3, 0.5],
               transform: GradientRotation(-20 * math.pi / 180),
-            ),
-          ),
-        ),
-      ),
-      Positioned(
-        right: 6,
-        bottom: 4,
-        width: mark == LoopChromePlateMark.crown ? 74 : 64,
-        child: Opacity(
-          opacity: 0.25,
-          child: ColorFiltered(
-            colorFilter: const ColorFilter.matrix(loopGreyMatrix),
-            child: Transform.rotate(
-              angle: -10 * math.pi / 180,
-              child: loopAtmoArt(
-                corner,
-                key: const ValueKey<String>('loop-chrome-plate-mark'),
-              ),
             ),
           ),
         ),
@@ -1278,7 +1015,7 @@ class LoopChromePlate extends StatelessWidget {
   }
 }
 
-/// The Inter Bold index 「01」 in Yellow with a small splat at its top right — the
+/// The Inter Bold index 「01」 in Yellow (its splat gone, decision 0291) — the
 /// section heading's number (decision 0220 §7), also the podium's place
 /// (decision 0224).
 class LoopSprayIndex extends StatelessWidget {
@@ -1287,20 +1024,9 @@ class LoopSprayIndex extends StatelessWidget {
   final int index;
 
   @override
-  Widget build(BuildContext context) => Stack(
-    clipBehavior: Clip.none,
-    children: <Widget>[
-      Text(
-        index.toString().padLeft(2, '0'),
-        style: LoopType.sectionIndex.copyWith(color: LoopColors.yellow),
-      ),
-      Positioned(
-        right: -12,
-        top: -8,
-        width: 26,
-        child: IgnorePointer(child: LoopSprayHeading._splat()),
-      ),
-    ],
+  Widget build(BuildContext context) => Text(
+    index.toString().padLeft(2, '0'),
+    style: LoopType.sectionIndex.copyWith(color: LoopColors.yellow),
   );
 }
 

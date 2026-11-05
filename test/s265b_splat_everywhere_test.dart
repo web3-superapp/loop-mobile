@@ -3,6 +3,9 @@
 // segments, the choice buttons, the market tab strip, the wallet's asset
 // tabs, MEME's stage chips — and nothing else does: the plain buttons, the
 // top text tabs and the tab bar stay as they were.
+//
+// S367 · decision 0291: the spray is gone from every chip — `splat: true`
+// and MEME's stage chips no longer draw it either.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,21 +41,11 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
   await tester.pump();
 }
 
-/// The splat sits on the top-left corner of [chosen]: its centre is above
-/// and left of the chosen box's top-left quarter.
-void _onTopLeft(WidgetTester tester, Finder chosen) {
-  final splat = tester.getRect(find.descendant(of: chosen, matching: _splat));
-  final box = tester.getRect(chosen);
-  expect(splat.center.dx, lessThan(box.left + box.width / 2));
-  expect(splat.center.dy, lessThan(box.top + box.height / 2));
-}
-
 void main() {
   // Decision 0277: the Figma's filter chip has no splat, so a LoopSeg /
   // LoopSegBar no longer wears it by default; `splat: true` is the way in.
-  testWidgets('LoopSegBar: the chosen chip wears no splat by default', (
-    tester,
-  ) async {
+  testWidgets('LoopSegBar: the chosen chip wears no splat, by default or '
+      'opted in (0291)', (tester) async {
     await _pump(
       tester,
       LoopSegBar(
@@ -75,13 +68,13 @@ void main() {
         onSelected: (_) {},
       ),
     );
+    // Decision 0291: `splat: true` draws nothing any more.
     final opted = find.byType(LoopSeg);
-    expect(find.descendant(of: opted.at(1), matching: _splat), findsOneWidget);
-    _onTopLeft(tester, opted.at(1));
+    expect(find.descendant(of: opted.at(1), matching: _splat), findsNothing);
   });
 
-  testWidgets('LoopSeg without a capsule height wears none either; '
-      '`splat: true` is the one way in', (tester) async {
+  testWidgets('LoopSeg without a capsule height wears none either, not even '
+      'with `splat: true` (0291)', (tester) async {
     await _pump(
       tester,
       Row(
@@ -114,7 +107,7 @@ void main() {
     expect(find.descendant(of: _key('off'), matching: _splat), findsNothing);
     expect(
       find.descendant(of: _key('opted-in'), matching: _splat),
-      findsOneWidget,
+      findsNothing,
     );
   });
 
@@ -198,7 +191,7 @@ void main() {
     );
   });
 
-  testWidgets('MEME stage chips keep their own splat', (tester) async {
+  testWidgets('MEME stage chips wear no splat either (0291)', (tester) async {
     await _pump(
       tester,
       Launch2StageChips(
@@ -209,7 +202,7 @@ void main() {
         onSelected: (_) {},
       ),
     );
-    expect(_key('launch2-desk-seg-splat-public'), findsOneWidget);
+    expect(_key('launch2-desk-seg-splat-public'), findsNothing);
     expect(_key('launch2-desk-seg-splat-upcoming'), findsNothing);
   });
 

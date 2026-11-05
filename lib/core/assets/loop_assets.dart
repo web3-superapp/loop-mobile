@@ -294,13 +294,12 @@ abstract final class LoopBrandAssets {
 /// requester's looplabs.meme posters and hero (see
 /// `assets/brand/atmo-SOURCES.md`); the layered source files replace them
 /// before launch.
+///
+/// S367 · decision 0291: the background pieces — the wall, the two fogs, the
+/// wall crown behind a title and the chip splat — are gone with their files.
+/// What is left is content: the banner's chrome hand, its crown and tag, the
+/// title brush, the rank crowns, the drip and the default chrome face.
 abstract final class LoopAtmoAssets {
-  static const String wall = '${LoopAssetPaths.brand}/atmo-wall.webp';
-  static const String sprayPurple =
-      '${LoopAssetPaths.brand}/atmo-spray-purple.png';
-  static const String sprayYellow =
-      '${LoopAssetPaths.brand}/atmo-spray-yellow.png';
-  static const String crownWall = '${LoopAssetPaths.brand}/atmo-crown-wall.png';
   static const String crownYellow =
       '${LoopAssetPaths.brand}/atmo-crown-yellow.png';
   static const String crownFlat = '${LoopAssetPaths.brand}/atmo-crown-flat.png';
@@ -309,8 +308,6 @@ abstract final class LoopAtmoAssets {
   static const String brushPurple =
       '${LoopAssetPaths.brand}/atmo-brush-purple.png';
   static const String tagInLoop = '${LoopAssetPaths.brand}/atmo-tag-inloop.png';
-  static const String splatYellow =
-      '${LoopAssetPaths.brand}/atmo-splat-yellow.png';
   static const String dripYellow =
       '${LoopAssetPaths.brand}/atmo-drip-yellow.png';
   static const String avatarChrome =
@@ -318,16 +315,11 @@ abstract final class LoopAtmoAssets {
 
   /// Every piece, for `precacheImage` before the MEME home's first frame.
   static const List<String> all = <String>[
-    wall,
-    sprayPurple,
-    sprayYellow,
-    crownWall,
     crownYellow,
     crownFlat,
     handChrome,
     brushPurple,
     tagInLoop,
-    splatYellow,
     dripYellow,
     avatarChrome,
   ];

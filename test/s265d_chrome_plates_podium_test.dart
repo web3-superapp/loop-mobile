@@ -117,7 +117,7 @@ void main() {
 
   group('镀铬牌', () {
     testWidgets('a 2 px chrome bevel, a 1 px Ink line, a brushed face with '
-        'the wall, the fog, the light band and the faded corner mark', (
+        'the light band (the wall, fog and corner mark went in 0291)', (
       tester,
     ) async {
       await _pumpPlate(tester);
@@ -148,13 +148,14 @@ void main() {
                   .gradient!
               as LinearGradient;
       expect(brushed.colors, LoopChromePlate.faceColors);
+      expect(part('loop-chrome-plate-light'), findsOneWidget);
+      // Decision 0291: the wall, the fog and the faded corner mark are gone.
       for (final key in <String>[
         'loop-chrome-plate-wall',
         'loop-chrome-plate-fog',
-        'loop-chrome-plate-light',
         'loop-chrome-plate-mark',
       ]) {
-        expect(part(key), findsOneWidget, reason: key);
+        expect(part(key), findsNothing, reason: key);
       }
       final light =
           (tester

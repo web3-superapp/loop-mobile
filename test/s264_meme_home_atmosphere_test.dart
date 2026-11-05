@@ -161,7 +161,9 @@ void main() {
     await _drain(tester);
   });
 
-  testWidgets('the home stands on the wall with the crown behind its title', (
+  // S367 · decision 0291: the wall and the title crown are gone; the
+  // backdrop is plain Ink and still does not scroll.
+  testWidgets('the home stands on a plain Ink backdrop, no title crown', (
     tester,
   ) async {
     await _pump(tester, <Map<String, Object?>>[
@@ -170,7 +172,11 @@ void main() {
     // The page's wall, and the same wall cut to the sticky bar's box.
     expect(_key('launch2-atmo-backdrop'), findsNWidgets(2));
     expect(_key('launch2-atmo-wall'), findsNWidgets(2));
-    expect(_key('launch2-atmo-title-crown'), findsOneWidget);
+    expect(_key('launch2-atmo-title-crown'), findsNothing);
+    expect(
+      tester.widget<ColoredBox>(_key('launch2-atmo-wall').first).color,
+      LoopColors.ink,
+    );
     expect(find.text('MEME'), findsOneWidget);
     // The wall does not scroll with the rows.
     final wall = tester.getRect(_key('launch2-atmo-backdrop').first);
