@@ -20,6 +20,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 
 /// The search scopes offered by `chat-search`.
 ///
@@ -421,34 +422,9 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
         onSubmitted: (_) => _searchNow(),
         // M40 R26 a search field: body 14 (decision 0191).
         style: LoopType.body,
-        decoration: InputDecoration(
-          hintText: context.l10n.chatV2_searchChatSearchScreenTitle,
-          isDense: true,
-          filled: true,
-          fillColor: LoopColors.card,
-          prefixIcon: const Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 6, 0),
-            child: LoopIcon('search', size: 16, color: LoopColors.text3),
-          ),
-          prefixIconConstraints: const BoxConstraints(
-            minWidth: 34,
-            minHeight: 44,
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(0, 11, 14, 11),
-          // UX-008 (decision 0254): the 12 corner and the Purple focus edge
-          // every field has.
-          border: OutlineInputBorder(
-            borderRadius: LoopRadius.control,
-            borderSide: const BorderSide(color: LoopColors.line),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: LoopRadius.control,
-            borderSide: const BorderSide(color: LoopColors.line),
-          ),
-          focusedBorder: const OutlineInputBorder(
-            borderRadius: LoopRadius.control,
-            borderSide: BorderSide(color: LoopColors.purple),
-          ),
+        // S371 · decision 0297: the one Figma search field.
+        decoration: loopSearchFieldDecoration(
+          hint: context.l10n.chatV2_searchChatSearchScreenTitle,
         ),
       ),
       // Decision 0131: a search page opens on its field and its scopes, not on
@@ -559,6 +535,10 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
             : '${hit.senderLabel} · ${hit.channelLabel}';
         return LoopRecordRow(
           key: ValueKey<String>('chat-search-hit-${hit.messageId}'),
+          // S371 · decision 0297: the conversation row's 67 and its 16 / 500
+          // name (docs/58 §9.2 / §9.4).
+          kind: LoopRecordRowKind.person,
+          titleStyle: LoopType.rowTitleLg,
           // `.row-ico`: every result row in the prototype opens with the
           // sender's tile. The row is two lines of copy without it, and three
           // hits in a row read as one paragraph (audit 2026-09-20 · D-7).

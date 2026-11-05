@@ -347,7 +347,12 @@ Future<void> showLoopPageInfoSheet(
             ),
           if (footer != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                2,
+                LoopSpacing.page,
+                0,
+              ),
               child: footer(sheetContext),
             ),
         ],
@@ -364,7 +369,12 @@ class _LoopInfoParagraph extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     key: note.key,
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      14,
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -394,7 +404,12 @@ class _LoopProvenanceSection extends StatelessWidget {
       children: <Widget>[
         if (heading != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              4,
+            ),
             child: Text(heading, style: LoopType.title),
           ),
         if (entry.attributed) ...<Widget>[
@@ -403,13 +418,19 @@ class _LoopProvenanceSection extends StatelessWidget {
             value: entry.sources.isEmpty
                 ? context.l10n.widgets_inlineStatesValue
                 : <String>{...entry.sources}.join(' · '),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+              horizontal: LoopSpacing.page,
+              vertical: 6,
+            ),
           ),
           if (at != null)
             LoopKeyValue(
               label: context.l10n.widgets_inlineStatesLabel3,
               value: loopDateTimeLabel(at),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(
+                horizontal: LoopSpacing.page,
+                vertical: 6,
+              ),
             ),
           const SizedBox(height: 8),
         ],

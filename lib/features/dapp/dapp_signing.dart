@@ -502,7 +502,7 @@ Future<bool> showDappConnectSheet(
         children: <Widget>[
           Text(
             context.l10n.dapp_signingShowDappConnectSheet,
-            style: LoopType.heading,
+            style: LoopType.headline,
           ),
           const SizedBox(height: LoopSpacing.card),
           DappSiteHeader(origin: origin, faviconUrl: faviconUrl),

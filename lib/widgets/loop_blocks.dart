@@ -380,7 +380,14 @@ class LoopRowIcon extends StatelessWidget {
       return Semantics(
         label: semanticLabel,
         excludeSemantics: semanticLabel == null,
-        child: LoopEntryIcon(mark, size: circle ? 36 : 40),
+        // S371 · decision 0297: a flat page's row glyph is a function row's
+        // — the Figma's 9-corner square ground (docs/58 §9.4); a record
+        // mark ([circle]) stays round.
+        child: LoopEntryIcon(
+          mark,
+          size: circle ? 36 : 40,
+          shape: circle ? LoopEntryIconShape.circle : LoopEntryIconShape.square,
+        ),
       );
     }
     final (background, foreground) = switch (tone) {

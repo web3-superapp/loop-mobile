@@ -27,6 +27,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 
 /// The unavailable facts `group-info` renders instead of prototype samples.
 const _memberDirectoryDeferred = LoopUnavailableFact(
@@ -151,7 +152,12 @@ class GroupChatScreen extends ConsumerWidget {
                             title: context
                                 .l10n
                                 .chatV2_groupScreensGroupScopeNoteTitle,
-                            margin: EdgeInsets.fromLTRB(16, 0, 12, 0),
+                            margin: EdgeInsets.fromLTRB(
+                              LoopSpacing.page,
+                              0,
+                              12,
+                              0,
+                            ),
                             text: context
                                 .l10n
                                 .chatV2_groupScreensGroupScopeNoteText,
@@ -603,10 +609,12 @@ class _GroupRenameFormState extends State<_GroupRenameForm> {
                 if (_invalid) setState(() => _invalid = false);
               },
               onSubmitted: (_) => _submit(),
-              decoration: InputDecoration(
-                labelText: context.l10n.chatV2_groupScreensLabelText(
+              // S371 · decision 0297: the Figma search-field face.
+              decoration: loopSearchFieldDecoration(
+                hint: context.l10n.chatV2_groupScreensLabelText(
                   groupNameMaximumRunes,
                 ),
+                searchGlyph: false,
                 errorText: _invalid
                     ? context.l10n.chatV2_groupScreensErrorText
                     : null,

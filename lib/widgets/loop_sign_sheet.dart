@@ -165,8 +165,8 @@ class LoopSignSheet extends StatelessWidget {
                               title,
                               // R2: the one sheet-title step (decision
                               // 0189; it was 16 against every other sheet's
-                              // 20).
-                              style: LoopType.heading,
+                              // 20). Decision 0297: headline 19 / 700.
+                              style: LoopType.headline,
                             ),
                           ),
                           if (networkBadge != null) ...<Widget>[

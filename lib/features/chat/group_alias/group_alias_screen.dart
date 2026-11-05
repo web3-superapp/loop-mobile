@@ -15,6 +15,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart'
     show loopFormFieldDecoration;
 
@@ -537,8 +538,10 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
             maxLength: groupAliasMaximumCodePoints,
             textInputAction: TextInputAction.search,
             style: LoopType.bodyLg,
-            decoration: loopFormFieldDecoration(
+            // S371 · decision 0297: the one Figma search field.
+            decoration: loopSearchFieldDecoration(
               hint: context.l10n.chatGroupAlias_screenHint2,
+              searchGlyph: false,
               counterText: '',
             ),
             onSubmitted: (value) => unawaited(controller.search(value)),

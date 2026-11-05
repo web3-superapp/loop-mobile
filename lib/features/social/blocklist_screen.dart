@@ -19,6 +19,7 @@ import 'package:loop_mobile/widgets/loop_inline_states.dart';
 import 'package:loop_mobile/widgets/loop_load_more.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 
 /// `blocklist` · the three prototype segments.
 ///
@@ -227,7 +228,13 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
       // `.row-ico.mono` + `.badge`: the prototype's blocked row is a monogram
       // tile, a reason and a 解除 pill — not two lines of text with a mono
       // value where the pill belongs (audit 2026-09-21 §J.12, §D #7).
-      leading: LoopRowIcon(monogram: loopMonogram(title)),
+      // S371 · decision 0297: a person row borrows the conversation row's
+      // 67 and its 48 face.
+      kind: LoopRecordRowKind.person,
+      leading: LoopRowIcon(
+        monogram: loopMonogram(title),
+        size: SecondaryRowMetrics.personFace,
+      ),
       title: title,
       subtitle: blockReasonText(entry.reasonCode),
       trailingBadge: LoopBadge(LoopL10n.current.social_blocklistLoopBadge),

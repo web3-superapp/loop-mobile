@@ -23,7 +23,24 @@ class LoopPersonRow extends StatelessWidget {
     this.semanticLabel,
     this.height = 64,
     this.titleColor,
+    this.divider = false,
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: LoopSpacing.page,
+      vertical: 8,
+    ),
   });
+
+  /// Draws the Figma's 1 px white 5 % line under the row, across the
+  /// content width (S371 · decision 0297, docs/58 §9.4: person and function
+  /// rows are ruled). The line is counted inside [height].
+  final bool divider;
+
+  /// The space around the row's content. The default is the page margin
+  /// and 8 above and below; a Figma-height row passes 6 (decision 0297).
+  final EdgeInsets padding;
+
+  /// The [divider] line itself.
+  static const Key dividerKey = ValueKey<String>('loop-person-row-divider');
 
   /// The face: an avatar or a logo at 36–40, or a [LoopEntryIcon].
   final Widget leading;
@@ -43,13 +60,10 @@ class LoopPersonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final row = ConstrainedBox(
-      constraints: BoxConstraints(minHeight: height),
+    final face = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: divider ? height - 1 : height),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: LoopSpacing.page,
-          vertical: 8,
-        ),
+        padding: padding,
         child: Row(
           children: <Widget>[
             leading,
@@ -103,6 +117,26 @@ class LoopPersonRow extends StatelessWidget {
         ),
       ),
     );
+    final row = !divider
+        ? face
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              face,
+              Padding(
+                padding: EdgeInsets.only(
+                  left: padding.left,
+                  right: padding.right,
+                ),
+                child: const SizedBox(
+                  key: dividerKey,
+                  height: 1,
+                  child: ColoredBox(color: LoopColors.divider),
+                ),
+              ),
+            ],
+          );
     final tap = onTap;
     final body = tap == null
         ? row
@@ -124,23 +158,47 @@ class LoopPersonRow extends StatelessWidget {
   }
 }
 
-/// A 40 round glyph tile for an entry row that has no face of its own
-/// (资料 / 成员 / 语音房 in the manage center, 社区 AI on the record).
+/// The ground a [LoopEntryIcon] draws its glyph on (S371 · decision 0297).
+enum LoopEntryIconShape {
+  /// Round — a person's place, or an entry that stands in for one.
+  circle,
+
+  /// The Figma's function-icon ground: a square at a 9 corner (docs/58
+  /// §9.4 「功能图标底 9」).
+  square,
+}
+
+/// A glyph tile for an entry row that has no face of its own (资料 / 成员 /
+/// 语音房 in the manage center, 社区 AI on the record). Round at 40 by
+/// default; a function row passes [LoopEntryIconShape.square] (decision
+/// 0297).
 class LoopEntryIcon extends StatelessWidget {
-  const LoopEntryIcon(this.icon, {super.key, this.size = 40});
+  const LoopEntryIcon(
+    this.icon, {
+    super.key,
+    this.size = 40,
+    this.shape = LoopEntryIconShape.circle,
+  });
 
   final String icon;
   final double size;
+  final LoopEntryIconShape shape;
 
   @override
   Widget build(BuildContext context) => Container(
     width: size,
     height: size,
     alignment: Alignment.center,
-    decoration: const BoxDecoration(
-      color: LoopColors.card2,
-      shape: BoxShape.circle,
-    ),
+    decoration: switch (shape) {
+      LoopEntryIconShape.circle => const BoxDecoration(
+        color: LoopColors.card2,
+        shape: BoxShape.circle,
+      ),
+      LoopEntryIconShape.square => const BoxDecoration(
+        color: LoopColors.card2,
+        borderRadius: LoopRadius.glyphGround,
+      ),
+    },
     child: LoopIcon(icon, size: 20, color: LoopColors.chalk),
   );
 }

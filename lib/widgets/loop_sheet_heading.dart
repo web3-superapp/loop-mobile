@@ -26,9 +26,10 @@ class LoopSheetHeading extends StatelessWidget {
           LoopSpacing.page,
           12,
         ),
-        // R2: the only sheet-title step (decision 0189), Inter Bold since
-        // decision 0210.
-        child: Text(title, style: LoopType.heading),
+        // R2: the only sheet-title step (decision 0189). S371 · decision
+        // 0297: the Figma has no 22 step; a sheet title is `headline`
+        // 19 / 700 (docs/58 §9.2).
+        child: Text(title, style: LoopType.headline),
       ),
     );
   }

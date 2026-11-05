@@ -356,6 +356,8 @@ LoopRecordRow _selectableFriendRow({
   required VoidCallback? onChanged,
 }) => LoopRecordRow(
   key: ValueKey<String>(rowKey),
+  // S371 · decision 0297: the conversation row's 67.
+  kind: LoopRecordRowKind.person,
   leading: LoopInitialsAvatar(
     label: identity.alias,
     size: SecondaryRowMetrics.personFace,

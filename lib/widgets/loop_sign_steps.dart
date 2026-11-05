@@ -157,7 +157,12 @@ class LoopSignStepStrip extends StatelessWidget {
     final next = _nextIndex;
     return Padding(
       key: ValueKey<String>('$keyPrefix-steps'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        8,
+      ),
       child: Row(
         children: <Widget>[
           for (var index = 0; index < steps.length; index += 1) ...<Widget>[

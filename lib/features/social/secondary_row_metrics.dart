@@ -1,3 +1,4 @@
+import 'package:flutter/painting.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 
 /// S370b · decision 0294: the Figma's row measures (docs/58 §3.2 / §3.3 /
@@ -25,4 +26,11 @@ abstract final class SecondaryRowMetrics {
 
   /// A token row's height: 71.
   static const double tokenRow = LoopRowHeight.token;
+
+  /// S371 · decision 0297: a borrowed row's padding — the page margin and
+  /// 6 above and below (docs/58 §9.4 「上下 6 统一」).
+  static const EdgeInsets rowPadding = EdgeInsets.symmetric(
+    horizontal: LoopSpacing.page,
+    vertical: 6,
+  );
 }

@@ -691,6 +691,10 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
     // community shows wherever its preset has no local image.
     return LoopRecordRow(
       key: ValueKey<String>('chat-forward-target-${target.cid}'),
+      // S371 · decision 0297: the conversation row's 67 and its 16 / 500
+      // name (docs/58 §9.2 / §9.4).
+      kind: LoopRecordRowKind.person,
+      titleStyle: LoopType.rowTitleLg,
       // `.row-ico`: the prototype's destination rows all carry one.
       // Decision 0258: a group's square, a direct row's circle.
       leading: chatForwardTargetFace(

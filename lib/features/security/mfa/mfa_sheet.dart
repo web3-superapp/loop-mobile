@@ -91,7 +91,7 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
           Text(
             context.l10n.securityMfa_sheetMfaSheetTitle,
             key: const ValueKey<String>('mfa-sheet-title'),
-            style: LoopType.heading,
+            style: LoopType.headline,
           ),
           const SizedBox(height: 8),
           Text(context.l10n.securityMfa_sheetBuild, style: LoopType.bodySm),

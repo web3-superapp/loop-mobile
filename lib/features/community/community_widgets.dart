@@ -1167,6 +1167,8 @@ LoopRecordRow communityDirectoryRow({
   if (ranked == null) {
     return LoopRecordRow(
       key: ValueKey<String>('community-row-${community.communityId}'),
+      // S371 · decision 0297: the community row's 86 (docs/58 §9.4).
+      kind: LoopRecordRowKind.community,
       // S370b · decision 0294: the community row's 56 square logo at r12
       // (docs/58 §3.3).
       leading: CommunityLogo(
@@ -1193,6 +1195,7 @@ LoopRecordRow communityDirectoryRow({
   // member count moves onto the second line so both stay readable.
   return LoopRecordRow(
     key: ValueKey<String>('community-row-${community.communityId}'),
+    kind: LoopRecordRowKind.community,
     leading: CommunityLogo(
       identity: community.communityId,
       name: community.name,

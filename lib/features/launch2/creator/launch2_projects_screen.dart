@@ -168,11 +168,14 @@ LoopRecordRow _projectRow(Launch2CreatorRow row, VoidCallback onTap) {
   final status = row.status;
   return LoopRecordRow(
     key: ValueKey<String>('launch2-project-row-${project.projectId}'),
+    // S371 · decision 0297: the token row's 71 and 44 face (docs/58 §9.4);
+    // the status pill now shrinks instead of overflowing at 390.
+    kind: LoopRecordRowKind.token,
     leading: MemeLogo(
       symbol: project.ticker,
       imageUrl: row.draft?.logoAssetUrl,
-      size: Launch2SecondaryMetrics.recordFace,
-      radius: Launch2SecondaryMetrics.recordFace / 2,
+      size: Launch2SecondaryMetrics.tokenFace,
+      radius: Launch2SecondaryMetrics.tokenFace / 2,
     ),
     title: project.name,
     subtitle: _projectSubtitle(row),
@@ -191,10 +194,11 @@ LoopRecordRow _projectRow(Launch2CreatorRow row, VoidCallback onTap) {
 LoopRecordRow _unreadableRow(LaunchProject project, VoidCallback onTap) {
   return LoopRecordRow(
     key: ValueKey<String>('launch2-project-unreadable-${project.projectId}'),
+    kind: LoopRecordRowKind.token,
     leading: MemeLogo(
       symbol: project.ticker,
-      size: Launch2SecondaryMetrics.recordFace,
-      radius: Launch2SecondaryMetrics.recordFace / 2,
+      size: Launch2SecondaryMetrics.tokenFace,
+      radius: Launch2SecondaryMetrics.tokenFace / 2,
     ),
     title: project.name,
     subtitle: LoopL10n.current.launch2Creator_launch2ProjectsSubtitle,

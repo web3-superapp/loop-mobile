@@ -32,6 +32,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 
 /// `search` · the global search: 全部 / 代币 / 社区 / 用户 (decision 0121
 /// hides Launch and DApp behind `searchOutboundDomainsVisible`). Decision 0178
@@ -380,6 +381,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         LoopPersonRow(
           key: ValueKey<String>(_recentKey(entry)),
           height: SecondaryRowMetrics.tokenRow,
+          // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+          divider: true,
+          padding: SecondaryRowMetrics.rowPadding,
           leading: _assetLogo(entry.title, null),
           title: entry.title,
           tag: LoopBadge(LoopL10n.current.common_token),
@@ -632,15 +636,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   );
 
   Widget _field(SearchController controller) {
-    // UX-008 (decision 0254): the field's corners and focus edge are every
-    // field's.
     // S370b · decision 0294: the Figma's search box (docs/58 §5 / §9.4) —
     // 44 high, r12, the search ground with its 1px card edge, the 15 / 500
-    // placeholder in the third ink.
-    const border = OutlineInputBorder(
-      borderRadius: LoopRadius.control,
-      borderSide: BorderSide(color: LoopColors.cardEdge),
-    );
+    // placeholder in the third ink; shared since S371 (decision 0297).
     return TextField(
       key: const ValueKey<String>('search-field'),
       controller: _query,
@@ -648,29 +646,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       onChanged: controller.type,
       onSubmitted: (value) => unawaited(controller.submit(value)),
       style: LoopType.body,
-      decoration: InputDecoration(
+      // S371 · decision 0297: the one Figma search field; the magnifier is
+      // this page's submit key.
+      decoration: loopSearchFieldDecoration(
         // The field promises only the domains that answer (device
         // walkthrough 2026-09-23 · a55–a65), not 「任何内容」.
-        hintText: '$searchFieldLabel…',
-        hintStyle: LoopType.searchHint,
-        filled: true,
-        fillColor: LoopColors.searchBg,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        constraints: const BoxConstraints(
-          minHeight: LoopTouch.searchField,
-          maxHeight: LoopTouch.searchField,
-        ),
-        prefixIconConstraints: const BoxConstraints.tightFor(
-          width: LoopTouch.searchField,
-          height: LoopTouch.searchField,
-        ),
-        border: border,
-        enabledBorder: border,
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: LoopRadius.control,
-          borderSide: BorderSide(color: LoopColors.purple),
-        ),
+        hint: '$searchFieldLabel…',
         prefixIcon: LoopIconButton(
           key: const ValueKey<String>('search-submit'),
           icon: 'search',
@@ -758,6 +739,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       SearchResultType.asset => LoopPersonRow(
         key: ValueKey<String>('search-result-${result.stableId}'),
         height: SecondaryRowMetrics.tokenRow,
+        // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+        divider: true,
+        padding: SecondaryRowMetrics.rowPadding,
         leading: _assetLogo(result.title, result.logoUrl),
         title: result.title,
         tag: LoopBadge(LoopL10n.current.common_token),
@@ -782,6 +766,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         key: ValueKey<String>('search-result-${result.stableId}'),
         // S370b · decision 0294: the community row, 86 / 56 r12.
         height: SecondaryRowMetrics.communityRow,
+        // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+        divider: true,
+        padding: SecondaryRowMetrics.rowPadding,
         leading: _communityLogo(
           result.stableId,
           result.title,
@@ -804,6 +791,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       SearchResultType.user => LoopPersonRow(
         key: ValueKey<String>('search-result-${result.stableId}'),
         height: SecondaryRowMetrics.personRow,
+        // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+        divider: true,
+        padding: SecondaryRowMetrics.rowPadding,
         leading: LoopProfileAvatar(
           avatarRef: result.avatarRef,
           alias: result.title,

@@ -176,11 +176,12 @@ Future<void> _openSheet(
   await tester.pumpAndSettle();
 }
 
-/// R2: the sheet's title is the one `LoopSheetHeading`, at `heading` 20/600.
+/// R2: the sheet's title is the one `LoopSheetHeading`, at `headline`
+/// 19 / 700 since S371 · decision 0297 (docs/58 §9.2 has no 22 step).
 void _expectSheetHeading(WidgetTester tester, String title) {
   final heading = find.widgetWithText(LoopSheetHeading, title);
   expect(heading, findsOneWidget, reason: title);
-  _expectStep(_painted(tester, title), LoopType.heading, reason: title);
+  _expectStep(_painted(tester, title), LoopType.headline, reason: title);
 }
 
 void main() {

@@ -11,6 +11,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sheet_heading.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 
 /// Whether [row] has anything that can leave the wallet: a read that worked
 /// and a spendable amount above zero. A failed read is not zero and is not
@@ -159,12 +160,9 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
             enableSuggestions: false,
             textInputAction: TextInputAction.search,
             onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: context.l10n.wallet_moneyAssetPickerHintText,
-              prefixIcon: Padding(
-                padding: EdgeInsets.all(12),
-                child: LoopIcon('search', size: 18, color: LoopColors.text3),
-              ),
+            // S371 · decision 0297: the one Figma search field.
+            decoration: loopSearchFieldDecoration(
+              hint: context.l10n.wallet_moneyAssetPickerHintText,
             ),
           ),
         ),
@@ -187,6 +185,8 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
             )
           else
             LoopRecordGroup(
+              // S371 · decision 0297: a holdings list is not ruled (§9.4).
+              divided: false,
               rows: <LoopRecordRow>[
                 for (final row in listed) _row(row, choosable: choosable(row)),
               ],
@@ -198,6 +198,7 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
                 folded.length,
               ),
               child: LoopRecordGroup(
+                divided: false,
                 rows: <LoopRecordRow>[
                   for (final row in folded) _row(row, choosable: false),
                 ],

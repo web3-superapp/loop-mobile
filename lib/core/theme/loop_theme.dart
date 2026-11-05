@@ -538,6 +538,10 @@ abstract final class LoopRadius {
   /// A tab count chip · 2.
   static const double countValue = 2;
 
+  /// A function row's glyph ground (docs/58 §9.4 「功能图标底 9」, S371 ·
+  /// decision 0297) · 9.
+  static const double glyphGroundValue = 9;
+
   /// The small buttons: 发射 / 加入 · 6.
   static const double compactButtonValue = 6;
 
@@ -585,6 +589,9 @@ abstract final class LoopRadius {
   static const BorderRadius tag = BorderRadius.all(Radius.circular(tagValue));
   static const BorderRadius stage = BorderRadius.all(
     Radius.circular(stageValue),
+  );
+  static const BorderRadius glyphGround = BorderRadius.all(
+    Radius.circular(glyphGroundValue),
   );
   static const BorderRadius count = BorderRadius.all(
     Radius.circular(countValue),

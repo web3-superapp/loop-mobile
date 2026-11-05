@@ -60,7 +60,12 @@ Future<void> showLoopInfoSheet(
           for (final note in notes)
             Padding(
               key: note.key,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                14,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -75,7 +80,12 @@ Future<void> showLoopInfoSheet(
             ),
           if (footer != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                2,
+                LoopSpacing.page,
+                0,
+              ),
               child: footer(sheetContext),
             ),
         ],

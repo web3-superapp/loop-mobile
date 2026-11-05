@@ -54,7 +54,8 @@ class LoopEmptyState extends StatelessWidget {
   /// a figure came from — never for an explanation of the page (0248).
   final bool showMessage;
 
-  /// The one next step, usually a primary [LoopButton].
+  /// The one next step, usually a [LoopButton]; inside the state it draws as
+  /// a [LoopEmptyActionButton] (decision 0297).
   final Widget? action;
   final bool compact;
 
@@ -105,9 +106,11 @@ class LoopEmptyState extends StatelessWidget {
             ),
           ),
         ],
+        // S371 · decision 0297: the step is the quiet secondary button, 16
+        // under the title, whatever button the caller handed.
         if (action case final Widget next) ...<Widget>[
-          SizedBox(height: compact ? 14 : 20),
-          next,
+          const SizedBox(height: LoopEmptyActionButton.titleGap),
+          LoopEmptyActionScope(child: next),
         ],
       ],
     );

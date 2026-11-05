@@ -260,13 +260,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // S370b · decision 0294: the community row's 56 logo — 13 + 56 + 13
-      // = 82 (the 86 of docs/58 §3.2 needs LoopRecordRow's 13 inset to move).
+      // S371 · decision 0297: the community row's 86 of docs/58 §3.2
+      // (`LoopRecordRowKind.community`, its group line inside it); S370b
+      // stopped at 82 while the 13 inset was fixed.
       final rows = find.byType(LoopRecordRow);
-      expect(tester.getSize(rows.at(1)).height, 82);
+      expect(tester.getSize(rows.at(1)).height, LoopRowHeight.community);
       expect(
         tester.getTopLeft(rows.at(1)).dy - tester.getTopLeft(rows.at(0)).dy,
-        82,
+        LoopRowHeight.community,
       );
       // `.row{gap:12px}` after a 56pt mark. S279 · decision 0237: the group
       // is a block on the 20pt page margin, its rows 16 inside it.

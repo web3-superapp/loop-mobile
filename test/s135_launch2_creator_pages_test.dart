@@ -889,8 +889,9 @@ void main() {
         isA<LoopRecordRow>(),
       );
       expect(find.byType(LoopRecordGroup), findsOneWidget);
-      // S370a · decision 0293: a project's face is a record row's 36 round
-      // (a 44 token face pushed the English state badge off a 390 row).
+      // S371 · decision 0297: a project's face is the token row's 44 round
+      // (S370a held it at 36 because the English state badge could not
+      // shrink; the record row's badge slot squeezes it now).
       final faces = tester
           .widgetList<MemeLogo>(
             find.descendant(
@@ -901,8 +902,8 @@ void main() {
           .toList();
       expect(faces, isNotEmpty);
       for (final face in faces) {
-        expect(face.size, 36);
-        expect(face.radius, 18);
+        expect(face.size, 44);
+        expect(face.radius, 22);
       }
       expect(find.text('请补充社区链接。'), findsOneWidget);
       // An approved project resumes on the signing page.
