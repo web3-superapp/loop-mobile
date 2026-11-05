@@ -3,6 +3,7 @@ import 'package:loop_mobile/core/cache/loop_snapshot_store.dart';
 import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/launch/loop_v2_launch_chain_codec.dart';
+import 'package:loop_mobile/integrations/backend/v2/launch2_creator/loop_v2_launch2_creator_codec.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
@@ -306,7 +307,15 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
   ///
   /// Decision 0125 (client 0147): `communityId` is present only when the
   /// project names a community; its absence means none.
-  static const _projectOptionalKeys = <String>{'rejection', 'communityId'};
+  ///
+  /// Decision 0287 (loop-api 0199): with `LAUNCH2_PROJECT_TERMS_EMIT` on, the
+  /// single-project read also carries the three project-term keys. They are
+  /// read with the same rules as the hooks-config draft (client 0284).
+  static const _projectOptionalKeys = <String>{
+    'rejection',
+    'communityId',
+    ...LoopV2Launch2CreatorCodec.projectTermsKeys,
+  };
 
   static const _rejectionKeys = <String>{'reasonCode', 'note', 'at'};
 
@@ -423,6 +432,9 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       ),
       rejection: rejected,
       communityId: _communityId(map),
+      nftPriceUsd1: LoopV2Launch2CreatorCodec.nftPriceUsd1(map),
+      walletCapPerMille: LoopV2Launch2CreatorCodec.walletCapPerMille(map),
+      maxCumulativeBuyRaw: LoopV2Launch2CreatorCodec.maxCumulativeBuyRaw(map),
     );
   }
 

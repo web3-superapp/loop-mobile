@@ -376,6 +376,9 @@ final class LaunchProject {
     required this.configVersion,
     this.rejection,
     this.communityId,
+    this.nftPriceUsd1,
+    this.walletCapPerMille,
+    this.maxCumulativeBuyRaw,
   });
 
   final String projectId;
@@ -423,6 +426,19 @@ final class LaunchProject {
   /// client 0147). Present only when the project names one, in the owner and
   /// the public projection alike; `null` means none.
   final String? communityId;
+
+  /// The applicant's NFT price in whole USD1, 1…1000 (loop-api decision 0199,
+  /// client 0287). Only the single-project read carries it, and only while the
+  /// server emits project terms; `null` means absent.
+  final int? nftPriceUsd1;
+
+  /// The per-wallet inner-market cap in per mille, 1…1000 (decision 0287);
+  /// `null` means absent.
+  final int? walletCapPerMille;
+
+  /// The cap as a positive raw MEME amount (decision 0287); `null` means
+  /// absent.
+  final BigInt? maxCumulativeBuyRaw;
 
   /// Only the owner's projection carries a version, and only an editable state
   /// accepts a `PUT`.
