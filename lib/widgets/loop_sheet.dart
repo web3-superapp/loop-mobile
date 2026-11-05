@@ -160,7 +160,7 @@ class LoopSheet extends StatelessWidget {
                           LoopSpacing.page,
                           12,
                         ),
-                        child: Text(title!, style: LoopType.heading),
+                        child: Text(title!, style: LoopType.headline),
                       ),
                     Flexible(child: SingleChildScrollView(child: child)),
                   ],

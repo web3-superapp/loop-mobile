@@ -153,7 +153,8 @@ void main() {
     _expectStep(tester, 'View all', LoopType.bodySm);
   });
 
-  testWidgets('R2 · every sheet title is LoopType.heading', (tester) async {
+  // S371 · decision 0297: the sheet-title step is headline 19 / 700.
+  testWidgets('R2 · every sheet title is LoopType.headline', (tester) async {
     await _pump(
       tester,
       const Column(
@@ -168,8 +169,8 @@ void main() {
         ],
       ),
     );
-    _expectStep(tester, '选择网络', LoopType.heading);
-    _expectStep(tester, '确认转账', LoopType.heading);
+    _expectStep(tester, '选择网络', LoopType.headline);
+    _expectStep(tester, '确认转账', LoopType.headline);
     _expectStep(tester, '额度不足时需要先授权', LoopType.caption);
     // Decision 0229: a fact's label and value are both at the body2 size —
     // the label 400, the value the line's 600 figure.

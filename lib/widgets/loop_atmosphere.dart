@@ -769,7 +769,12 @@ class LoopAtmoEmpty extends StatelessWidget {
     return LoopAtmoBoard(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 22, 16, 20),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.card,
+            22,
+            LoopSpacing.card,
+            20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -789,12 +794,13 @@ class LoopAtmoEmpty extends StatelessWidget {
               ),
               // Decision 0277 with 0248: the Figma's crown and title, and no
               // explanatory sentence under them.
+              // S371 · decision 0297 (需求方 11-05): the step under an empty
+              // state is the quiet secondary button, sized by its words.
               if (action != null && label != null) ...<Widget>[
-                const SizedBox(height: 14),
-                LoopYellowButton(
+                const SizedBox(height: LoopEmptyActionButton.titleGap),
+                LoopEmptyActionButton(
                   key: actionKey,
                   label: label,
-                  height: 44,
                   onTap: action,
                 ),
               ],
@@ -804,6 +810,91 @@ class LoopAtmoEmpty extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The one step under an empty state (S371 · decision 0297, 需求方
+/// 2026-11-05: the Yellow 「Launch a tok…」 under 预告's crown was too big
+/// and cut off). docs/58 §9.4's secondary button: 36 high at an 8 corner on
+/// white 8 %, the word at 14 / 500 Chalk, 16 at each side, as wide as its
+/// words and never wider than the content; the word is never ellipsed — a
+/// long one wraps to a second line and the face grows. The touch target
+/// stays 44.
+class LoopEmptyActionButton extends StatelessWidget {
+  const LoopEmptyActionButton({
+    required this.label,
+    super.key,
+    this.onTap,
+    this.semanticLabel,
+  });
+
+  final String label;
+  final VoidCallback? onTap;
+  final String? semanticLabel;
+
+  /// The face's height (one line).
+  static const double height = 36;
+
+  /// From the empty state's title to the step.
+  static const double titleGap = 16;
+
+  /// The visible face (a test's handle).
+  static const Key faceKey = ValueKey<String>('loop-empty-action-face');
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: semanticLabel ?? label,
+      excludeSemantics: true,
+      child: LoopPressable(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: LoopTouch.minimum,
+            minWidth: LoopTouch.minimum,
+          ),
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              key: faceKey,
+              constraints: const BoxConstraints(minHeight: height),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: LoopColors.white8,
+                borderRadius: LoopRadius.button,
+              ),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                softWrap: true,
+                style: LoopType.body1.copyWith(
+                  height: 22 / 14,
+                  color: enabled ? LoopColors.chalk : LoopColors.text3,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Inside an empty state's step: a [LoopButton] there draws as the
+/// [LoopEmptyActionButton] face (S371 · decision 0297), so every empty
+/// state's step follows the one component whatever its caller passed.
+class LoopEmptyActionScope extends InheritedWidget {
+  const LoopEmptyActionScope({required super.child, super.key});
+
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<LoopEmptyActionScope>() !=
+      null;
+
+  @override
+  bool updateShouldNotify(LoopEmptyActionScope oldWidget) => false;
 }
 
 /// The atmosphere's solid Yellow button: 12 radius, Ink 14 / 700. No glow
@@ -897,7 +988,12 @@ class LoopChromePlate extends StatelessWidget {
   const LoopChromePlate({
     required this.child,
     super.key,
-    this.padding = const EdgeInsets.fromLTRB(16, 14, 16, 14),
+    this.padding = const EdgeInsets.fromLTRB(
+      LoopSpacing.card,
+      14,
+      LoopSpacing.card,
+      14,
+    ),
     this.margin = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
     this.mark = LoopChromePlateMark.crown,
   });

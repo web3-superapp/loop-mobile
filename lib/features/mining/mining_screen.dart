@@ -623,6 +623,8 @@ class _CompositionBlock extends ConsumerWidget {
             )
           : LoopRecordGroup(
               key: const ValueKey<String>('mining-composition'),
+              // S371 · decision 0297: holdings are not ruled (§9.4).
+              divided: false,
               rows: <LoopRecordRow>[
                 for (var index = 0; index < counted.length; index += 1)
                   miningCompositionRow(
@@ -710,6 +712,7 @@ class _CompositionBlock extends ConsumerWidget {
     else
       LoopRecordGroup(
         key: ValueKey<String>('mining-composition-$slug'),
+        divided: false,
         rows: rows,
       ),
   ];

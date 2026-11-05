@@ -1098,9 +1098,13 @@ class _AiEntryRow extends ConsumerWidget {
       child: LoopPersonRow(
         key: const ValueKey<String>('community-profile-open-ai'),
         height: SecondaryRowMetrics.functionRow,
+        // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+        divider: true,
+        padding: SecondaryRowMetrics.rowPadding,
         leading: const LoopEntryIcon(
           'ai',
           size: SecondaryRowMetrics.functionGlyph,
+          shape: LoopEntryIconShape.square,
         ),
         title: context.l10n.community_profileCommunityProfileOpenAiTitle,
         subtitle: capability.isAvailable
@@ -1233,9 +1237,13 @@ class _MembershipFooter extends StatelessWidget {
         child: LoopPersonRow(
           key: const ValueKey<String>('community-owner-cannot-leave'),
           height: SecondaryRowMetrics.functionRow,
+          // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+          divider: true,
+          padding: SecondaryRowMetrics.rowPadding,
           leading: const LoopEntryIcon(
             'close',
             size: SecondaryRowMetrics.functionGlyph,
+            shape: LoopEntryIconShape.square,
           ),
           title: context.l10n.community_profileCommunityOwnerCannotLeaveTitle,
           titleColor: LoopColors.text3,
@@ -1250,9 +1258,13 @@ class _MembershipFooter extends StatelessWidget {
       child: LoopPersonRow(
         key: const ValueKey<String>('community-leave-action'),
         height: SecondaryRowMetrics.functionRow,
+        // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+        divider: true,
+        padding: SecondaryRowMetrics.rowPadding,
         leading: const LoopEntryIcon(
           'close',
           size: SecondaryRowMetrics.functionGlyph,
+          shape: LoopEntryIconShape.square,
         ),
         title: context.l10n.community_profileCommunityOwnerCannotLeaveTitle,
         titleColor: LoopColors.fall,

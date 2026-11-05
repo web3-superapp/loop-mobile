@@ -56,8 +56,9 @@ void main() {
         expect(title.style?.fontSize, LoopType.title.fontSize);
         final value = tester.widget<Text>(find.text('1 个已绑定'));
         expect(value.style?.fontSize, LoopType.figure.fontSize);
-        // No card ground: the only fill under the row is the round glyph
-        // tile (decision 0127's `LoopEntryIcon`).
+        // No card ground: the only fill under the row is the glyph tile
+        // (decision 0127's `LoopEntryIcon`) — since S371 · decision 0297 the
+        // function row's 9-corner square (docs/58 §9.4).
         expect(
           find.descendant(
             of: row,
@@ -67,7 +68,9 @@ void main() {
                   widget.decoration is BoxDecoration &&
                   (widget.decoration! as BoxDecoration).color != null &&
                   (widget.decoration! as BoxDecoration).shape !=
-                      BoxShape.circle,
+                      BoxShape.circle &&
+                  (widget.decoration! as BoxDecoration).borderRadius !=
+                      LoopRadius.glyphGround,
             ),
           ),
           findsNothing,

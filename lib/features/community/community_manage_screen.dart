@@ -196,9 +196,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-edit-profile'),
             height: SecondaryRowMetrics.functionRow,
+            // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+            divider: true,
+            padding: SecondaryRowMetrics.rowPadding,
             leading: LoopEntryIcon(
               'id',
               size: SecondaryRowMetrics.functionGlyph,
+              shape: LoopEntryIconShape.square,
             ),
             title: context.l10n.community_manageCommunityManageEditProfileTitle,
             subtitle:
@@ -214,9 +218,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-bound-asset'),
               height: SecondaryRowMetrics.functionRow,
+              // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+              divider: true,
+              padding: SecondaryRowMetrics.rowPadding,
               leading: LoopEntryIcon(
                 'wallet',
                 size: SecondaryRowMetrics.functionGlyph,
+                shape: LoopEntryIconShape.square,
               ),
               title:
                   context.l10n.community_manageCommunityManageBoundAssetTitle,
@@ -249,9 +257,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-share'),
             height: SecondaryRowMetrics.functionRow,
+            // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+            divider: true,
+            padding: SecondaryRowMetrics.rowPadding,
             leading: LoopEntryIcon(
               'share',
               size: SecondaryRowMetrics.functionGlyph,
+              shape: LoopEntryIconShape.square,
             ),
             title: context.l10n.community_manageCommunityManageShareTitle,
             subtitle: context.l10n.community_manageCommunityManageShareSubtitle,
@@ -274,9 +286,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           LoopPersonRow(
             key: ValueKey<String>('community-manage-announcements'),
             height: SecondaryRowMetrics.functionRow,
+            // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+            divider: true,
+            padding: SecondaryRowMetrics.rowPadding,
             leading: LoopEntryIcon(
               'news',
               size: SecondaryRowMetrics.functionGlyph,
+              shape: LoopEntryIconShape.square,
             ),
             title:
                 context.l10n.community_manageCommunityManageAnnouncementsTitle,
@@ -295,9 +311,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-members'),
             height: SecondaryRowMetrics.functionRow,
+            // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+            divider: true,
+            padding: SecondaryRowMetrics.rowPadding,
             leading: LoopEntryIcon(
               'users',
               size: SecondaryRowMetrics.functionGlyph,
+              shape: LoopEntryIconShape.square,
             ),
             title: context.l10n.community_manageCommunityManageMembersTitle,
             subtitle: switch (counts) {
@@ -324,9 +344,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-transfer'),
               height: SecondaryRowMetrics.functionRow,
+              // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+              divider: true,
+              padding: SecondaryRowMetrics.rowPadding,
               leading: LoopEntryIcon(
                 'crown',
                 size: SecondaryRowMetrics.functionGlyph,
+                shape: LoopEntryIconShape.square,
               ),
               title: context.l10n.community_manageCommunityManageTransferTitle,
               subtitle:
@@ -350,9 +374,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-voice-enter'),
               height: SecondaryRowMetrics.functionRow,
+              // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+              divider: true,
+              padding: SecondaryRowMetrics.rowPadding,
               leading: LoopEntryIcon(
                 'voice',
                 size: SecondaryRowMetrics.functionGlyph,
+                shape: LoopEntryIconShape.square,
               ),
               title:
                   context.l10n.community_manageCommunityManageVoiceEnterTitle,
@@ -370,9 +398,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-voice-open'),
               height: SecondaryRowMetrics.functionRow,
+              // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+              divider: true,
+              padding: SecondaryRowMetrics.rowPadding,
               leading: LoopEntryIcon(
                 'mic',
                 size: SecondaryRowMetrics.functionGlyph,
+                shape: LoopEntryIconShape.square,
               ),
               title: context.l10n.community_manageCommunityManageVoiceOpenTitle,
               subtitle:

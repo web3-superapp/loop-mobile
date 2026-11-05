@@ -26,6 +26,7 @@ import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/features/social/profile_face_link.dart';
 import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
+import 'package:loop_mobile/widgets/loop_search_entry.dart';
 
 /// The UI copy for one server-published governance command.
 ///
@@ -203,13 +204,12 @@ class _CommunityMembersScreenState
                   textInputAction: TextInputAction.search,
                   maxLength: memberSearchMaximumRunes,
                   onChanged: controller.search,
-                  decoration: InputDecoration(
-                    labelText: context
+                  // S371 · decision 0297: the one Figma search field — the
+                  // label is its placeholder, no floating label above it.
+                  decoration: loopSearchFieldDecoration(
+                    hint: context
                         .l10n
                         .community_membersCommunityMembersSearchClearLabelText,
-                    hintText: context
-                        .l10n
-                        .community_membersCommunityMembersSearchClearHintText,
                     counterText: '',
                     suffixIcon: !searching
                         ? null
@@ -516,6 +516,9 @@ class _CommunityMembersScreenState
     return LoopPersonRow(
       key: ValueKey<String>('member-row-$identity'),
       height: SecondaryRowMetrics.personRow,
+      // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+      divider: true,
+      padding: SecondaryRowMetrics.rowPadding,
       // S239: the face opens the member's page (我 for the reader's own row)
       // even where the row itself opens the governance sheet.
       leading: LoopProfileFaceLink(

@@ -350,7 +350,7 @@ Future<bool> showDappFindingsSheet(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(review.host ?? review.input, style: LoopType.heading),
+          Text(review.host ?? review.input, style: LoopType.headline),
           const SizedBox(height: LoopSpacing.card),
           for (final finding in review.findings)
             if (finding != LoopUrlFinding.schemeAssumed)
@@ -734,7 +734,7 @@ class _DappBrowserPageState extends ConsumerState<DappBrowserPage>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(url.host, style: LoopType.heading),
+            Text(url.host, style: LoopType.headline),
             const SizedBox(height: LoopSpacing.tight),
             SelectableText(
               url.toString(),

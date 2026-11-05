@@ -299,6 +299,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     final members = communityMemberCountLabel(community.memberCount);
     return LoopRecordRow(
       key: ValueKey<String>('community-joined-${community.communityId}'),
+      // S371 · decision 0297: the community row's 86 (docs/58 §9.4).
+      kind: LoopRecordRowKind.community,
       // S370b · decision 0294: the community row's 56 square logo at r12.
       leading: CommunityLogo(
         identity: community.communityId,

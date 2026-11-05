@@ -232,6 +232,9 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       // S370b · decision 0294: a person row reads as the conversation row
       // (docs/58 §3.2): 67 high, the face 48.
       height: SecondaryRowMetrics.personRow,
+      // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+      divider: true,
+      padding: SecondaryRowMetrics.rowPadding,
       // S239: the face opens the contact's page; the row keeps its sheet.
       leading: LoopProfileFaceLink(
         key: ValueKey<String>(

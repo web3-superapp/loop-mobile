@@ -245,6 +245,9 @@ class _RequestRow extends StatelessWidget {
       key: ValueKey<String>('dm-request-row-$id'),
       // S370b · decision 0294: the conversation row, 67 / 48.
       height: SecondaryRowMetrics.personRow,
+      // S371 · decision 0297: ruled, 6 above and below (docs/58 §9.4).
+      divider: true,
+      padding: SecondaryRowMetrics.rowPadding,
       // S239: the face opens the requester's page; the row keeps its sheet.
       leading: LoopProfileFaceLink(
         key: ValueKey<String>('dm-request-face-$id'),

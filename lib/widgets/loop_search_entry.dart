@@ -85,3 +85,71 @@ class LoopSearchEntry extends StatelessWidget {
     );
   }
 }
+
+/// The Figma's search field for a real [TextField] (S371 · decision 0297,
+/// docs/58 §9.4): 44 high at a 12 corner on `searchBg`, a 1 px `cardEdge`
+/// edge, the `searchHint` 15 / 500 placeholder and the 20 magnifier — the
+/// same face as [LoopSearchEntry]. A focused field draws the Purple edge
+/// every field has (decision 0254). Member search, group rename, the asset
+/// picker and the chat / community search pages share it instead of each
+/// writing one.
+InputDecoration loopSearchFieldDecoration({
+  required String hint,
+  bool searchGlyph = true,
+  Widget? prefixIcon,
+  Widget? suffixIcon,
+  String? errorText,
+  String? counterText,
+}) {
+  const edge = OutlineInputBorder(
+    borderRadius: LoopRadius.control,
+    borderSide: BorderSide(color: LoopColors.cardEdge),
+  );
+  const danger = OutlineInputBorder(
+    borderRadius: LoopRadius.control,
+    borderSide: BorderSide(color: LoopColors.danger),
+  );
+  final prefix =
+      prefixIcon ??
+      (searchGlyph
+          ? const Padding(
+              padding: EdgeInsets.fromLTRB(14, 0, 8, 0),
+              child: LoopIcon('search', size: 20, color: LoopColors.text3),
+            )
+          : null);
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: LoopType.searchHint,
+    errorText: errorText,
+    counterText: counterText,
+    filled: true,
+    fillColor: LoopColors.searchBg,
+    isDense: true,
+    // 44 whatever step the caller types in; a field that can show an error
+    // keeps room under it for the message.
+    constraints: errorText == null
+        ? const BoxConstraints(
+            minHeight: LoopTouch.searchField,
+            maxHeight: LoopTouch.searchField,
+          )
+        : const BoxConstraints(minHeight: LoopTouch.searchField),
+    contentPadding: EdgeInsets.fromLTRB(prefix == null ? 14 : 0, 12, 14, 12),
+    prefixIcon: prefix,
+    prefixIconConstraints: prefix == null
+        ? null
+        : const BoxConstraints(
+            minWidth: LoopTouch.searchField,
+            minHeight: LoopTouch.searchField,
+          ),
+    suffixIcon: suffixIcon,
+    border: edge,
+    enabledBorder: edge,
+    disabledBorder: edge,
+    focusedBorder: const OutlineInputBorder(
+      borderRadius: LoopRadius.control,
+      borderSide: BorderSide(color: LoopColors.purple),
+    ),
+    errorBorder: danger,
+    focusedErrorBorder: danger,
+  );
+}

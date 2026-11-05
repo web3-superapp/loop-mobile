@@ -355,7 +355,12 @@ Future<void> showLoopProvenanceSheet(
         context.l10n.widgets_inlineStatesLoopProvenanceSheetBarrierLabel,
     builder: (sheetContext) => SingleChildScrollView(
       key: const ValueKey<String>('loop-provenance-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        4,
+        LoopSpacing.page,
+        8,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

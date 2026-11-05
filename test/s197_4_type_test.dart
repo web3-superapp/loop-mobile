@@ -156,7 +156,8 @@ void main() {
       find.byKey(const ValueKey<String>('referral-explain-action')),
     );
     await tester.pumpAndSettle();
-    _expectStep(tester, '邀请说明', LoopType.heading);
+    // S371 · decision 0297: a sheet title is headline 19 / 700.
+    _expectStep(tester, '邀请说明', LoopType.headline);
     final support = _painted(
       tester,
       // Decision 0243: the sheet is the shared (i) sheet, one note per fact.

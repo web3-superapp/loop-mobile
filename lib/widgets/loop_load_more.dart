@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:flutter/widgets.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
 
@@ -83,7 +84,12 @@ class LoopLoadMoreFooter extends StatefulWidget {
     super.key,
     this._failedMessage,
     this.skeletonRows = 1,
-    this.padding = const EdgeInsets.fromLTRB(16, 12, 16, 0),
+    this.padding = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      12,
+      LoopSpacing.page,
+      0,
+    ),
   });
 
   /// Prefix of the stable test keys: `<prefix>-load-more`,

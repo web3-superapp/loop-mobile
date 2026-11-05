@@ -69,7 +69,7 @@ class _LoopPasskeySheetState extends ConsumerState<_LoopPasskeySheet> {
           Text(
             'Passkey',
             key: const ValueKey<String>('passkey-sheet-title'),
-            style: LoopType.heading,
+            style: LoopType.headline,
           ),
           const SizedBox(height: 8),
           Text(

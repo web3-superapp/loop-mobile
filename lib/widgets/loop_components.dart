@@ -1544,6 +1544,34 @@ class _PressedEdgeState extends State<_PressedEdge> {
 
 enum LoopRowPosition { single, first, middle, last }
 
+/// Which Figma row a [LoopRecordRow] borrows its height from (S371 ·
+/// decision 0297, docs/58 §9.4): the row's full height, its own divider
+/// included, with 6 above and below the content.
+enum LoopRecordRowKind {
+  /// MEME token row · 71.
+  token(LoopRowHeight.token),
+
+  /// A person (or a conversation target) · 67, the chat row's.
+  person(LoopRowHeight.chat),
+
+  /// Community row · 86.
+  community(LoopRowHeight.community),
+
+  /// Function / management row · 56.
+  function(LoopRowHeight.management),
+
+  /// Holdings row · 51.
+  holdings(LoopRowHeight.holdings);
+
+  const LoopRecordRowKind(this.height);
+
+  /// The row's full height.
+  final double height;
+
+  /// The space above and below the content.
+  static const double inset = 6;
+}
+
 /// `.row`: identity, primary copy, secondary copy and a stable trailing value.
 /// Consecutive rows form one card: first gets the top radius and light edge,
 /// last the bottom radius and shadow. Taps feedback with the ground colour.
@@ -1569,10 +1597,68 @@ class LoopRecordRow extends StatelessWidget {
     this.trailingStrong = false,
     this.readOnly = false,
     this.divider = false,
+    this.kind,
+    this.titleStyle,
   });
 
   final Widget? leading;
   final String title;
+
+  /// The Figma row this one takes its height from (decision 0297). `null`
+  /// keeps the row's own ladder: 72 / 80 with 13 above and below on a
+  /// ledger page, 56 with 8 on a flat page.
+  final LoopRecordRowKind? kind;
+
+  /// The title's step; `null` is [LoopType.title] (a conversation target
+  /// passes [LoopType.rowTitleLg], decision 0297).
+  final TextStyle? titleStyle;
+
+  TextStyle get _titleStyle => titleStyle ?? LoopType.title;
+
+  /// The row's minimum height and the space above and below its content.
+  /// A drawn divider is counted inside a [kind]'s height, and inside a
+  /// group, so ruling a row does not make it taller (decision 0297).
+  (double, double) _box(
+    double fallbackHeight,
+    double fallbackInset, {
+    required bool grouped,
+  }) {
+    final ruled = divider && (kind != null || grouped) ? 1.0 : 0.0;
+    return switch (kind) {
+      final LoopRecordRowKind k => (k.height - ruled, LoopRecordRowKind.inset),
+      null => (fallbackHeight - ruled, fallbackInset),
+    };
+  }
+
+  /// The least a title keeps beside a squeezed [trailingBadge].
+  static const double badgeTitleReserve = 48;
+
+  /// The most a [trailingBadge] may take (decision 0297): the row's width
+  /// less its face, the gaps, the chevron and [badgeTitleReserve]. Past it
+  /// the badge is squeezed — a [LoopBadge] ellipses its word — instead of
+  /// pushing the row out of its width (an English status pill beside a 44
+  /// face overflowed at 390). Every badge narrower than this draws exactly
+  /// as before. The row's width is read off the screen and the margins the
+  /// row stands between (a group's block adds its 16 inset).
+  double _badgeCap(BuildContext context) {
+    final grouped = LoopRecordGroup.inside(context);
+    final margins = grouped
+        ? 2 * (LoopSpacing.page + LoopSpacing.card)
+        : 2 * LoopSpacing.page;
+    final reserve =
+        (leading != null ? 56 : 0) +
+        10 +
+        (onTap != null && chevron ? 23 : 0) +
+        (trailing != null || trailingCaption != null ? 12 : 0) +
+        badgeTitleReserve;
+    final cap = MediaQuery.sizeOf(context).width - margins - reserve;
+    return cap < LoopTouch.minimum ? LoopTouch.minimum : cap;
+  }
+
+  Widget _badgeSlot(BuildContext context) => ConstrainedBox(
+    constraints: BoxConstraints(maxWidth: _badgeCap(context)),
+    child: LoopCompactButtons(child: trailingBadge!),
+  );
 
   /// Draws the Figma's 1 px white 5 % line under the row, across the content
   /// width (decision 0277, docs/58 §9.4: token, chat, community, post and
@@ -1724,21 +1810,25 @@ class LoopRecordRow extends StatelessWidget {
           ? const Radius.circular(LoopRadius.cardValue)
           : Radius.zero,
     );
+    final (minHeight, inset) = _box(
+      subtitle != null || subtitleSpans != null
+          ? LoopSpacing.rowMinWithSub
+          : LoopSpacing.rowMin,
+      13,
+      grouped: LoopRecordGroup.inside(context),
+    );
     final content = Container(
       // v3 (decision 0229): a list row is at least 72 high, 80 with its
       // second line; rows are told apart by that space, not by a line.
-      constraints: BoxConstraints(
-        minHeight: subtitle != null || subtitleSpans != null
-            ? LoopSpacing.rowMinWithSub
-            : LoopSpacing.rowMin,
-      ),
+      // Decision 0297: a [kind] takes the Figma row's height instead.
+      constraints: BoxConstraints(minHeight: minHeight),
       alignment: AlignmentDirectional.centerStart,
       // Decision 0212 (水平对齐): the row's glyph and words start on the page
       // margin itself, under the section title, and its chevron ends on the
       // right margin — the hairlines already span exactly that width, so the
       // 12 inner inset only pushed the content off the page's one left edge.
       // A chosen row keeps room for its 3 px Purple bar.
-      padding: EdgeInsets.fromLTRB(selected ? 9 : 0, 13, 0, 13),
+      padding: EdgeInsets.fromLTRB(selected ? 9 : 0, inset, 0, inset),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
@@ -1751,7 +1841,7 @@ class LoopRecordRow extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.title,
+                  style: _titleStyle,
                 ),
                 if (subtitleSpans != null)
                   Text.rich(
@@ -1772,7 +1862,7 @@ class LoopRecordRow extends StatelessWidget {
           ),
           if (trailingBadge != null) ...<Widget>[
             const SizedBox(width: 10),
-            LoopCompactButtons(child: trailingBadge!),
+            _badgeSlot(context),
           ],
           if (trailingChart != null) ...<Widget>[
             const SizedBox(width: 8),
@@ -1910,9 +2000,10 @@ extension on LoopRecordRow {
     // S279 · decision 0237: a grouped row takes the block's inset.
     final grouped = LoopRecordGroup.inside(context);
     final inset = grouped ? LoopSpacing.card : LoopSpacing.page;
+    final (minHeight, vertical) = _box(LoopFlat.rowHeight, 8, grouped: grouped);
     final bare = Container(
-      constraints: const BoxConstraints(minHeight: LoopFlat.rowHeight),
-      padding: EdgeInsets.fromLTRB(inset, 8, inset, 8),
+      constraints: BoxConstraints(minHeight: minHeight),
+      padding: EdgeInsets.fromLTRB(inset, vertical, inset, vertical),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
@@ -1925,7 +2016,7 @@ extension on LoopRecordRow {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopType.title,
+                  style: _titleStyle,
                 ),
                 if (subtitleSpans != null)
                   Padding(
@@ -1952,7 +2043,7 @@ extension on LoopRecordRow {
           ),
           if (trailingBadge != null) ...<Widget>[
             const SizedBox(width: 10),
-            LoopCompactButtons(child: trailingBadge!),
+            _badgeSlot(context),
           ],
           if (trailingChart != null) ...<Widget>[
             const SizedBox(width: 8),
@@ -2039,7 +2130,8 @@ extension on LoopRecordRow {
 /// page's modules read apart from the page and from each other; its rows
 /// take the block's 16 inset instead of the page margin.
 class LoopRecordGroup extends StatelessWidget {
-  const LoopRecordGroup({required this.rows, super.key}) : children = null;
+  const LoopRecordGroup({required this.rows, super.key, this.divided = true})
+    : children = null;
 
   /// The same block around rows that read their own state and so cannot be
   /// handed over as plain [LoopRecordRow] values (S288: the step-up row on
@@ -2048,9 +2140,17 @@ class LoopRecordGroup extends StatelessWidget {
   const LoopRecordGroup.children({
     required List<Widget> this.children,
     super.key,
-  }) : rows = const <LoopRecordRow>[];
+  }) : rows = const <LoopRecordRow>[],
+       divided = false;
 
   final List<LoopRecordRow> rows;
+
+  /// Draws the Figma's 1 px white 5 % line between rows (S371 · decision
+  /// 0297, docs/58 §9.4: a function row is ruled, every one of them). A
+  /// holdings or rank list passes false. The line is drawn between rows,
+  /// not under the last one — the block's own edge closes the group — and
+  /// it is counted inside the row's height.
+  final bool divided;
 
   /// Set only by [LoopRecordGroup.children]; drawn as given, in order.
   final List<Widget>? children;
@@ -2111,6 +2211,10 @@ class LoopRecordGroup extends StatelessWidget {
             trailingColor: rows[index].trailingColor,
             trailingStrong: rows[index].trailingStrong,
             readOnly: rows[index].readOnly,
+            kind: rows[index].kind,
+            titleStyle: rows[index].titleStyle,
+            divider:
+                index < rows.length - 1 && (divided || rows[index].divider),
             position: rows.length == 1
                 ? LoopRowPosition.single
                 : index == 0
@@ -2146,7 +2250,12 @@ class LoopNotice extends StatelessWidget {
     this.title,
     this.icon = 'info',
     this.tone = LoopNoticeTone.normal,
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    this.margin = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      14,
+    ),
     this.chalk = false,
     this.trailing,
     this.keepCard = false,
@@ -2162,7 +2271,12 @@ class LoopNotice extends StatelessWidget {
     this.title,
     this.icon = 'warn',
     this.tone = LoopNoticeTone.warn,
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    this.margin = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      14,
+    ),
     this.chalk = false,
     this.trailing,
     this.keepCard = false,
@@ -2747,7 +2861,12 @@ class LoopSegBar extends StatelessWidget {
     required this.onSelected,
     super.key,
     this.icons,
-    this.padding = const EdgeInsets.fromLTRB(16, 0, 16, 8),
+    this.padding = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      8,
+    ),
     this.dimmed,
     this.splat = false,
   }) : assert(icons == null || icons.length == labels.length),
@@ -2937,6 +3056,15 @@ class LoopButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // S371 · decision 0297: an empty state's step is the one quiet
+    // secondary button, whatever rank its caller asked for.
+    if (LoopEmptyActionScope.of(context) && label.isNotEmpty) {
+      return LoopEmptyActionButton(
+        label: label,
+        onTap: onPressed,
+        semanticLabel: semanticLabel,
+      );
+    }
     final enabled = onPressed != null;
     final choice = selected;
     final chosen = choice ?? false;
@@ -3370,7 +3498,12 @@ class _LoopComposerState extends State<LoopComposer> {
 
   Widget _composerBar(double safeBottom) {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 10, 16, math.max(10, safeBottom)),
+      padding: EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        10,
+        LoopSpacing.page,
+        math.max(10, safeBottom),
+      ),
       decoration: const BoxDecoration(
         color: LoopColors.ink,
         border: Border(top: BorderSide(color: LoopColors.line)),
@@ -3529,7 +3662,12 @@ class LoopPowerHint extends StatelessWidget {
       ),
     );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        14,
+      ),
       child: onTap == null
           ? Semantics(container: true, child: content)
           : Semantics(
@@ -4371,7 +4509,7 @@ class LoopErrorState extends StatelessWidget {
     this.retryEnabled = true,
     this.alternative,
     this.alternativeLabel,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.margin = const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
   });
 
   final String? _title;
@@ -4484,7 +4622,12 @@ class LoopOfflineState extends StatelessWidget {
     this.cause = LoopOfflineCause.connection,
     this._pausedActions,
     this.onRetry,
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    this.margin = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      14,
+    ),
   });
 
   static String get cachedHeadline =>
@@ -4620,7 +4763,12 @@ class LoopPermissionState extends StatelessWidget {
     this.onOpenSettings,
     this._requestLabel,
     this._settingsLabel,
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    this.margin = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      0,
+      LoopSpacing.page,
+      14,
+    ),
   });
 
   final String title;
@@ -4653,7 +4801,12 @@ class LoopPermissionState extends StatelessWidget {
         ),
         if (denied && onOpenSettings != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              14,
+            ),
             child: LoopButton(
               label: settingsLabel,
               block: true,
@@ -4662,7 +4815,12 @@ class LoopPermissionState extends StatelessWidget {
           )
         else if (!denied && onRequest != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              14,
+            ),
             child: LoopButton(
               label: requestLabel,
               block: true,
