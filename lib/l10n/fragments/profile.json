@@ -404,12 +404,6 @@
     "where": "lib/features/profile/profile_v2_screens.dart:1854",
     "zh": "可见性说明"
   },
-  "profile_screensProfileAddBioLabel": {
-    "en": "Add a bio",
-    "placeholders": {},
-    "where": "lib/features/profile/profile_v2_screens.dart:1044",
-    "zh": "添加个人简介"
-  },
   "profile_screensProfileAlias": {
     "en": "No alias yet",
     "placeholders": {},
@@ -679,12 +673,6 @@
     "placeholders": {},
     "where": "lib/features/profile/profile_v2_screens.dart:1877",
     "zh": "好友可以把你拉进小群"
-  },
-  "profile_screensText": {
-    "en": "+ Add a bio",
-    "placeholders": {},
-    "where": "lib/features/profile/profile_v2_screens.dart:1059",
-    "zh": "＋ 添加个人简介"
   },
   "profile_screensTitle": {
     "en": "Nothing was changed",

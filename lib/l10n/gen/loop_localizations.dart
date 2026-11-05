@@ -32484,12 +32484,6 @@ abstract class LoopLocalizations {
   /// **'About visibility'**
   String get profile_screensPrivacyVisibilityNoteTitle;
 
-  /// lib/features/profile/profile_v2_screens.dart:1044
-  ///
-  /// In en, this message translates to:
-  /// **'Add a bio'**
-  String get profile_screensProfileAddBioLabel;
-
   /// lib/features/profile/profile_v2_screens.dart:990
   ///
   /// In en, this message translates to:
@@ -32759,12 +32753,6 @@ abstract class LoopLocalizations {
   /// In en, this message translates to:
   /// **'Friends can add you to small groups'**
   String get profile_screensSwitch5;
-
-  /// lib/features/profile/profile_v2_screens.dart:1059
-  ///
-  /// In en, this message translates to:
-  /// **'+ Add a bio'**
-  String get profile_screensText;
 
   /// lib/features/profile/profile_screens.dart:150
   ///

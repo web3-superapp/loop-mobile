@@ -26360,10 +26360,6 @@
   "@profile_screensPrivacyVisibilityNoteTitle": {
     "description": "lib/features/profile/profile_v2_screens.dart:1854"
   },
-  "profile_screensProfileAddBioLabel": "Add a bio",
-  "@profile_screensProfileAddBioLabel": {
-    "description": "lib/features/profile/profile_v2_screens.dart:1044"
-  },
   "profile_screensProfileAlias": "No alias yet",
   "@profile_screensProfileAlias": {
     "description": "lib/features/profile/profile_v2_screens.dart:990"
@@ -26543,10 +26539,6 @@
   "profile_screensSwitch5": "Friends can add you to small groups",
   "@profile_screensSwitch5": {
     "description": "lib/features/profile/profile_v2_screens.dart:1877"
-  },
-  "profile_screensText": "+ Add a bio",
-  "@profile_screensText": {
-    "description": "lib/features/profile/profile_v2_screens.dart:1059"
   },
   "profile_screensTitle": "Nothing was changed",
   "@profile_screensTitle": {

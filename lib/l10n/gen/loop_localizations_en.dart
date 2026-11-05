@@ -20599,9 +20599,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get profile_screensPrivacyVisibilityNoteTitle => 'About visibility';
 
   @override
-  String get profile_screensProfileAddBioLabel => 'Add a bio';
-
-  @override
   String get profile_screensProfileAlias => 'No alias yet';
 
   @override
@@ -20757,9 +20754,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
 
   @override
   String get profile_screensSwitch5 => 'Friends can add you to small groups';
-
-  @override
-  String get profile_screensText => '+ Add a bio';
 
   @override
   String get profile_screensTitle => 'Nothing was changed';
