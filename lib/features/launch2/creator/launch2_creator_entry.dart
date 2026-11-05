@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:loop_mobile/core/config/loop_feature_switches.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/launch2/creator/launch2_creator_routes.dart';
@@ -13,6 +14,7 @@ import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pressable.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_title_doodle.dart';
 
 /// Whether the MEME v2 project-side entry may be drawn: the build switch is
 /// on and the server publishes `launch2` as available (decision 0137).
@@ -258,6 +260,15 @@ class Launch2LaunchCapsule extends StatelessWidget {
 
   static String get label => LoopL10n.current.launch2Creator_launch2CreateText;
 
+  /// The tab bar's idle MEME glyph (docs/58 §8), tinted onYellow.
+  static final String glyphAsset = LoopFigmaAssets.nav('meme', active: false);
+
+  /// The glyph box for the 16 / 600 word.
+  static const double glyphSize = 18;
+
+  /// Glyph to word.
+  static const double glyphGap = 6;
+
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
@@ -271,28 +282,48 @@ class Launch2LaunchCapsule extends StatelessWidget {
           widthFactor: 1,
           child: Container(
             key: const ValueKey<String>('launch2-create-capsule'),
-            // S353b · decision 0279 (docs/58 §5.20): the Figma's 「发射」 —
-            // 30 high, 8 / 4 inside, a 6 corner, the rocket 21 and 16 / 600
-            // words 4 apart, onYellow on Yellow.
+            // S353b · decision 0279 (docs/58 §5.20 / §9.4): the Figma's
+            // 「发射」 — 30 high, 8 inside, a 6 corner, onYellow on Yellow.
+            // S372 · decision 0296: the tab bar's own MEME rocket (the line
+            // glyph, docs/58 §8) at [glyphSize] for the 16 / 600 word, 6
+            // apart, the pair centred both ways.
             height: LoopTouch.buttonCompact,
             padding: const EdgeInsets.symmetric(horizontal: 8),
+            alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: LoopColors.yellow,
               borderRadius: LoopRadius.compactButton,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                const Launch2BoldIcon(
-                  'launch',
-                  size: 21,
-                  color: LoopColors.onYellow,
+                SvgPicture.asset(
+                  glyphAsset,
+                  key: const ValueKey<String>('launch2-create-capsule-glyph'),
+                  width: glyphSize,
+                  height: glyphSize,
+                  colorFilter: const ColorFilter.mode(
+                    LoopColors.onYellow,
+                    BlendMode.srcIn,
+                  ),
+                  excludeFromSemantics: true,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: glyphGap),
                 Text(
                   label,
+                  key: const ValueKey<String>('launch2-create-capsule-word'),
                   maxLines: 1,
-                  style: LoopType.button.copyWith(color: LoopColors.onYellow),
+                  // One line box, its leading split evenly above and below,
+                  // so the word's box centre is the button's.
+                  textHeightBehavior: const TextHeightBehavior(
+                    leadingDistribution: TextLeadingDistribution.even,
+                  ),
+                  style: LoopType.button.copyWith(
+                    color: LoopColors.onYellow,
+                    height: 1.2,
+                    leadingDistribution: TextLeadingDistribution.even,
+                  ),
                 ),
               ],
             ),

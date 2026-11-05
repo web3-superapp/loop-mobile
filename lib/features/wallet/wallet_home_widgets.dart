@@ -364,15 +364,24 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
     // §5.10: the yellow trend at the right of the figure, the week the
     // server stored; a tap opens the chart as the 今日盈亏 line does. No
     // history, no trend — never a drawn-in shape.
+    // S372 · decision 0296: with the chart open below, the small trend says
+    // nothing more and is not drawn; its box stays as an empty gap so the
+    // figure and the lines under it do not move. Closing brings it back.
+    // Open and close switch at once, as decision 0259 does for the chart.
     final trend = historyOn && (week?.drawable ?? false)
         ? Padding(
             padding: const EdgeInsets.only(left: 8, top: 8),
-            child: WalletNetWorthTrend(
-              key: ValueKey<String>('$keyPrefix-networth-trend'),
-              history: week!,
-              expanded: expanded,
-              onTap: _toggle,
-            ),
+            child: expanded
+                ? SizedBox.fromSize(
+                    key: ValueKey<String>('$keyPrefix-networth-trend-gap'),
+                    size: WalletNetWorthTrend.size,
+                  )
+                : WalletNetWorthTrend(
+                    key: ValueKey<String>('$keyPrefix-networth-trend'),
+                    history: week!,
+                    expanded: expanded,
+                    onTap: _toggle,
+                  ),
           )
         : null;
 

@@ -102,7 +102,13 @@ void main() {
     expect(_key('wallet-networth-chart'), findsOneWidget);
     expect(_key('wallet-networth-ranges'), findsOneWidget);
     expect(_key('wallet-networth-collapse'), findsOneWidget);
-    expect(find.bySemanticsLabel('Collapse'), findsWidgets);
+    // S372 · decision 0296: the small trend (which spoke 「Collapse」) is
+    // not drawn while the chart is open; the 今日盈亏 line says it.
+    expect(find.bySemanticsLabel('Collapse'), findsNothing);
+    expect(
+      find.bySemanticsLabel(RegExp('Collapse net value trend')),
+      findsOneWidget,
+    );
 
     await tester.tap(_key('wallet-networth-collapse'));
     await tester.pumpAndSettle();
