@@ -159,6 +159,8 @@ class LoopChartToolbar extends StatelessWidget {
 /// Decision 0171 (docs/33 L4): the shared quiet `.seg` — a word, and the
 /// solid dark-grey pill while it is on — instead of a hand-made r6 capsule.
 /// A screen reader hears what it switches, not the abbreviation.
+/// S375 · decision 0299: the compact capsule (2 / 4 around the word) in a
+/// transparent 44 target, the same as the periods under the plot.
 class LoopChartToggle extends StatelessWidget {
   const LoopChartToggle({
     required this.label,
@@ -179,7 +181,13 @@ class LoopChartToggle extends StatelessWidget {
     toggled: on,
     label: semantic,
     excludeSemantics: true,
-    child: LoopSeg(label: label, quiet: true, selected: on, onSelected: onTap),
+    child: LoopSeg(
+      label: label,
+      quiet: true,
+      compact: true,
+      selected: on,
+      onSelected: onTap,
+    ),
   );
 }
 
@@ -191,6 +199,9 @@ typedef LoopChartIntervalOption = ({String keyName, String label});
 /// Decision 0171 (docs/33 L4): the periods are quiet `LoopSeg`s, the same
 /// OKX filter pill as every other peer choice. The row scrolls rather than
 /// overflowing on a narrow phone, and the trailing control keeps its place.
+/// S375 · decision 0299: every period is the compact capsule (2 / 4 around
+/// the word) centred in a transparent 44 target, so the row is the 44 target
+/// and no taller.
 class LoopChartIntervalRow extends StatelessWidget {
   const LoopChartIntervalRow({
     required this.options,
@@ -220,7 +231,7 @@ class LoopChartIntervalRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (fill) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(12, 2, 4, 0),
+        padding: const EdgeInsets.fromLTRB(12, 0, 4, 0),
         child: Row(
           children: <Widget>[
             Expanded(
@@ -245,7 +256,7 @@ class LoopChartIntervalRow extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 2, 4, 0),
+      padding: const EdgeInsets.fromLTRB(12, 0, 4, 0),
       child: Row(
         children: <Widget>[
           Expanded(
@@ -260,6 +271,7 @@ class LoopChartIntervalRow extends StatelessWidget {
                       key: ValueKey<String>(option.keyName),
                       label: option.label,
                       quiet: true,
+                      compact: true,
                       selected: index == selectedIndex,
                       onSelected: () => onSelected(index),
                     ),
@@ -276,9 +288,11 @@ class LoopChartIntervalRow extends StatelessWidget {
 }
 
 /// One period of a filled [LoopChartIntervalRow]: the quiet [LoopSeg]'s look
-/// (a plain word; the chosen one a solid Purple pill with a white bold word
-/// and the splat) at the width its share of the line gives it, 44 tall. The
-/// word shrinks rather than overflows under a large text scale.
+/// (a plain word; the chosen one on the solid selected ground) at the width
+/// its share of the line gives it. S375 · decision 0299: the capsule hugs
+/// the word (2 / 4 around it) and sits centred in a transparent target the
+/// width of its share and 44 tall. The word shrinks rather than overflows
+/// under a large text scale.
 class LoopChartPeriod extends StatelessWidget {
   const LoopChartPeriod({
     required this.label,
@@ -293,43 +307,26 @@ class LoopChartPeriod extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chip = Material(
-      color: selected ? LoopColors.purpleSelected : Colors.transparent,
-      shape: const RoundedRectangleBorder(borderRadius: LoopRadius.pill),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          if (!selected) LoopHaptics.selection();
-          onSelected();
-        },
-        borderRadius: LoopRadius.pill,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: double.infinity,
-            minHeight: LoopTouch.minimum,
-          ),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: ExcludeSemantics(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    style:
-                        LoopTypography.withWeight(
-                          LoopType.action,
-                          selected ? FontWeight.w700 : FontWeight.w600,
-                        ).copyWith(
-                          color: selected
-                              ? LoopColors.onPurple
-                              : LoopColors.text2,
-                        ),
-                  ),
+    final chip = LoopCompactChip(
+      expand: true,
+      ground: selected ? LoopColors.purpleSelected : Colors.transparent,
+      onTap: () {
+        if (!selected) LoopHaptics.selection();
+        onSelected();
+      },
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: ExcludeSemantics(
+          child: Text(
+            label,
+            maxLines: 1,
+            style:
+                LoopTypography.withWeight(
+                  LoopType.action,
+                  selected ? FontWeight.w700 : FontWeight.w600,
+                ).copyWith(
+                  color: selected ? LoopColors.onPurple : LoopColors.text2,
                 ),
-              ),
-            ),
           ),
         ),
       ),
