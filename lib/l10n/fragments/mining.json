@@ -36,15 +36,10 @@
     "zh": "这个邀请码不能绑定：不能邀请自己，也不能绑定自己下级的邀请码。"
   },
   "mining_copyHead": {
-    "en": "Showing the power snapshot from {computedAtLabel}",
-    "placeholders": {
-      "computedAtLabel": {
-        "example": "computedAtLabel",
-        "type": "Object"
-      }
-    },
+    "en": "Showing the last complete power snapshot",
+    "placeholders": {},
     "where": "lib/features/mining/mining_copy.dart:150",
-    "zh": "显示的是 {computedAtLabel} 的算力快照"
+    "zh": "显示的是上一次完整的算力快照"
   },
   "mining_copyIf": {
     "en": "Block and time appear here after the next power snapshot.",
@@ -1239,34 +1234,15 @@
     "zh": "挖矿说明"
   },
   "mining_screenMiningSnapshotComputed": {
-    "en": "Block {groupedFigure} · {launchTimestampLabel} · when power was calculated",
+    "en": "Block {groupedFigure}",
     "placeholders": {
       "groupedFigure": {
         "example": "loopGroupedFigure(blockNumber)",
         "type": "Object"
-      },
-      "launchTimestampLabel": {
-        "example": "launchTimestampLabel(computedAt)",
-        "type": "Object"
       }
     },
     "where": "lib/features/mining/mining_screen.dart:374, lib/features/mining/mining_secondary_screens.dart:486",
-    "zh": "区块 {groupedFigure} · {launchTimestampLabel} · 这是算出算力的时间"
-  },
-  "mining_screenMiningSnapshotComputed2": {
-    "en": "Snapshot · {launchTimestampLabel}{stale}",
-    "placeholders": {
-      "launchTimestampLabel": {
-        "example": "launchTimestampLabel(computedAt)",
-        "type": "Object"
-      },
-      "stale": {
-        "example": "stale ? ' · 未更新' : ''",
-        "type": "Object"
-      }
-    },
-    "where": "lib/features/mining/mining_screen.dart:419",
-    "zh": "快照 · {launchTimestampLabel}{stale}"
+    "zh": "区块 {groupedFigure}"
   },
   "mining_screenParenthetical": {
     "en": " ({text})",
@@ -1765,12 +1741,6 @@
     "where": "lib/features/mining/mining_secondary_screens.dart:799",
     "zh": "当日产量"
   },
-  "mining_widgetsCurrentRank": {
-    "en": "Current rank",
-    "placeholders": {},
-    "where": "lib/features/mining/mining_widgets.dart",
-    "zh": "当前排名"
-  },
   "mining_widgetsLoopRecordRow": {
     "en": "Holding {amountFigure}",
     "placeholders": {
@@ -1924,6 +1894,18 @@
     "placeholders": {},
     "where": "lib/features/mining/mining_widgets.dart:540",
     "zh": "挖矿奖励，打开挖矿奖励页"
+  },
+  "mining_widgetsMyRank": {
+    "en": "My rank",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart",
+    "zh": "我的排名"
+  },
+  "mining_widgetsNoRank": {
+    "en": "No rank yet",
+    "placeholders": {},
+    "where": "lib/features/mining/mining_widgets.dart",
+    "zh": "暂无排名"
   },
   "mining_widgetsRankPlace": {
     "en": "#{position}",

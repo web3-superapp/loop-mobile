@@ -2317,17 +2317,6 @@
     "where": "lib/features/community/community_widgets.dart:779",
     "zh": "有算力的成员"
   },
-  "community_widgetsCommunityMiningPowerRowSubtitle": {
-    "en": "Latest power snapshot · {communitySettlementLabel}",
-    "placeholders": {
-      "communitySettlementLabel": {
-        "example": "communitySettlementLabel(computedAt)",
-        "type": "Object"
-      }
-    },
-    "where": "lib/features/community/community_widgets.dart:709",
-    "zh": "最近一次算力快照 · {communitySettlementLabel}"
-  },
   "community_widgetsCommunityMiningPowerWeightTitle": {
     "en": "Community weight",
     "placeholders": {},
@@ -2741,17 +2730,6 @@
     },
     "where": "lib/features/community/community_widgets.dart:1785",
     "zh": "{communityBoundAssetChainNote}{communityBoundAssetUniqueHint}提交后进入审核，你是所有者；验证标记由运维核验后设置。"
-  },
-  "community_widgetsValue": {
-    "en": "{communityObservedAtLabel} · Not updated",
-    "placeholders": {
-      "communityObservedAtLabel": {
-        "example": "communityObservedAtLabel(staleAt)",
-        "type": "Object"
-      }
-    },
-    "where": "lib/features/community/community_widgets.dart:470",
-    "zh": "{communityObservedAtLabel} · 未更新"
   },
   "community_widgetsVerified": {
     "en": "Verified",

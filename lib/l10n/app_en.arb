@@ -7617,15 +7617,6 @@
   "@community_widgetsCommunityMiningPowerParticipantsTitle": {
     "description": "lib/features/community/community_widgets.dart:779"
   },
-  "community_widgetsCommunityMiningPowerRowSubtitle": "Latest power snapshot · {communitySettlementLabel}",
-  "@community_widgetsCommunityMiningPowerRowSubtitle": {
-    "description": "lib/features/community/community_widgets.dart:709",
-    "placeholders": {
-      "communitySettlementLabel": {
-        "type": "Object?"
-      }
-    }
-  },
   "community_widgetsCommunityMiningPowerWeightTitle": "Community weight",
   "@community_widgetsCommunityMiningPowerWeightTitle": {
     "description": "lib/features/community/community_widgets.dart:756"
@@ -7926,15 +7917,6 @@
         "type": "Object?"
       },
       "communityBoundAssetUniqueHint": {
-        "type": "Object?"
-      }
-    }
-  },
-  "community_widgetsValue": "{communityObservedAtLabel} · Not updated",
-  "@community_widgetsValue": {
-    "description": "lib/features/community/community_widgets.dart:470",
-    "placeholders": {
-      "communityObservedAtLabel": {
         "type": "Object?"
       }
     }
@@ -9869,18 +9851,6 @@
   "intel_rankBoardMiningFormulaPending": "Power formula not yet in effect",
   "@intel_rankBoardMiningFormulaPending": {
     "description": "lib/features/intel/intel_rank_board.dart:442"
-  },
-  "intel_rankBoardMiningSnapshotComputed": "{intelRankLedgerKickerBase}, snapshot {intelRankMonthDayClock}",
-  "@intel_rankBoardMiningSnapshotComputed": {
-    "description": "lib/features/intel/intel_rank_board.dart:519",
-    "placeholders": {
-      "intelRankLedgerKickerBase": {
-        "type": "Object?"
-      },
-      "intelRankMonthDayClock": {
-        "type": "Object?"
-      }
-    }
   },
   "intel_rankBoardNull": "Community {name}",
   "@intel_rankBoardNull": {
@@ -22571,14 +22541,9 @@
   "@mining_controllersValidationFailed": {
     "description": "lib/features/mining/mining_controllers.dart:426"
   },
-  "mining_copyHead": "Showing the power snapshot from {computedAtLabel}",
+  "mining_copyHead": "Showing the last complete power snapshot",
   "@mining_copyHead": {
-    "description": "lib/features/mining/mining_copy.dart:150",
-    "placeholders": {
-      "computedAtLabel": {
-        "type": "Object?"
-      }
-    }
+    "description": "lib/features/mining/mining_copy.dart:150"
   },
   "mining_copyIf": "Block and time appear here after the next power snapshot.",
   "@mining_copyIf": {
@@ -23451,26 +23416,11 @@
   "@mining_screenMiningRulesActionTitle": {
     "description": "lib/features/mining/mining_screen.dart:299, lib/features/mining/mining_screen.dart:300"
   },
-  "mining_screenMiningSnapshotComputed": "Block {groupedFigure} · {launchTimestampLabel} · when power was calculated",
+  "mining_screenMiningSnapshotComputed": "Block {groupedFigure}",
   "@mining_screenMiningSnapshotComputed": {
     "description": "lib/features/mining/mining_screen.dart:374, lib/features/mining/mining_secondary_screens.dart:486",
     "placeholders": {
       "groupedFigure": {
-        "type": "Object?"
-      },
-      "launchTimestampLabel": {
-        "type": "Object?"
-      }
-    }
-  },
-  "mining_screenMiningSnapshotComputed2": "Snapshot · {launchTimestampLabel}{stale}",
-  "@mining_screenMiningSnapshotComputed2": {
-    "description": "lib/features/mining/mining_screen.dart:419",
-    "placeholders": {
-      "launchTimestampLabel": {
-        "type": "Object?"
-      },
-      "stale": {
         "type": "Object?"
       }
     }
@@ -23827,10 +23777,6 @@
   "@mining_secondaryScreensTrailingCaption3": {
     "description": "lib/features/mining/mining_secondary_screens.dart:799"
   },
-  "mining_widgetsCurrentRank": "Current rank",
-  "@mining_widgetsCurrentRank": {
-    "description": "lib/features/mining/mining_widgets.dart"
-  },
   "mining_widgetsLoopRecordRow": "Holding {amountFigure}",
   "@mining_widgetsLoopRecordRow": {
     "description": "lib/features/mining/mining_widgets.dart:1137",
@@ -23943,6 +23889,14 @@
   "mining_widgetsMiningSummaryHeroClaimSemanticLabel": "Mining rewards, open the mining rewards page",
   "@mining_widgetsMiningSummaryHeroClaimSemanticLabel": {
     "description": "lib/features/mining/mining_widgets.dart:540"
+  },
+  "mining_widgetsMyRank": "My rank",
+  "@mining_widgetsMyRank": {
+    "description": "lib/features/mining/mining_widgets.dart"
+  },
+  "mining_widgetsNoRank": "No rank yet",
+  "@mining_widgetsNoRank": {
+    "description": "lib/features/mining/mining_widgets.dart"
   },
   "mining_widgetsRankPlace": "#{position}",
   "@mining_widgetsRankPlace": {

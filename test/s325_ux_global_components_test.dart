@@ -347,7 +347,8 @@ void main() {
       expect(_key('mining-info-sheet'), findsOneWidget);
       expect(find.text('About mining'), findsOneWidget);
       expect(find.text('LOOP power snapshot'), findsOneWidget);
-      expect(find.text('Observed at'), findsOneWidget);
+      // S378 · decision 0302: the snapshot's time is not in the sheet.
+      expect(find.text('Observed at'), findsNothing);
     });
 
     testWidgets('交易历史: the source moved to the bar', (tester) async {

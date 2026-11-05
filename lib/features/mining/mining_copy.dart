@@ -145,10 +145,9 @@ String? miningAttemptCause(
 /// figures — a published snapshot valued every holding it weighs, which is
 /// exactly why the later run was not published.
 ///
-/// [computedAtLabel] is the caller's own UTC label, so the page and this line
-/// date the same snapshot the same way.
+/// S378 · decision 0302 (需求方 2026-11-05): the line no longer dates the
+/// snapshot; it says the numbers are the last complete one's.
 String miningStaleLine({
-  required String computedAtLabel,
   MiningSnapshotAttempt? attempt,
   Map<String, String> symbols = const <String, String>{},
 }) {
@@ -158,7 +157,7 @@ String miningStaleLine({
   final cause = attempt == null
       ? null
       : miningAttemptCause(attempt, symbols: symbols);
-  final head = LoopL10n.current.mining_copyHead(computedAtLabel);
+  final head = LoopL10n.current.mining_copyHead;
   return cause == null
       ? '$head · $tail'
       : LoopL10n.current.mining_copyStaleWithCause(cause, head, tail);

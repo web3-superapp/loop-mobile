@@ -263,11 +263,6 @@ class CommunityUnavailableCard extends StatelessWidget {
   }
 }
 
-/// A server-side time — a snapshot's, an observation's — on the reader's own
-/// wall clock. It is never restated as a relative "just now".
-String communitySettlementLabel(DateTime computedAt) =>
-    loopLocalTimestampLabel(computedAt);
-
 /// A count in the community record's own mono voice, grouped in thousands.
 ///
 /// `128420 成员` is read digit by digit; `128,420 成员` is read at a glance,
@@ -434,10 +429,11 @@ class CommunityMiningSummaryCard extends StatelessWidget {
         : loopPowerFigure(settled.power);
     final reading = account ?? const CommunityMiningAccountReading.unread();
     // A later run that did not complete leaves this number the last complete
-    // snapshot's (Decision 0057): the card dates it in one row.
-    final staleAt = switch (fact) {
-      LoopMiningPowerSettled(:final computedAt, stale: true) => computedAt,
-      _ => null,
+    // snapshot's (Decision 0057): the card marks it in one row. S378 ·
+    // decision 0302: the row says 未更新 without dating the snapshot.
+    final stale = switch (fact) {
+      LoopMiningPowerSettled(stale: true) => true,
+      _ => false,
     };
     final semantic = LoopL10n.current.community_widgetsSemantic(power, weight);
     // Decision 0170 (docs/33 M2): one `.record-card` of `.kv` rows — the
@@ -479,12 +475,10 @@ class CommunityMiningSummaryCard extends StatelessWidget {
             valueKey: const ValueKey<String>('community-mining-power'),
             padding: _miningFactPadding,
           ),
-          if (staleAt != null)
+          if (stale)
             LoopKeyValue(
               label: context.l10n.community_widgetsLabel3,
-              value: context.l10n.community_widgetsValue(
-                communityObservedAtLabel(staleAt),
-              ),
+              value: context.l10n.mining_widgetsMarker,
               valueKey: const ValueKey<String>('community-mining-stale'),
               padding: _miningFactPadding,
             ),
@@ -711,7 +705,6 @@ class CommunityMiningPowerCard extends StatelessWidget {
       case LoopMiningPowerSettled(
         :final power,
         :final formulaVersion,
-        :final computedAt,
         :final isBaseline,
         :final stale,
       ):
@@ -727,18 +720,10 @@ class CommunityMiningPowerCard extends StatelessWidget {
                   LoopRecordRow(
                     key: const ValueKey<String>('community-mining-power-row'),
                     title: label,
-                    subtitle: stale
-                        ? miningStaleLine(
-                            computedAtLabel: communitySettlementLabel(
-                              computedAt,
-                            ),
-                          )
-                        : context.l10n
-                              .community_widgetsCommunityMiningPowerRowSubtitle(
-                                communitySettlementLabel(computedAt),
-                              ),
-                    // The stamp ended at 「10:23 U…」, which drops the zone
-                    // the time is stated in.
+                    // S378 · decision 0302 (需求方 2026-11-05): no
+                    // 「最近一次算力快照 · 时间」; a stale number keeps its
+                    // undated stale line, a current one has no subtitle.
+                    subtitle: stale ? miningStaleLine() : null,
                     subtitleMaxLines: 2,
                     trailing: power,
                     // The version's own declaration is what may label the

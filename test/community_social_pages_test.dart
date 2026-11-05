@@ -150,11 +150,12 @@ void main() {
       );
       expect(card, findsOneWidget);
       expect(find.text('230.5'), findsOneWidget);
+      // S378 · decision 0302: no 「最近一次算力快照 · time」 subtitle.
       expect(
         find.textContaining(
           loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58)),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       // The version that settled it is a backend identifier: it is not in the
       // row's own sentence.
@@ -163,7 +164,7 @@ void main() {
 
     // Decision 0057: the row keeps the number and dates it, because the run
     // after this snapshot could not value a holding and was never published.
-    testWidgets('a reading a later run overtook is dated on the row', (
+    testWidgets('a reading a later run overtook is marked on the row', (
       tester,
     ) async {
       await pumpCommunityPage(
@@ -193,8 +194,8 @@ void main() {
       expect(find.text('230.5'), findsOneWidget);
       expect(
         find.textContaining(
-          'Showing the power snapshot from '
-          '${loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58))} '
+          // S378 · decision 0302: undated.
+          'Showing the last complete power snapshot '
           "· The latest snapshot didn't finish",
         ),
         findsOneWidget,

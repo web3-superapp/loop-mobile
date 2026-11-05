@@ -525,21 +525,20 @@ class _CommunitySnapshotBlock extends StatelessWidget {
           maxLines: 2,
           detailMaxLines: 4,
         ),
-      MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
-        LoopRecordGroup(
-          key: const ValueKey<String>('mining-community-snapshot'),
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('mining-community-snapshot-row'),
-              title: miningSnapshotRowTitle,
-              subtitle: context.l10n.mining_screenMiningSnapshotComputed(
-                loopGroupedFigure(blockNumber),
-                launchTimestampLabel(computedAt),
-              ),
-              subtitleMaxLines: 2,
+      MiningSnapshotComputed(:final blockNumber) => LoopRecordGroup(
+        key: const ValueKey<String>('mining-community-snapshot'),
+        rows: <LoopRecordRow>[
+          LoopRecordRow(
+            key: const ValueKey<String>('mining-community-snapshot-row'),
+            title: miningSnapshotRowTitle,
+            // S378 · decision 0302: the block, not the time.
+            subtitle: context.l10n.mining_screenMiningSnapshotComputed(
+              loopGroupedFigure(blockNumber),
             ),
-          ],
-        ),
+            subtitleMaxLines: 2,
+          ),
+        ],
+      ),
     };
   }
 }

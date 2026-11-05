@@ -388,10 +388,10 @@ List<LoopInfoNote> miningInfoNotes(MiningSummary? summary) {
         MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
           '${miningSnapshotAbsenceMessage(reasonCode)}${LoopL10n.current.widgets_sentenceJoin}'
               '${miningSnapshotAbsenceReason(reasonCode, attempt: latestAttempt)}',
-        MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
+        // S378 · decision 0302: the block, not the time.
+        MiningSnapshotComputed(:final blockNumber) =>
           LoopL10n.current.mining_screenMiningSnapshotComputed(
             loopGroupedFigure(blockNumber),
-            launchTimestampLabel(computedAt),
           ),
       },
     ),
@@ -431,25 +431,22 @@ String _heroHeading(MiningSummary summary) => switch (summary.formula) {
 String? _heroUnit(MiningSummary summary) =>
     _heroHeading(summary) == launchMissingHeading ? null : 'H';
 
-/// The hero's one line under the figure: when the snapshot behind it was
-/// computed, and 未更新 when a later run overtook it (decision 0057). S315: no
-/// sentence about formulas or promises; the (i) carries those.
+/// The hero's one line at its top right. S378 · decision 0302 (需求方
+/// 2026-11-05): the snapshot's time is gone; only 未更新 stays when a later run
+/// overtook the snapshot (decision 0057, AGENTS rule 25 visible marker).
 String? _heroCaption(MiningSummary summary) => switch (summary.snapshot) {
-  MiningSnapshotComputed(:final computedAt, :final stale) =>
-    LoopL10n.current.mining_screenMiningSnapshotComputed2(
-      launchTimestampLabel(computedAt),
-      stale ? ' · ${LoopL10n.current.mining_widgetsMarker}' : '',
-    ),
+  MiningSnapshotComputed(stale: true) => LoopL10n.current.mining_widgetsMarker,
   _ => null,
 };
 
 /// The cells while the LOOP token is not live (decision 0184): the
-/// account's last settled hour and its counted invites. None of them is a
+/// account's last settled hour (S378: no longer its invites). None is a
 /// LOOP amount. Decision 0272: 全网算力 is the network card's above, so it
 /// is not repeated here.
 List<MiningHeroMetric> _powerMetrics(MiningRewardsView? rewards) {
+  // S378 · decision 0302 (需求方 2026-11-05): 有效邀请 left the hero — the
+  // 邀请 tab under it already carries the invite figures.
   final hour = miningLastHourPower(rewards);
-  final invites = rewards?.invites?.total.activeMembers;
   return <MiningHeroMetric>[
     MiningHeroMetric(
       slug: 'last-hour-power',
@@ -458,16 +455,6 @@ List<MiningHeroMetric> _powerMetrics(MiningRewardsView? rewards) {
       spoken: hour == null
           ? LoopL10n.current.mining_screenSpoken2
           : miningPowerFigure(hour),
-    ),
-    MiningHeroMetric(
-      slug: 'active-invites',
-      label: LoopL10n.current.mining_screenLabel4,
-      value: invites == null
-          ? launchMissingFigure
-          : LoopL10n.current.mining_screenValue(invites),
-      spoken: invites == null
-          ? LoopL10n.current.mining_screenSpoken
-          : LoopL10n.current.mining_screenValue(invites),
     ),
   ];
 }

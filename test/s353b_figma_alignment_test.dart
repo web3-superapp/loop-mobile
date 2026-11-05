@@ -127,11 +127,12 @@ void main() {
       final power = tester.widget<Text>(_key('mining-summary-hero-power'));
       expect(power.style!.fontSize, LoopType.heroFigure.fontSize);
       expect(power.style!.color, LoopColors.textPrimary);
-      // 「Current rank #12」 with the crown, the way into 算力榜.
+      // S378 · decision 0302: 「My rank #12」 with the crown, the way into
+      // 算力榜, at the right end of the figure row.
       expect(
         find.descendant(
           of: _key('mining-network-rank-action'),
-          matching: find.text('Current rank'),
+          matching: find.text('My rank'),
         ),
         findsOneWidget,
       );
@@ -144,10 +145,8 @@ void main() {
       );
       await tester.tap(_key('mining-network-rank-action'));
       expect(opened, 1);
-      // The snapshot sits at the top right in white 30 %.
-      final caption = tester.widget<Text>(_key('mining-summary-hero-caption'));
-      expect(caption.style!.color, LoopColors.white30);
-      expect(caption.style!.fontSize, LoopType.metaSm.fontSize);
+      // S378 · decision 0302: no snapshot time at the top right.
+      expect(_key('mining-summary-hero-caption'), findsNothing);
     });
 
     test('the place colour follows the Figma', () {

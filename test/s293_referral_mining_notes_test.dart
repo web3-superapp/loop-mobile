@@ -392,7 +392,8 @@ void main() {
       expect(find.text('Formula version'), findsOneWidget);
       expect(find.textContaining('Formula version in effect'), findsOneWidget);
       expect(find.text('Latest power snapshot'), findsOneWidget);
-      expect(find.textContaining('when power was calculated'), findsOneWidget);
+      // S378 · decision 0302: the block only, not the time.
+      expect(find.textContaining('when power was calculated'), findsNothing);
       expect(find.textContaining('Block '), findsOneWidget);
       expect(find.text('No local estimates'), findsOneWidget);
     });

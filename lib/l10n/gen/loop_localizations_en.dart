@@ -6217,13 +6217,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
       'Members with power';
 
   @override
-  String community_widgetsCommunityMiningPowerRowSubtitle(
-    Object? communitySettlementLabel,
-  ) {
-    return 'Latest power snapshot · $communitySettlementLabel';
-  }
-
-  @override
   String get community_widgetsCommunityMiningPowerWeightTitle =>
       'Community weight';
 
@@ -6436,11 +6429,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
     Object? communityBoundAssetUniqueHint,
   ) {
     return '$communityBoundAssetChainNote$communityBoundAssetUniqueHint After you submit it goes into review and you\'re the owner. The verified badge is set after verification.';
-  }
-
-  @override
-  String community_widgetsValue(Object? communityObservedAtLabel) {
-    return '$communityObservedAtLabel · Not updated';
   }
 
   @override
@@ -8040,14 +8028,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
   @override
   String get intel_rankBoardMiningFormulaPending =>
       'Power formula not yet in effect';
-
-  @override
-  String intel_rankBoardMiningSnapshotComputed(
-    Object? intelRankLedgerKickerBase,
-    Object? intelRankMonthDayClock,
-  ) {
-    return '$intelRankLedgerKickerBase, snapshot $intelRankMonthDayClock';
-  }
 
   @override
   String intel_rankBoardNull(Object? name) {
@@ -17626,9 +17606,7 @@ class LoopLocalizationsEn extends LoopLocalizations {
       'This invite code can\'t be bound: you can\'t invite yourself or bind a code from someone you invited.';
 
   @override
-  String mining_copyHead(Object? computedAtLabel) {
-    return 'Showing the power snapshot from $computedAtLabel';
-  }
+  String get mining_copyHead => 'Showing the last complete power snapshot';
 
   @override
   String get mining_copyIf =>
@@ -18267,19 +18245,8 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get mining_screenMiningRulesActionTitle => 'About mining';
 
   @override
-  String mining_screenMiningSnapshotComputed(
-    Object? groupedFigure,
-    Object? launchTimestampLabel,
-  ) {
-    return 'Block $groupedFigure · $launchTimestampLabel · when power was calculated';
-  }
-
-  @override
-  String mining_screenMiningSnapshotComputed2(
-    Object? launchTimestampLabel,
-    Object? stale,
-  ) {
-    return 'Snapshot · $launchTimestampLabel$stale';
+  String mining_screenMiningSnapshotComputed(Object? groupedFigure) {
+    return 'Block $groupedFigure';
   }
 
   @override
@@ -18576,9 +18543,6 @@ class LoopLocalizationsEn extends LoopLocalizations {
   String get mining_secondaryScreensTrailingCaption3 => 'Daily output';
 
   @override
-  String get mining_widgetsCurrentRank => 'Current rank';
-
-  @override
   String mining_widgetsLoopRecordRow(Object? amountFigure) {
     return 'Holding $amountFigure';
   }
@@ -18658,6 +18622,12 @@ class LoopLocalizationsEn extends LoopLocalizations {
   @override
   String get mining_widgetsMiningSummaryHeroClaimSemanticLabel =>
       'Mining rewards, open the mining rewards page';
+
+  @override
+  String get mining_widgetsMyRank => 'My rank';
+
+  @override
+  String get mining_widgetsNoRank => 'No rank yet';
 
   @override
   String mining_widgetsRankPlace(Object? position) {
