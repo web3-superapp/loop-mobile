@@ -725,7 +725,12 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
           // 内联面板不带自己的滚动层：语音房整页只有一层滚动，这里只按内容
           // 高度展开。
           return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              4,
+              LoopSpacing.page,
+              0,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

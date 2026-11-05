@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_recent.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_inline_states.dart';
@@ -203,7 +204,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         filters: SingleChildScrollView(
           key: const ValueKey<String>('search-segs'),
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
+          // S370b · decision 0294: the segments start on the 20 page margin.
+          padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 14, 8, 10),
           child: Row(
             children: <Widget>[
               _seg(
@@ -377,6 +379,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       for (final entry in rows)
         LoopPersonRow(
           key: ValueKey<String>(_recentKey(entry)),
+          height: SecondaryRowMetrics.tokenRow,
           leading: _assetLogo(entry.title, null),
           title: entry.title,
           tag: LoopBadge(LoopL10n.current.common_token),
@@ -631,9 +634,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   Widget _field(SearchController controller) {
     // UX-008 (decision 0254): the field's corners and focus edge are every
     // field's.
+    // S370b · decision 0294: the Figma's search box (docs/58 §5 / §9.4) —
+    // 44 high, r12, the search ground with its 1px card edge, the 15 / 500
+    // placeholder in the third ink.
     const border = OutlineInputBorder(
       borderRadius: LoopRadius.control,
-      borderSide: BorderSide.none,
+      borderSide: BorderSide(color: LoopColors.cardEdge),
     );
     return TextField(
       key: const ValueKey<String>('search-field'),
@@ -646,11 +652,19 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         // The field promises only the domains that answer (device
         // walkthrough 2026-09-23 · a55–a65), not 「任何内容」.
         hintText: '$searchFieldLabel…',
-        hintStyle: LoopType.body.copyWith(color: LoopColors.text3),
+        hintStyle: LoopType.searchHint,
         filled: true,
-        fillColor: LoopColors.card2,
+        fillColor: LoopColors.searchBg,
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        constraints: const BoxConstraints(
+          minHeight: LoopTouch.searchField,
+          maxHeight: LoopTouch.searchField,
+        ),
+        prefixIconConstraints: const BoxConstraints.tightFor(
+          width: LoopTouch.searchField,
+          height: LoopTouch.searchField,
+        ),
         border: border,
         enabledBorder: border,
         focusedBorder: const OutlineInputBorder(
@@ -723,14 +737,15 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     name: name,
     logoRef: logoRef,
     size: size,
+    radius: SecondaryRowMetrics.communityLogoRadius,
   );
 
   Widget _assetLogo(String symbol, String? logoUrl) => LoopTokenLogo(
     assetSymbol: symbol,
     logoUrl: logoUrl,
     fallbackMonogram: symbol,
-    size: 44,
-    cornerRadius: LoopRadius.tileValue,
+    // S370b · decision 0294: the token row's round 44 logo (docs/58 §3.3).
+    size: SecondaryRowMetrics.tokenLogo,
   );
 
   Widget _resultRow(SearchResult result) {
@@ -742,6 +757,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       // right edge states that instead of printing a figure (AGENTS rule 25).
       SearchResultType.asset => LoopPersonRow(
         key: ValueKey<String>('search-result-${result.stableId}'),
+        height: SecondaryRowMetrics.tokenRow,
         leading: _assetLogo(result.title, result.logoUrl),
         title: result.title,
         tag: LoopBadge(LoopL10n.current.common_token),
@@ -764,11 +780,13 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       // member count instead, and only when the server sent one.
       SearchResultType.community => LoopPersonRow(
         key: ValueKey<String>('search-result-${result.stableId}'),
+        // S370b · decision 0294: the community row, 86 / 56 r12.
+        height: SecondaryRowMetrics.communityRow,
         leading: _communityLogo(
           result.stableId,
           result.title,
           result.avatarRef,
-          44,
+          SecondaryRowMetrics.communityLogo,
         ),
         title: result.title,
         subtitle: result.memberCount == null
@@ -785,10 +803,11 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
       ),
       SearchResultType.user => LoopPersonRow(
         key: ValueKey<String>('search-result-${result.stableId}'),
+        height: SecondaryRowMetrics.personRow,
         leading: LoopProfileAvatar(
           avatarRef: result.avatarRef,
           alias: result.title,
-          size: 44,
+          size: SecondaryRowMetrics.personFace,
         ),
         title: result.title,
         subtitle: result.subtitle,

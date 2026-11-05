@@ -23,6 +23,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/features/social/profile_face_link.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 
 /// `connections` · following and followers.
 ///
@@ -228,7 +229,9 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     final following = entry.viewerFollows;
     return LoopPersonRow(
       key: ValueKey<String>('connection-row-${target ?? entry.profile.loopId}'),
-      height: 56,
+      // S370b · decision 0294: a person row reads as the conversation row
+      // (docs/58 §3.2): 67 high, the face 48.
+      height: SecondaryRowMetrics.personRow,
       // S239: the face opens the contact's page; the row keeps its sheet.
       leading: LoopProfileFaceLink(
         key: ValueKey<String>(
@@ -239,7 +242,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
         child: LoopProfileAvatar(
           avatarRef: entry.profile.avatarRef,
           alias: entry.profile.displayName,
-          size: 40,
+          size: SecondaryRowMetrics.personFace,
         ),
       ),
       title: entry.profile.displayName,

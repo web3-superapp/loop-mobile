@@ -260,17 +260,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Decision 0229 (v3): a row with its second line is 80 high, no
-      // hairline (0210's 13 + 44 + 13 + 1 = 71 retired).
+      // S370b · decision 0294: the community row's 56 logo — 13 + 56 + 13
+      // = 82 (the 86 of docs/58 §3.2 needs LoopRecordRow's 13 inset to move).
       final rows = find.byType(LoopRecordRow);
-      expect(tester.getSize(rows.at(1)).height, 80);
+      expect(tester.getSize(rows.at(1)).height, 82);
       expect(
         tester.getTopLeft(rows.at(1)).dy - tester.getTopLeft(rows.at(0)).dy,
-        80,
+        82,
       );
-      // `.row{gap:12px}` after a 44pt mark. S279 · decision 0237: the group
+      // `.row{gap:12px}` after a 56pt mark. S279 · decision 0237: the group
       // is a block on the 20pt page margin, its rows 16 inside it.
-      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 20 + 16 + 44 + 12);
+      expect(tester.getTopLeft(find.text('DeFi 早读会')).dx, 20 + 16 + 56 + 12);
     });
 
     testWidgets('第二行说成员数，右边只留 chevron', (tester) async {

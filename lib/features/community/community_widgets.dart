@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
@@ -1166,10 +1167,14 @@ LoopRecordRow communityDirectoryRow({
   if (ranked == null) {
     return LoopRecordRow(
       key: ValueKey<String>('community-row-${community.communityId}'),
+      // S370b · decision 0294: the community row's 56 square logo at r12
+      // (docs/58 §3.3).
       leading: CommunityLogo(
         identity: community.communityId,
         name: community.name,
         logoRef: community.logoRef,
+        size: SecondaryRowMetrics.communityLogo,
+        radius: SecondaryRowMetrics.communityLogoRadius,
       ),
       title: community.name,
       // The slug is the server's addressing handle; it told a reader browsing
@@ -1192,6 +1197,8 @@ LoopRecordRow communityDirectoryRow({
       identity: community.communityId,
       name: community.name,
       logoRef: community.logoRef,
+      size: SecondaryRowMetrics.communityLogo,
+      radius: SecondaryRowMetrics.communityLogoRadius,
     ),
     title: community.name,
     subtitle: label == null ? members : '$label · $members',

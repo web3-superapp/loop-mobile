@@ -537,7 +537,12 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     final note = Semantics(
       liveRegion: true,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          8,
+        ),
         child: VoiceMediaStateCard(
           key: const ValueKey<String>('voiceroom-media-restored'),
           title: audioRoomRestoredMicrophoneNote,
@@ -698,7 +703,12 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
       // membership is still there, and this is how the reader gets the audio
       // back without leaving and joining again.
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          0,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -734,7 +744,12 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface> {
     }
     if (widget.inline) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          4,
+          LoopSpacing.page,
+          0,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

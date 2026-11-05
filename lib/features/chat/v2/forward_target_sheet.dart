@@ -237,7 +237,12 @@ class _ForwardTargetSheetState extends ConsumerState<ForwardTargetSheet> {
         ),
         Flexible(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              8,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -352,7 +357,9 @@ class _TargetRow extends StatelessWidget {
       key: ValueKey<String>('forward-target-${target.cid}'),
       onTap: enabled ? onTap : null,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
+        // S370b · decision 0294: the conversation row (docs/58 §3.2) — 67
+        // high, the name 16 / 500, the line under it 14 / 300.
+        constraints: const BoxConstraints(minHeight: LoopRowHeight.chat),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
@@ -376,13 +383,14 @@ class _TargetRow extends StatelessWidget {
                       target.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopType.title,
+                      style: LoopType.rowTitleLg,
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       target.detail,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopType.caption,
+                      style: LoopType.captionMd,
                     ),
                   ],
                 ),

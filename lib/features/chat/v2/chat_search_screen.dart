@@ -588,7 +588,8 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
       return LoopInitialsAvatar(
         key: ValueKey<String>('chat-search-direct-face-${hit.messageId}'),
         label: hit.senderLabel,
-        size: 44,
+        // S370b · decision 0294: the conversation row's 48 face.
+        size: chatListAvatarSize,
       );
     }
     final communityId = loopCommunityIdForChannelCid(hit.cid);
@@ -597,8 +598,8 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
       logoRef: communityId == null ? null : faces[communityId]?.logoRef,
       label: hit.channelLabel,
       members: hit.members,
-      size: 44,
-      radius: 15,
+      size: chatListAvatarSize,
+      radius: chatListAvatarRadius,
     );
   }
 }

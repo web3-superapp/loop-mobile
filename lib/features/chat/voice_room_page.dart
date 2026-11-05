@@ -520,7 +520,12 @@ Future<void> _showRoomMenu(BuildContext context) {
     builder: (sheetContext) {
       return SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[

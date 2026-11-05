@@ -18,6 +18,7 @@ import 'package:loop_mobile/widgets/loop_empty_state.dart';
 import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 
 class CreateFriendGroupPage extends ConsumerStatefulWidget {
   const CreateFriendGroupPage({super.key});
@@ -346,7 +347,7 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
 }
 
 /// One friend to pick (decision 0168): a `.row` in the labelled group — the
-/// initials at 36, the alias over the LOOP code, and the shared round
+/// initials at 48 (S370b · decision 0294: the conversation row's face), the alias over the LOOP code, and the shared round
 /// [LoopSelectionCheck] in the value column.
 LoopRecordRow _selectableFriendRow({
   required String rowKey,
@@ -355,7 +356,10 @@ LoopRecordRow _selectableFriendRow({
   required VoidCallback? onChanged,
 }) => LoopRecordRow(
   key: ValueKey<String>(rowKey),
-  leading: LoopInitialsAvatar(label: identity.alias, size: 36),
+  leading: LoopInitialsAvatar(
+    label: identity.alias,
+    size: SecondaryRowMetrics.personFace,
+  ),
   title: identity.alias,
   subtitle: 'LOOP #${identity.profileCode}',
   trailingBadge: LoopSelectionCheck(selected: selected),
