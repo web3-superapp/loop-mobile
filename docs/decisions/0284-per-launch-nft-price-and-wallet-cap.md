@@ -26,3 +26,5 @@ Accepted · 2026-11-04（S359-mobile）。需求方 2026-11-04 提出、用户�
 - 测试：`test/s359_project_terms_test.dart`（表单规则、空 / 越界 / 合法提交、回填、草稿 / 实例 / 签名三处 codec 的缺键与带键与非法值、模板卡与 NFT 页显示）。
 - 服务端开关 off 时编辑一个已存自定义条款的草稿，App 看不到旧值、留空提交会回到默认值——开关须在 App 发版后、项目方开始填写前打开。
 - NFT 页价格读 `nftSale.priceUsd1`、回购说明读 `template.buybackOrderUsd1`：loop-api 须把这两个也改成实例值（今天是模板常量）。
+
+0287 补：单个项目接口的三个条款键（`GET /v2/launch/projects/{id}` 的 `project` 对象，见 0287）。
