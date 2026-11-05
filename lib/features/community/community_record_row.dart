@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -65,6 +66,8 @@ class CommunityRecordRow extends StatelessWidget {
         ),
       ),
       title: name,
+      // 0301 (11-05 改稿, docs/58 §5.8): the community row's name, 16 / 500.
+      titleStyle: LoopType.rowTitle,
       subtitle: subtitle,
       subtitleMaxLines: subtitleMaxLines,
       trailingBadge: trailingBadge,

@@ -68,7 +68,8 @@ void main() {
         tester,
         MemeTokenCard(row: _meme(), now: DateTime.utc(2026, 10, 8, 3)),
       );
-      _expectStep(_painted(tester, _key('meme-row-ticker')), LoopType.titleLg);
+      // S377 · decision 0301: the token row's name, rowTitle 16 / 500.
+      _expectStep(_painted(tester, _key('meme-row-ticker')), LoopType.rowTitle);
       _expectStep(_painted(tester, _key('meme-row-subtitle')), LoopType.bodySm);
       _expectStep(_painted(tester, _key('meme-row-cap')), LoopType.figureMd);
       _expectStep(
@@ -159,12 +160,14 @@ void main() {
           ],
         ),
       );
-      _expectStep(_painted(tester, find.text('BNB').first), LoopType.title);
-      _expectStep(_painted(tester, find.text('WBNB')), LoopType.title);
+      // S377 · decision 0301 (11-05 改稿): the holdings name 16 / 500, the
+      // failed row with it.
+      _expectStep(_painted(tester, find.text('BNB').first), LoopType.rowTitle);
+      _expectStep(_painted(tester, find.text('WBNB')), LoopType.rowTitle);
       _expectStep(
         _painted(tester, _key('wallet-balance-amount-${healthy.assetId}')),
-        // S353c · decision 0280 (docs/58 §5.13): the amount is 14 / 600.
-        LoopType.figureSm,
+        // S377 · decision 0301 (docs/58 §5.13): the amount is 16 / 600.
+        LoopType.figure,
       );
       // S343 · decision 0271: this row's one grey fact is its price note.
       _expectStep(

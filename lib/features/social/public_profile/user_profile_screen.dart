@@ -940,7 +940,9 @@ class _HoldingsSection extends StatelessWidget {
       valueCaption: usd1 == null ? null : Text(usd1, style: _holdingCaption),
       // S353c · decision 0280 (docs/58 §5.13): the holdings row, 51 tall.
       height: LoopRowHeight.holdings,
-      valueStyle: LoopType.figureSm,
+      // 0301 (11-05 改稿, docs/58 §5.13): name 16 / 500, amount 16 / 600.
+      titleStyle: LoopType.rowTitle,
+      valueStyle: LoopType.figure,
       onTap: () => onOpen(Launch2Route.instance(item.instanceId)),
       semanticLabel: <String>[
         ticker,
@@ -977,7 +979,9 @@ class _HoldingsSection extends StatelessWidget {
       ),
       // S353c · decision 0280 (docs/58 §5.13): the holdings row, 51 tall.
       height: LoopRowHeight.holdings,
-      valueStyle: LoopType.figureSm,
+      // 0301 (11-05 改稿, docs/58 §5.13): name 16 / 500, amount 16 / 600.
+      titleStyle: LoopType.rowTitle,
+      valueStyle: LoopType.figure,
       onTap: open == null ? null : () => open(item.assetId),
       semanticLabel:
           '${item.symbol}${LoopL10n.current.common_listSeparator}${usd == null ? balance : loopFormatUsd(usd)}',

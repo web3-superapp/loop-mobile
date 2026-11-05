@@ -893,7 +893,7 @@ class Launch2BoardStage extends StatelessWidget {
 /// One board row (v3, decision 0229; S353b · decision 0279, docs/58 §5.4:
 /// 71 high plus its 1 px line, the face 44).
 ///
-/// Left: the face, the name (body1 17) with its ticker (caption 13), and
+/// Left: the face, the name (rowTitle 16) with its ticker (caption 12), and
 /// under it the bar with the share sold (or the stage's own caption line).
 /// Right: the price as the row's one figure (17 / 600) over the stage
 /// capsule; a row with no curve price yet keeps only the capsule. Before v3
@@ -1087,8 +1087,9 @@ class Launch2BoardRow extends ConsumerWidget {
   }
 }
 
-/// A board row's first line: the name (body1) and, when the line holds both,
-/// the ticker (caption) after it.
+/// A board row's first line: the name (rowTitle 16 / 500 since decision
+/// 0301, the Figma's 11-05 revision) and, when the line holds both, the
+/// ticker (caption 12 / 300) after it.
 class _BoardRowName extends StatelessWidget {
   const _BoardRowName({required this.name, this.ticker});
 
@@ -1103,7 +1104,7 @@ class _BoardRowName extends StatelessWidget {
       name,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: LoopType.body1,
+      style: LoopType.rowTitle,
     );
     final mark = ticker;
     if (mark == null) return nameText;
@@ -1123,7 +1124,7 @@ class _BoardRowName extends StatelessWidget {
         }
 
         final fits =
-            width(name, LoopType.body1) +
+            width(name, LoopType.rowTitle) +
                 _gap +
                 width(mark, LoopType.caption) <=
             box.maxWidth;

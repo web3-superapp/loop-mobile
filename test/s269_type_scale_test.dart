@@ -147,7 +147,8 @@ void main() {
     final row = _key('launch2-row-${_id(1)}');
     expect(
       _size(tester, find.descendant(of: row, matching: find.text('天才少年'))),
-      LoopType.body1.fontSize,
+      // S377 · decision 0301 (11-05 改稿): the token row's name is 16.
+      LoopType.rowTitle.fontSize,
     );
     // One primary figure on the right: the price at the figure step (16).
     expect(
@@ -180,7 +181,7 @@ void main() {
       ),
       28,
     );
-    // The community rows: body1 names, 80 high.
+    // The community rows: rowTitle names (16, decision 0301), 86 high.
     final firstId = '4b96a75e-6828-4a6b-8c1d-${0.toString().padLeft(12, '0')}';
     expect(
       _size(
@@ -190,7 +191,7 @@ void main() {
           matching: find.text('DeFi 早读会 0'),
         ),
       ),
-      LoopType.body1.fontSize,
+      LoopType.rowTitle.fontSize,
     );
     _expectNothingUnder12(tester, '广场');
     await drainS269(tester);

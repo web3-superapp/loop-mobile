@@ -1174,6 +1174,8 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
             size: SecondaryRowMetrics.tokenLogo,
           ),
           title: symbol,
+          // 0301 (11-05 改稿): the token row's name, 16 / 500.
+          titleStyle: LoopType.rowTitle,
           // S336 · decision 0265: without a quote the grey line is the
           // token's name (or its short address), never a reading state or a
           // reason; before the first answer it is blank.

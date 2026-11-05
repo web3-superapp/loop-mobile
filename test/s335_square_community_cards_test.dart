@@ -144,11 +144,11 @@ void main() {
       expect(tester.getRect(logo).left - first.left, 0);
       expect(tester.widget<CommunityLogo>(logo).radius, 12);
 
-      // Three lines: a body1 Chalk name (decision 0277: 14 / 500), a Text2
+      // Three lines: a rowTitle Chalk name (decision 0301: 16 / 500), a Text2
       // description, Text3 facts.
       final name = tester.widget<Text>(_key('square-community-name-${_id(0)}'));
-      expect(name.style?.fontSize, LoopType.body1.fontSize);
-      expect(name.style?.fontWeight, LoopType.body1.fontWeight);
+      expect(name.style?.fontSize, LoopType.rowTitle.fontSize);
+      expect(name.style?.fontWeight, LoopType.rowTitle.fontWeight);
       expect(name.style?.color, LoopColors.textPrimary);
       expect(name.maxLines, 1);
       final description = tester.widget<Text>(

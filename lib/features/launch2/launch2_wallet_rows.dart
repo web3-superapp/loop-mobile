@@ -239,7 +239,9 @@ class Launch2WalletRows extends ConsumerWidget {
       // S371 · decision 0297: it stands in 我的 holdings list beside the 51
       // holdings rows (0280 / 0295, docs/58 §5.13) — same height and figure.
       height: LoopRowHeight.holdings,
-      valueStyle: LoopType.figureSm,
+      // 0301 (11-05 改稿, docs/58 §5.13): name 16 / 500, amount 16 / 600.
+      titleStyle: LoopType.rowTitle,
+      valueStyle: LoopType.figure,
       onTap: () => onOpen(Launch2Route.instance(position.instanceId)),
       semanticLabel:
           '$title${LoopL10n.current.common_listSeparator}$line${LoopL10n.current.common_listSeparator}$value${LoopL10n.current.common_listSeparator}$caption',

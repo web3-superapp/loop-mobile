@@ -677,7 +677,8 @@ class SquareCommunityRow extends StatelessWidget {
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: LoopType.body1,
+                                // 0301 (11-05 改稿, docs/58 §5.8): 16 / 500.
+                                style: LoopType.rowTitle,
                               ),
                               if (described) ...<Widget>[
                                 const SizedBox(height: 1),

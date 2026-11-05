@@ -434,6 +434,8 @@ class Launch2InstanceTile extends ConsumerWidget {
         radius: memeCardLogoSize / 2,
       ),
       title: row.ticker,
+      // 0301 (11-05 改稿, docs/58 §5.4): the token row's name, 16 / 500.
+      titleStyle: LoopType.rowTitle,
       subtitle: row.name,
       value: value,
       valueKey: ValueKey<String>('launch2-row-value-${row.instanceId}'),

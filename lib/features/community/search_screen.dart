@@ -744,6 +744,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         padding: SecondaryRowMetrics.rowPadding,
         leading: _assetLogo(result.title, result.logoUrl),
         title: result.title,
+        // 0301 (11-05 改稿): the token / community row's name, 16 / 500.
+        titleStyle: LoopType.rowTitle,
         tag: LoopBadge(LoopL10n.current.common_token),
         subtitle: result.subtitle,
         trailing: Flexible(
@@ -776,6 +778,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           SecondaryRowMetrics.communityLogo,
         ),
         title: result.title,
+        // 0301 (11-05 改稿): the token / community row's name, 16 / 500.
+        titleStyle: LoopType.rowTitle,
         subtitle: result.memberCount == null
             ? null
             : LoopL10n.current.community_manageAsyncError(result.memberCount),

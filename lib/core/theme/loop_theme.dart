@@ -962,12 +962,13 @@ abstract final class LoopTypography {
 /// | `emptyMessage` | 12 / 400 / 18 | textSecondary | 空态的状态事实句（只在 showMessage 时画） |
 /// | `headlineSm` | 16 / 700 | textPrimary | 小区块标题（热门社区） |
 /// | `rowTitleLg` | 16 / 500 / 23 | textPrimary | 会话名 |
-/// | `figure` | 16 / 600 / 23 tnum | textPrimary | 行右主数字（价格） |
+/// | `rowTitle` | 16 / 500 / 22 | textPrimary | 代币 / 社区 / 持仓行主标题（0301 · 11-05 改稿） |
+/// | `figure` | 16 / 600 / 23 tnum | textPrimary | 行右主数字（价格）、持仓数量（0301） |
 /// | `button` | 16 / 600 | textPrimary | 发射、发帖、全宽 CTA |
 /// | `tab` / `tabIdle` | 16 / 600 / 20 · 16 / 500 / 20 | white · textSecondary | 分段 tab |
 /// | `body2` | 16 / 400 / 25 | textPrimary | 帖子正文、输入 |
-/// | `body1` | 14 / 500 / 22 | textPrimary | **行主标题** |
-/// | `figureSm` | 14 / 600 tnum | textSecondary | 持仓数量、引用卡名（主字在调用处给） |
+/// | `body1` | 14 / 500 / 22 | textPrimary | 榜单行主标题 |
+/// | `figureSm` | 14 / 600 tnum | textSecondary | 引用卡名（主字在调用处给） |
 /// | `label` | 14 / 500 / 20 | textTertiary | 快捷键字、功能行标题（主字在调用处给） |
 /// | `body2Sm` | 14 / 400 / 22 | textPrimary | 公告帖、总资产标签行 |
 /// | `searchHint` | 15 / 500 | textTertiary | 聊天搜索占位 |
@@ -1089,8 +1090,14 @@ abstract final class LoopType {
     height: 23 / 16,
   );
 
-  /// body1 · 14 / 500 on 22 — the one primary line of a list row: a token, a
-  /// community, a person on a board, a holding.
+  /// rowTitle · 16 / 500 on 22 — 0301：代币 / 社区 / 持仓行主标题 (the
+  /// Figma's 11-05 revision lifted the token, community and holdings rows'
+  /// name from 14 to 16; the line stays 22).
+  static final TextStyle rowTitle = _step(16, FontWeight.w500, height: 22 / 16);
+
+  /// body1 · 14 / 500 on 22 — the primary line of a board row (a person on
+  /// the power / community / invite boards) and every other 14 title. The
+  /// token, community and holdings rows moved to [rowTitle] (0301).
   static final TextStyle body1 = _step(14, FontWeight.w500, height: 22 / 14);
 
   /// body2 · 16 / 400 on 25 — prose, a post, a note, an input.
@@ -1273,7 +1280,8 @@ abstract final class LoopType {
     figures: true,
   );
 
-  /// figureSm · 14 / 600 tabular — a holding's amount, a quoted card's name
+  /// figureSm · 14 / 600 tabular — a quoted card's name (a holding's amount
+  /// moved to [figure], 0301)
   /// (Chalk at the call site). The step keeps its older textSecondary ink:
   /// most of its callers are a row's secondary figure.
   static final TextStyle figureSm = _step(

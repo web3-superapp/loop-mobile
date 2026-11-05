@@ -23,6 +23,7 @@ class LoopPersonRow extends StatelessWidget {
     this.semanticLabel,
     this.height = 64,
     this.titleColor,
+    this.titleStyle,
     this.divider = false,
     this.padding = const EdgeInsets.symmetric(
       horizontal: LoopSpacing.page,
@@ -58,6 +59,10 @@ class LoopPersonRow extends StatelessWidget {
   final double height;
   final Color? titleColor;
 
+  /// The name's step; `null` is [LoopType.title] 14 / 500. A token or
+  /// community result passes [LoopType.rowTitle] 16 / 500 (decision 0301).
+  final TextStyle? titleStyle;
+
   @override
   Widget build(BuildContext context) {
     final face = ConstrainedBox(
@@ -81,7 +86,7 @@ class LoopPersonRow extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           softWrap: false,
-                          style: LoopType.title.copyWith(
+                          style: (titleStyle ?? LoopType.title).copyWith(
                             color: titleColor ?? LoopColors.chalk,
                           ),
                         ),
