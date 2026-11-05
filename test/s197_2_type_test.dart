@@ -215,10 +215,14 @@ void main() {
   });
 
   group('M29 / M31 · tape headers and provenance', () {
-    testWidgets('the day header is a LoopLabel', (tester) async {
+    // S368 · decision 0292 (需求方 11-05 第 6 条): the day header is no
+    // longer a section title — a 13 Text3 caption.
+    testWidgets('the day header is a 13 Text3 caption', (tester) async {
       await _pump(tester, const WalletActivityDayHeader(label: '今天'));
-      expect(find.byType(LoopLabel), findsOneWidget);
-      _expectStep(_painted(tester, find.text('今天')), LoopType.sectionTitle);
+      expect(find.byType(LoopLabel), findsNothing);
+      final style = _painted(tester, find.text('今天'));
+      expect(style.fontSize, 13);
+      expect(style.color, LoopColors.text3);
     });
 
     // S278 · decision 0236: the footer prints only 「(i) 来源」 in captionSm;

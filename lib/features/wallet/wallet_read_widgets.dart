@@ -21,6 +21,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_flat.dart';
 import 'package:loop_mobile/widgets/loop_quote_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_tray_disclosure.dart';
@@ -451,15 +452,37 @@ List<({String key, String label, List<T> entries})> walletActivityDays<
 }
 
 /// The small header over one day of the tape.
+///
+/// S368 · decision 0292 (需求方 11-05 第 6 条「这个字太大了，这个信息不重
+/// 要」): the day is a 13 grey caption, no longer a section title — 16 above,
+/// 8 under, its left edge on the rows' own (a flat page's rows sit the block's
+/// 16 inside the page margin). 今天 and 昨天 alike.
 class WalletActivityDayHeader extends StatelessWidget {
   const WalletActivityDayHeader({required this.label, super.key});
 
   final String label;
 
+  /// The day's ink: docs/58 §9 caption step at 13, in Text3.
+  static final TextStyle style = LoopType.eyebrow.copyWith(
+    color: LoopColors.text3,
+  );
+
   @override
-  // R3 the section label (decision 0190 M29); a flat page draws it as its
-  // own section title. LoopLabel carries the header semantics itself.
-  Widget build(BuildContext context) => LoopLabel(label, followsLabel: true);
+  Widget build(BuildContext context) {
+    final left = LoopFlat.of(context)
+        ? LoopSpacing.page + LoopSpacing.card
+        : LoopSpacing.page;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(left, 16, LoopSpacing.page, 8),
+      child: Semantics(
+        header: true,
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(label, style: style),
+        ),
+      ),
+    );
+  }
 }
 
 /// The snapshot footer every balance block carries: all figures come from one

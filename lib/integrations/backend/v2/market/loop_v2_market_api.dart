@@ -90,10 +90,12 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
   static const smartMoneyPath = '/v2/market/smart-money';
   static const promotionsPath = '/v2/intel/promotions';
 
-  /// The four in-app locations a promotion may open (decision 0100). The
-  /// server refuses any other at start-up; the client refuses it again.
+  /// The in-app locations a promotion may open (decision 0100). The server
+  /// refuses any other at start-up; the client refuses it again. S368 ·
+  /// decision 0292 adds the one board page `/mining/rank` (需求方 11-05 第 9
+  /// 条) — that path only, not a wider shape.
   static final RegExp _promotionDeeplinkPattern = RegExp(
-    r'^(/intel|/square|/meme|/community/profile\?id=[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$',
+    r'^(/intel|/square|/meme|/mining/rank|/community/profile\?id=[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$',
   );
   static final RegExp _httpsPattern = RegExp(r'^https://\S+$');
   static final RegExp _logoUrlPattern = RegExp(r'^https?://\S+$');

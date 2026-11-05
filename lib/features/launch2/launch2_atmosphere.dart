@@ -181,6 +181,15 @@ class Launch2TradeTicker extends ConsumerStatefulWidget {
   /// What the right end fades into before the chevron (Figma `#0e0f10`).
   static const Color fade = LoopColors.searchBg;
 
+  /// S368 · decision 0292: the chevron's own opaque width at the right end.
+  static const double allWidth = LoopTouch.minimum;
+
+  /// S368 · decision 0292: the rail stops this far before the chevron.
+  static const double allGap = 8;
+
+  /// S368 · decision 0292: the rail fades out over its last 16.
+  static const double railFade = 16;
+
   @override
   ConsumerState<Launch2TradeTicker> createState() => _Launch2TradeTickerState();
 }
@@ -314,6 +323,15 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
                               : _rail(items, now),
                         ),
                       ),
+                      // S368 · decision 0292: the rail is cut 8 before the
+                      // chevron instead of running on under it.
+                      if (items.isNotEmpty)
+                        const SizedBox(
+                          width:
+                              Launch2TradeTicker.allWidth +
+                              1 +
+                              Launch2TradeTicker.allGap,
+                        ),
                     ],
                   ),
                 ),
@@ -335,26 +353,22 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
                     onTap: widget.onOpenAll,
                     scale: false,
                     child: Center(
+                      // S368 · decision 0292: an opaque ground of its own,
+                      // no see-through gradient over the rail.
                       child: Container(
-                        height: Launch2TradeTicker.bandHeight - 2,
-                        constraints: const BoxConstraints(
-                          minWidth: LoopTouch.minimum,
+                        key: const ValueKey<String>(
+                          'launch2-ticker-all-ground',
                         ),
+                        height: Launch2TradeTicker.bandHeight - 2,
+                        width: Launch2TradeTicker.allWidth,
                         margin: const EdgeInsets.only(right: 1),
-                        padding: const EdgeInsets.fromLTRB(22, 0, 12, 0),
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.horizontal(
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.horizontal(
                             right: Radius.circular(LoopRadius.chipValue),
                           ),
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Launch2TradeTicker.fade.withValues(alpha: 0),
-                              Launch2TradeTicker.fade,
-                            ],
-                            stops: const <double>[0, 0.55],
-                          ),
+                          color: Launch2TradeTicker.fade,
                         ),
-                        alignment: Alignment.centerRight,
+                        alignment: Alignment.center,
                         child: const LoopIcon(
                           'chevron',
                           size: 16,
@@ -394,11 +408,19 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
           for (var i = 1; i < copies; i++) ExcludeSemantics(child: set()),
         ],
       );
+      // S368 · decision 0292: soft at both ends — 18 in from the left, the
+      // last 16 before the chevron's gap on the right.
       return ShaderMask(
+        key: const ValueKey<String>('launch2-ticker-rail-mask'),
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => LinearGradient(
-          colors: const <Color>[Color(0x00000000), Color(0xFF000000)],
-          stops: <double>[0, (18 / bounds.width).clamp(0.0, 1.0)],
+          colors: const <Color>[
+            Color(0x00000000),
+            Color(0xFF000000),
+            Color(0xFF000000),
+            Color(0x00000000),
+          ],
+          stops: launch2TickerRailStops(bounds.width),
         ).createShader(bounds),
         child: ClipRect(
           child: OverflowBox(
@@ -419,6 +441,17 @@ class _Launch2TradeTickerState extends ConsumerState<Launch2TradeTicker>
       );
     },
   );
+}
+
+/// The rail mask's stops for a rail [width] wide: clear → solid over the
+/// first 18, solid → clear over the last [Launch2TradeTicker.railFade]
+/// (S368 · decision 0292).
+@visibleForTesting
+List<double> launch2TickerRailStops(double width) {
+  if (width <= 0) return const <double>[0, 0, 1, 1];
+  final left = (18 / width).clamp(0.0, 1.0);
+  final right = (1 - Launch2TradeTicker.railFade / width).clamp(left, 1.0);
+  return <double>[0, left, right, 1];
 }
 
 /// 「● 实时」 fixed at the band's left end (docs/58 §5.5): a 5 Purple dot
