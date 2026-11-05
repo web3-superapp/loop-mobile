@@ -167,12 +167,18 @@ class _BetaFeedbackEntryState extends ConsumerState<BetaFeedbackEntry>
         );
         // The tap is the key's own pressable; the detector around it only
         // moves it.
-        final key = Semantics(
-          button: true,
-          label: BetaFeedbackEntry.label,
-          excludeSemantics: true,
-          onTap: _open,
-          child: LoopPressable(onTap: _open, child: const _BetaFeedbackKey()),
+        // S361: the entry sits beside the Scaffold, outside any Material, so
+        // without one of its own the label would inherit MaterialApp's
+        // fallback text style (a double underline on the device).
+        final key = Material(
+          type: MaterialType.transparency,
+          child: Semantics(
+            button: true,
+            label: BetaFeedbackEntry.label,
+            excludeSemantics: true,
+            onTap: _open,
+            child: LoopPressable(onTap: _open, child: const _BetaFeedbackKey()),
+          ),
         );
         return Stack(
           clipBehavior: Clip.none,
