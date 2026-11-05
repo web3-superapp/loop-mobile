@@ -174,7 +174,12 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
           : null,
       body: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
+          ),
           child: LoopSurfaceCard(
             key: const ValueKey<String>('approval-guard-request'),
             child: Column(
@@ -218,7 +223,12 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
         if (intent == null) ...<Widget>[
           LoopLabel(context.l10n.wallet_approvalScreensLoopLabel),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              12,
+            ),
             child: LoopSurfaceCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -337,7 +347,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
         children: <Widget>[
           LoopSheetHeading(context.l10n.wallet_approvalScreensLoopSheetHeading),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -449,7 +459,12 @@ class _DecodedCallCard extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        12,
+      ),
       child: LoopSurfaceCard(
         key: const ValueKey<String>('approval-decoded-call'),
         child: Column(
@@ -762,7 +777,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         children: <Widget>[
           LoopSheetHeading('${row.symbol} · ${row.spender.checksumAddress}'),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

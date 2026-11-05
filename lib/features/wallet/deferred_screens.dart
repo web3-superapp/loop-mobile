@@ -182,7 +182,12 @@ class BridgeScreen extends ConsumerWidget {
           figure: loopFigureDash,
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            6,
+            LoopSpacing.page,
+            14,
+          ),
           child: LoopButton(
             key: const ValueKey<String>('bridge-start'),
             label: context.l10n.wallet_deferredScreensBridgeStartLabel,
@@ -202,7 +207,12 @@ class BridgeScreen extends ConsumerWidget {
           ),
         if (onOpenStatus != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              0,
+            ),
             child: LoopButton(
               key: const ValueKey<String>('bridge-open-status'),
               label: context.l10n.wallet_deferredScreensBridgeOpenStatusLabel,
@@ -295,7 +305,12 @@ class BridgeStatusScreen extends ConsumerWidget {
         ),
         if (onOpenWallet != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              6,
+              LoopSpacing.page,
+              14,
+            ),
             child: LoopButton(
               key: const ValueKey<String>('bridge-status-back-to-wallet'),
               label: context

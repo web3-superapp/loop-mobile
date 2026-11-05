@@ -622,7 +622,12 @@ class _UnknownCode extends StatelessWidget {
         body: context.l10n.scan_unknownBody,
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          0,
+          LoopSpacing.page,
+          12,
+        ),
         child: LoopSurfaceCard(
           child: SelectableText(
             text,

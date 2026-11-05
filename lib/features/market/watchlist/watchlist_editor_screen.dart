@@ -336,7 +336,12 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             )
           else
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                12,
+              ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -627,11 +632,18 @@ class _ReorderableWatchlist extends StatelessWidget {
                 type: MaterialType.transparency,
                 child: InkWell(
                   onTap: item.isReadable ? () => onOpen(item) : null,
+                  // Decision 0295 (类推 持仓行): 51 high, 6 above and
+                  // below, the asset's mark at 36, the block's 16 inset.
                   child: Container(
                     constraints: const BoxConstraints(
-                      minHeight: LoopTouch.minimum,
+                      minHeight: LoopRowHeight.holdings,
                     ),
-                    padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+                    padding: const EdgeInsets.fromLTRB(
+                      LoopSpacing.card,
+                      6,
+                      LoopSpacing.card,
+                      6,
+                    ),
                     decoration: BoxDecoration(
                       border: last
                           ? null
@@ -663,7 +675,7 @@ class _ReorderableWatchlist extends StatelessWidget {
                           assetSymbol: item.displayName,
                           logoUrl: item.logoUrl,
                           fallbackMonogram: item.displayName,
-                          size: 32,
+                          size: LoopRowHeight.holdingsAvatar,
                         ),
                         const SizedBox(width: 10),
                         Expanded(

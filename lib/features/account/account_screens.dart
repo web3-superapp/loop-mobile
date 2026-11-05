@@ -1452,7 +1452,7 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
           ),
           if (widget.loading)
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: LoopSpacing.page),
               child: LoopSkeleton(
                 key: ValueKey<String>('wallet-recovery-loading'),
                 type: LoopSkeletonType.list,
@@ -1683,7 +1683,12 @@ class SecuritySetupScreen extends StatelessWidget {
           ),
           Padding(
             key: const ValueKey<String>('security-biometric-fallback'),
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              14,
+              LoopSpacing.page,
+              14,
+            ),
             child: Text(
               securityBiometricFallbackLine,
               style: LoopType.captionSm,

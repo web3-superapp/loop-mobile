@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -38,7 +39,12 @@ class LoopSignOutButton extends StatefulWidget {
   const LoopSignOutButton({
     required this.onSignOut,
     super.key,
-    this.padding = const EdgeInsets.fromLTRB(16, 20, 16, 0),
+    this.padding = const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      20,
+      LoopSpacing.page,
+      0,
+    ),
   });
 
   final Future<void> Function() onSignOut;

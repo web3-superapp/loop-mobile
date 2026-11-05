@@ -231,7 +231,12 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
           // pressed state, grey value), and this one line says why.
           Padding(
             key: const ValueKey<String>('settings-fixed-values-note'),
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              4,
+              LoopSpacing.page,
+              0,
+            ),
             child: Text(
               settings == null
                   ? context.l10n.profileSettings_fixedThemeNote

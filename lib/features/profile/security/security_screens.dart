@@ -1019,7 +1019,12 @@ class _DeviceManagementScreenState
             ),
           LoopLabel(context.l10n.profileSecurity_screensLoopLabel6),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              0,
+            ),
             child: LoopButton(
               key: const ValueKey<String>('devices-revoke-all'),
               label: context.l10n.profileSecurity_screensDevicesRevokeAllLabel,

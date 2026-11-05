@@ -1151,7 +1151,7 @@ class MiningClaimGasSheet extends StatelessWidget {
               : context.l10n.miningRewards_screenS7,
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
           child: Text(
             swapAvailable
                 ? context.l10n.miningRewards_screenBuild(from, need, to)
@@ -1161,7 +1161,7 @@ class MiningClaimGasSheet extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
           child: LoopButton(
             key: const ValueKey<String>('mining-claim-gas-go'),
             label: swapAvailable
@@ -1174,7 +1174,7 @@ class MiningClaimGasSheet extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
           child: LoopButton(
             key: const ValueKey<String>('mining-claim-gas-cancel'),
             label: context.l10n.common_cancel,
@@ -1217,7 +1217,7 @@ class _TrackCard extends StatelessWidget {
 
 Widget _trackPending(String key) => Padding(
   key: ValueKey<String>(key),
-  padding: const EdgeInsets.symmetric(horizontal: 16),
+  padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
   child: Text(
     // Decision 0149: the hero names whose hour (「你有算力的小时」); the
     // track lines no longer repeat 「首个小时」 under it.
@@ -1374,8 +1374,11 @@ class MiningInviteTable extends StatelessWidget {
   /// read whole at 390 wide.
   static const List<int> _flex = <int>[9, 7, 10, 10, 10];
 
-  /// The head row's step: 12, and a second line before an ellipsis.
-  static final TextStyle _headStyle = LoopType.kicker.copyWith(fontSize: 12);
+  /// The head row's step: `meta` 12 / 500 in the second ink (decision 0295,
+  /// docs/58 §9.2), and a second line before an ellipsis.
+  static final TextStyle _headStyle = LoopType.meta.copyWith(
+    color: LoopColors.text2,
+  );
 
   Widget _row(
     List<String> cells, {

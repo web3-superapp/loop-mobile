@@ -317,7 +317,7 @@ class _ImageTile extends StatelessWidget {
       fit: StackFit.expand,
       children: <Widget>[
         ClipRRect(
-          borderRadius: LoopRadius.tile,
+          borderRadius: LoopRadius.card,
           child: Image.memory(
             image.bytes,
             fit: BoxFit.cover,
@@ -393,7 +393,7 @@ class _AddTile extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: LoopColors.card,
-              borderRadius: LoopRadius.tile,
+              borderRadius: LoopRadius.card,
               border: Border.all(color: LoopColors.line),
             ),
             child: Column(

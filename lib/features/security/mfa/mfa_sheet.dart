@@ -78,7 +78,12 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
     final controller = ref.read(loopMfaProvider.notifier);
     final failure = state.failure;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,

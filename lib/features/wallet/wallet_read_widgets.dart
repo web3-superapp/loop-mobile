@@ -543,7 +543,12 @@ class WalletNetWorthCard extends StatelessWidget {
         if (compact) {
           return Padding(
             key: const ValueKey<String>('wallet-networth-card'),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              14,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
@@ -713,6 +718,12 @@ Widget walletLaunchUnavailableLine(LoopLaunchChainBalance launchChain) =>
       reasonCode: launchChain.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
     );
 
+/// The holdings row's caption under the figure: `caption` 12 / 300 in the
+/// second ink (decision 0280 / 0295).
+final TextStyle walletHoldingCaption = LoopType.caption.copyWith(
+  color: LoopColors.textSecondary,
+);
+
 /// The Launch chain's native row: the same OKX row as the main assets
 /// (decision 0123), no pill — a testnet balance has no price and no 24h
 /// move — 手续费保留 in the grey line and 可动用 under the figure.
@@ -725,7 +736,7 @@ Widget walletLaunchNativeRow(
   leading: LoopTokenLogo(
     assetSymbol: native.symbol,
     fallbackMonogram: loopDisplaySymbol(native.symbol),
-    size: 36,
+    size: LoopRowHeight.holdingsAvatar,
   ),
   title: loopDisplaySymbol(native.symbol),
   titleTrailing: launchChain.isTestnet ? const LoopTestnetBadge() : null,
@@ -738,7 +749,12 @@ Widget walletLaunchNativeRow(
     LoopL10n.current.wallet_readBuild(
       hidden ? walletMaskedFigure : loopFormatDecimal(native.spendableBalance),
     ),
+    style: walletHoldingCaption,
   ),
+  // Decision 0295: it stands in 我的 holdings list beside the 51 holdings
+  // row (0280, docs/58 §5.13), so it takes the same height and figure.
+  height: LoopRowHeight.holdings,
+  valueStyle: LoopType.figureSm,
   semanticLabel:
       '$walletLaunchChainLabel ${loopDisplaySymbol(native.symbol)} '
       '${hidden ? walletMaskedFigure : loopFormatDecimal(native.displayBalance)}',
@@ -766,7 +782,7 @@ Widget walletLaunchUsd1Row(
     leading: LoopTokenLogo(
       assetSymbol: 'USD1',
       fallbackMonogram: usd1Symbol,
-      size: 36,
+      size: LoopRowHeight.holdingsAvatar,
     ),
     title: usd1Symbol,
     titleTrailing: launchChain.isTestnet ? const LoopTestnetBadge() : null,
@@ -777,7 +793,10 @@ Widget walletLaunchUsd1Row(
         : Text(
             usd1Reason,
             key: const ValueKey<String>('wallet-launch-chain-usd1-reason'),
+            style: walletHoldingCaption,
           ),
+    height: LoopRowHeight.holdings,
+    valueStyle: LoopType.figureSm,
     semanticLabel: <String>[
       '$walletLaunchChainLabel $usd1Symbol $usd1Figure',
       ?usd1Reason,
@@ -1056,7 +1075,12 @@ class WalletReceiveSkeleton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+              padding: EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                4,
+                LoopSpacing.page,
+                16,
+              ),
               child: Center(
                 child: LoopSkeletonBlock(
                   width: 156,
@@ -1070,11 +1094,16 @@ class WalletReceiveSkeleton extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: LoopSpacing.page),
               child: LoopSkeletonBlock(height: 58, radius: 14),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 20, 16, 16),
+              padding: EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                20,
+                LoopSpacing.page,
+                16,
+              ),
               child: Row(
                 children: <Widget>[
                   Expanded(

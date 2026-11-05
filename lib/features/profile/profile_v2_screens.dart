@@ -1257,7 +1257,7 @@ class _ProfileStateBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (phase) {
       LoopResourcePhase.loading => const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: LoopSkeleton(
           key: ValueKey<String>('profile-loading'),
           type: LoopSkeletonType.detail,
@@ -1453,7 +1453,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               },
             Padding(
               key: const ValueKey<String>('profile-avatar-picker'),
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                20,
+                LoopSpacing.page,
+                8,
+              ),
               child: LoopAvatarEditor(
                 avatarRef: state.draft.avatarRef,
                 alias: state.draft.alias,
@@ -1949,7 +1954,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               key: ValueKey<String>('privacy-visibility-note'),
               label: context.l10n.common_about,
               title: context.l10n.profile_screensPrivacyVisibilityNoteTitle,
-              margin: EdgeInsets.fromLTRB(16, 4, 12, 14),
+              margin: EdgeInsets.fromLTRB(LoopSpacing.page, 4, 12, 14),
               text: context.l10n.profile_screensPrivacyVisibilityNoteText,
             ),
           ],
@@ -2016,7 +2021,7 @@ class _PrivacyStateBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (phase) {
       LoopResourcePhase.loading => const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: LoopSpacing.page),
         child: LoopSkeleton(
           key: ValueKey<String>('privacy-loading'),
           type: LoopSkeletonType.list,

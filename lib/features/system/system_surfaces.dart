@@ -433,7 +433,7 @@ class LoopConnectivityBanner extends StatelessWidget {
           ),
           child: Container(
             constraints: const BoxConstraints(minHeight: 48),
-            padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+            padding: const EdgeInsets.fromLTRB(LoopSpacing.page, 8, 8, 8),
             decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: LoopColors.line2)),
             ),
@@ -491,7 +491,12 @@ class LoopGlobalNotice extends StatelessWidget {
     };
     final actionLabel = feedback.presentationActionLabel;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        14,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -664,7 +669,12 @@ class _CenteredStateBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        14,
+      ),
       child: Semantics(
         container: true,
         child: DecoratedBox(
@@ -1011,7 +1021,12 @@ class _OfflinePage extends StatelessWidget {
           )
         else if (onRetry != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              14,
+            ),
             child: LoopButton(
               label: context.l10n.common_retry,
               block: true,
@@ -1619,7 +1634,12 @@ class _PermissionPage extends StatelessWidget {
           ),
           if (onNotNow != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                14,
+              ),
               child: LoopButton(
                 label: context.l10n.system_surfacesLabel13,
                 block: true,
@@ -1700,7 +1720,12 @@ class _ToastStatesPage extends StatelessWidget {
         for (final (label, kind, message) in samples) ...<Widget>[
           LoopLabel(label, followsLabel: true),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              0,
+            ),
             child: LoopButton(
               key: ValueKey<String>('toast-trigger-${kind.name}'),
               label: context.l10n.system_surfacesLabel14(label),
@@ -1713,7 +1738,7 @@ class _ToastStatesPage extends StatelessWidget {
         ],
         LoopLabel(context.l10n.system_surfacesLoopLabel6, followsLabel: true),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
           child: Column(
             children: <Widget>[
               for (final (_, kind, message) in samples)
@@ -1913,7 +1938,12 @@ class _SignSheetStatesPage extends StatelessWidget {
           LoopLabel(item.label, followsLabel: true),
           if (item.state == LoopSignSheetState.pending)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page,
+                0,
+                LoopSpacing.page,
+                14,
+              ),
               child: LoopButton(
                 key: const ValueKey<String>('sign-sheet-trigger-pending'),
                 label: context.l10n.system_surfacesSignSheetTriggerPendingLabel,

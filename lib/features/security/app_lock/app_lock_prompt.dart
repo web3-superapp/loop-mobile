@@ -212,14 +212,24 @@ class _LoopAppLockPromptSheetState
       children: <Widget>[
         LoopSheetHeading(context.l10n.securityAppLock_promptLoopSheetHeading),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            16,
+          ),
           child: Text(loopAppLockPromptBody, style: LoopType.bodySm),
         ),
         if (outcome != null &&
             outcome != LoopDeviceAuthOutcome.succeeded &&
             !lock.busy)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              12,
+            ),
             child: Semantics(
               liveRegion: true,
               child: Text(
@@ -230,7 +240,12 @@ class _LoopAppLockPromptSheetState
             ),
           ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            10,
+          ),
           child: LoopButton(
             key: const ValueKey<String>('app-lock-prompt-enable'),
             label: lock.busy
@@ -242,7 +257,12 @@ class _LoopAppLockPromptSheetState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            16,
+          ),
           child: LoopButton(
             key: const ValueKey<String>('app-lock-prompt-later'),
             label: context.l10n.securityAppLock_promptAppLockPromptLaterLabel,

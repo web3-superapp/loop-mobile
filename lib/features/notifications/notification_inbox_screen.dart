@@ -453,6 +453,14 @@ LoopNotificationPresentation loopNotificationPresentation(
 /// One row: an 8 dp unread dot in its own column (kept empty once read so the
 /// glyphs line up), the kind's glyph, the title over one line of body, and
 /// the time on the right.
+/// A notification row's height — the chat row's 67 (decision 0295).
+const double notificationRowHeight = LoopRowHeight.chat;
+
+/// The 1 px white 5 % line under a notification row (decision 0295).
+const Key notificationRowDividerKey = ValueKey<String>(
+  'notification-row-divider',
+);
+
 class _NotificationRow extends StatelessWidget {
   const _NotificationRow({
     required this.entry,
@@ -471,8 +479,10 @@ class _NotificationRow extends StatelessWidget {
     final unread = entry.isUnread;
     final id = entry.notificationId;
     final time = loopRelativeTime(entry.createdAt, now: now);
-    final row = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 68),
+    // Decision 0295 (类推 会话行, docs/58 §9.4): 67 high, a 1 px white 5 %
+    // line under the row across the content width.
+    final line = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: notificationRowHeight - 1),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 10, LoopSpacing.page, 10),
         child: Row(
@@ -540,6 +550,21 @@ class _NotificationRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+    final row = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        line,
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+          child: SizedBox(
+            key: notificationRowDividerKey,
+            height: 1,
+            child: ColoredBox(color: LoopColors.divider),
+          ),
+        ),
+      ],
     );
     return Semantics(
       button: true,

@@ -920,7 +920,12 @@ class _FormulaVersionBlock extends StatelessWidget {
       children: <Widget>[
         LoopRecordGroup(key: ValueKey<String>('$keyPrefix-rows'), rows: rows),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            8,
+            LoopSpacing.page,
+            0,
+          ),
           child: Text(
             <String>[
               miningFormulaStatusLabel(version.status),

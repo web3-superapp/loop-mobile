@@ -91,7 +91,12 @@ class PrivyLoginScreen extends ConsumerWidget {
                   children: <Widget>[
                     // `.identity-head`: mark, title, one line of copy.
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 56, 16, 36),
+                      padding: const EdgeInsets.fromLTRB(
+                        LoopSpacing.page,
+                        56,
+                        LoopSpacing.page,
+                        36,
+                      ),
                       child: Semantics(
                         header: true,
                         container: true,
@@ -416,7 +421,8 @@ class AuthMethodButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool primary;
 
-  static const double height = 52;
+  /// The full-width CTA's 48 (decision 0295, docs/58 §9.4 按钮).
+  static const double height = LoopTouch.primaryButton;
 
   @override
   Widget build(BuildContext context) {
@@ -476,10 +482,7 @@ class AuthMethodButton extends StatelessWidget {
                         busy ? '$label…' : label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.withWeight(
-                          LoopType.bodyLg,
-                          FontWeight.w700,
-                        ).copyWith(color: foreground),
+                        style: LoopType.button.copyWith(color: foreground),
                       ),
                     ),
                   ],

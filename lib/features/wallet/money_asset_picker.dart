@@ -146,7 +146,12 @@ class _MoneyAssetPickerSheetState extends State<MoneyAssetPickerSheet> {
           widget.title ?? context.l10n.wallet_moneyAssetPickerTitle,
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: TextField(
             key: ValueKey<String>('${widget.rowKeyPrefix}-search'),
             controller: _query,

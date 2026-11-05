@@ -458,7 +458,12 @@ class _LoopStepUpThresholdSheetState
       children: <Widget>[
         LoopSheetHeading(context.l10n.securityStepUp_widgetsLoopSheetHeading),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            12,
+          ),
           child: Text(
             context.l10n.securityStepUp_widgetsBuild2,
             style: LoopType.bodySm,
@@ -488,7 +493,12 @@ class _LoopStepUpThresholdSheetState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            16,
+          ),
           // Decision 0234: a preset fills the field; the keyboard stays.
           child: LoopKeepsKeyboard(
             child: Wrap(
@@ -507,7 +517,12 @@ class _LoopStepUpThresholdSheetState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            16,
+          ),
           child: LoopButton(
             key: const ValueKey<String>('step-up-threshold-save'),
             label: _saving
