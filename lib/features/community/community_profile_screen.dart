@@ -23,6 +23,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_voice_room_open.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -1096,7 +1097,11 @@ class _AiEntryRow extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 12),
       child: LoopPersonRow(
         key: const ValueKey<String>('community-profile-open-ai'),
-        leading: const LoopEntryIcon('ai'),
+        height: SecondaryRowMetrics.functionRow,
+        leading: const LoopEntryIcon(
+          'ai',
+          size: SecondaryRowMetrics.functionGlyph,
+        ),
         title: context.l10n.community_profileCommunityProfileOpenAiTitle,
         subtitle: capability.isAvailable
             ? context.l10n.community_profileCommunityProfileOpenAiSubtitle
@@ -1157,10 +1162,12 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
         LoopLabel(context.l10n.community_manageCommunityManageBoundAssetTitle),
         LoopQuoteRow(
           key: const ValueKey<String>('community-bound-asset'),
+          // S370b · decision 0294: the token row (docs/58 §3.2), 71 / 44.
+          height: SecondaryRowMetrics.tokenRow,
           leading: LoopTokenLogo(
             assetSymbol: symbol,
             logoUrl: detail?.logoUrl,
-            size: 36,
+            size: SecondaryRowMetrics.tokenLogo,
           ),
           title: symbol,
           // S336 · decision 0265: without a quote the grey line is the
@@ -1225,7 +1232,11 @@ class _MembershipFooter extends StatelessWidget {
         padding: const EdgeInsets.only(top: 16),
         child: LoopPersonRow(
           key: const ValueKey<String>('community-owner-cannot-leave'),
-          leading: const LoopEntryIcon('close'),
+          height: SecondaryRowMetrics.functionRow,
+          leading: const LoopEntryIcon(
+            'close',
+            size: SecondaryRowMetrics.functionGlyph,
+          ),
           title: context.l10n.community_profileCommunityOwnerCannotLeaveTitle,
           titleColor: LoopColors.text3,
           semanticLabel: context
@@ -1238,7 +1249,11 @@ class _MembershipFooter extends StatelessWidget {
       padding: const EdgeInsets.only(top: 16),
       child: LoopPersonRow(
         key: const ValueKey<String>('community-leave-action'),
-        leading: const LoopEntryIcon('close'),
+        height: SecondaryRowMetrics.functionRow,
+        leading: const LoopEntryIcon(
+          'close',
+          size: SecondaryRowMetrics.functionGlyph,
+        ),
         title: context.l10n.community_profileCommunityOwnerCannotLeaveTitle,
         titleColor: LoopColors.fall,
         onTap: busy ? null : onLeave,

@@ -100,10 +100,7 @@ class ChatTokenCardView extends StatelessWidget {
                   Text(
                     kicker,
                     key: kickerKey,
-                    style: LoopType.captionSm.copyWith(
-                      color: LoopColors.text3,
-                      fontSize: 12,
-                    ),
+                    style: LoopType.captionSm.copyWith(color: LoopColors.text3),
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -307,10 +304,7 @@ class _Facts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final quiet = LoopType.captionSm.copyWith(
-      color: LoopColors.text3,
-      fontSize: 12,
-    );
+    final quiet = LoopType.captionSm.copyWith(color: LoopColors.text3);
     return Column(
       key: const ValueKey<String>('loop-token-card-risk-facts'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,10 +332,10 @@ class _Facts extends StatelessWidget {
                     children: <InlineSpan>[
                       TextSpan(
                         text: fact.fact,
-                        style: LoopTypography.withWeight(
-                          LoopType.captionSm,
-                          FontWeight.w600,
-                        ).copyWith(color: LoopColors.chalk, fontSize: 13),
+                        // S370b · decision 0294: the 13 / 600 figure step.
+                        style: LoopType.figureXs.copyWith(
+                          color: LoopColors.chalk,
+                        ),
                       ),
                       TextSpan(
                         text: context.l10n.chatTokenCard_viewText(
@@ -387,7 +381,7 @@ class _ChartBlock extends StatelessWidget {
             style: LoopTypography.withWeight(
               LoopType.captionSm,
               FontWeight.w600,
-            ).copyWith(color: LoopColors.text2, fontSize: 12),
+            ).copyWith(color: LoopColors.text2),
           ),
         const SizedBox(height: 6),
         Expanded(child: model.chart!),
@@ -417,10 +411,7 @@ class _Metrics extends StatelessWidget {
             children: <Widget>[
               Text(
                 metrics[index].label,
-                style: LoopType.captionSm.copyWith(
-                  color: LoopColors.text3,
-                  fontSize: 12,
-                ),
+                style: LoopType.captionSm.copyWith(color: LoopColors.text3),
               ),
               const SizedBox(height: 2),
               FittedBox(
@@ -501,10 +492,7 @@ class _Footnotes extends StatelessWidget {
               for (final line in lines)
                 Text(
                   line,
-                  style: LoopType.captionSm.copyWith(
-                    color: LoopColors.text3,
-                    fontSize: 12,
-                  ),
+                  style: LoopType.captionSm.copyWith(color: LoopColors.text3),
                 ),
             ],
           ),

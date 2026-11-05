@@ -160,7 +160,12 @@ class VoiceRoomHostStage extends StatelessWidget {
         children: <Widget>[
           Padding(
             key: const ValueKey<String>('voiceroom-host'),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              20,
+              LoopSpacing.page,
+              4,
+            ),
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -390,7 +395,12 @@ class _GridRows extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+    padding: const EdgeInsets.fromLTRB(
+      LoopSpacing.page,
+      4,
+      LoopSpacing.page,
+      0,
+    ),
     child: LayoutBuilder(
       builder: (context, constraints) {
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
@@ -980,7 +990,12 @@ Future<void> showVoiceRoomInfoSheet(
       children: <Widget>[
         LoopSheetHeading(voiceRoomTitle(room.communityName, title: room.title)),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

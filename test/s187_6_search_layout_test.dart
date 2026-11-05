@@ -493,7 +493,8 @@ void main() {
         find.descendant(of: row, matching: find.byType(LoopTokenLogo)),
       );
       expect(logo.size, 44);
-      expect(logo.cornerRadius, LoopRadius.tileValue);
+      // S370b · decision 0294: the token row's logo is round (docs/58 §3.3).
+      expect(logo.cornerRadius, isNull);
       final badge = tester.widget<LoopBadge>(
         find.descendant(of: row, matching: find.byType(LoopBadge)),
       );

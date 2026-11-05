@@ -697,8 +697,10 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
         context,
         target,
         faces: ref.watch(communityFacesProvider),
-        size: 44,
-        radius: 15,
+        // S370b · decision 0294: the conversation row's 48 face (docs/58
+        // §3.3), the inbox row's corner.
+        size: chatListAvatarSize,
+        radius: chatListAvatarRadius,
       ),
       title: target.label,
       subtitle: target.detail,

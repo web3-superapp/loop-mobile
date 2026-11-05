@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -298,10 +299,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     final members = communityMemberCountLabel(community.memberCount);
     return LoopRecordRow(
       key: ValueKey<String>('community-joined-${community.communityId}'),
+      // S370b · decision 0294: the community row's 56 square logo at r12.
       leading: CommunityLogo(
         identity: community.communityId,
         name: community.name,
         logoRef: community.logoRef,
+        size: SecondaryRowMetrics.communityLogo,
+        radius: SecondaryRowMetrics.communityLogoRadius,
       ),
       title: community.name,
       subtitle: accent == null ? members : '$members · $accent',

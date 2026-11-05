@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_voice_room_open.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 import 'package:loop_mobile/features/social/qr/loop_qr_card.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
@@ -101,12 +102,14 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             ? null
             : LoopPersonRow(
                 key: const ValueKey<String>('community-manage-header'),
-                height: 72,
+                // S370b · decision 0294: the community row (docs/58 §3.2).
+                height: SecondaryRowMetrics.communityRow,
                 leading: CommunityLogo(
                   identity: detail.community.communityId,
                   name: detail.community.name,
                   logoRef: detail.community.logoRef,
-                  size: 48,
+                  size: SecondaryRowMetrics.communityLogo,
+                  radius: SecondaryRowMetrics.communityLogoRadius,
                 ),
                 title: detail.community.name,
                 tag: viewer?.membership == null
@@ -192,7 +195,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         children: <Widget>[
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-edit-profile'),
-            leading: const LoopEntryIcon('id'),
+            height: SecondaryRowMetrics.functionRow,
+            leading: LoopEntryIcon(
+              'id',
+              size: SecondaryRowMetrics.functionGlyph,
+            ),
             title: context.l10n.community_manageCommunityManageEditProfileTitle,
             subtitle:
                 community.description ??
@@ -206,7 +213,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           if (isOwner)
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-bound-asset'),
-              leading: const LoopEntryIcon('wallet'),
+              height: SecondaryRowMetrics.functionRow,
+              leading: LoopEntryIcon(
+                'wallet',
+                size: SecondaryRowMetrics.functionGlyph,
+              ),
               title:
                   context.l10n.community_manageCommunityManageBoundAssetTitle,
               tag: LoopTag(context.l10n.community_manageLoopTag),
@@ -223,7 +234,13 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
               !community.boundAsset!.hasRegisteredPool)
             Padding(
               key: const ValueKey<String>('community-manage-no-pool'),
-              padding: const EdgeInsets.fromLTRB(68, 0, 16, 8),
+              // S370b: under the row's words — the page margin, the 34 glyph, its 12.
+              padding: const EdgeInsets.fromLTRB(
+                LoopSpacing.page + SecondaryRowMetrics.functionGlyph + 12,
+                0,
+                LoopSpacing.page,
+                8,
+              ),
               child: Text(
                 context.l10n.community_manageGroups,
                 style: LoopType.captionSm,
@@ -231,7 +248,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
             ),
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-share'),
-            leading: const LoopEntryIcon('share'),
+            height: SecondaryRowMetrics.functionRow,
+            leading: LoopEntryIcon(
+              'share',
+              size: SecondaryRowMetrics.functionGlyph,
+            ),
             title: context.l10n.community_manageCommunityManageShareTitle,
             subtitle: context.l10n.community_manageCommunityManageShareSubtitle,
             chevron: true,
@@ -252,7 +273,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           // grey line and takes no tap.
           LoopPersonRow(
             key: ValueKey<String>('community-manage-announcements'),
-            leading: LoopEntryIcon('news'),
+            height: SecondaryRowMetrics.functionRow,
+            leading: LoopEntryIcon(
+              'news',
+              size: SecondaryRowMetrics.functionGlyph,
+            ),
             title:
                 context.l10n.community_manageCommunityManageAnnouncementsTitle,
             subtitle: context
@@ -269,7 +294,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
         children: <Widget>[
           LoopPersonRow(
             key: const ValueKey<String>('community-manage-members'),
-            leading: const LoopEntryIcon('users'),
+            height: SecondaryRowMetrics.functionRow,
+            leading: LoopEntryIcon(
+              'users',
+              size: SecondaryRowMetrics.functionGlyph,
+            ),
             title: context.l10n.community_manageCommunityManageMembersTitle,
             subtitle: switch (counts) {
               AsyncData(:final value) => context.l10n.community_manageAsyncData(
@@ -294,7 +323,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           if (isOwner)
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-transfer'),
-              leading: const LoopEntryIcon('crown'),
+              height: SecondaryRowMetrics.functionRow,
+              leading: LoopEntryIcon(
+                'crown',
+                size: SecondaryRowMetrics.functionGlyph,
+              ),
               title: context.l10n.community_manageCommunityManageTransferTitle,
               subtitle:
                   context.l10n.community_manageCommunityManageTransferSubtitle,
@@ -316,7 +349,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           if (detail.voice.isLive)
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-voice-enter'),
-              leading: const LoopEntryIcon('voice'),
+              height: SecondaryRowMetrics.functionRow,
+              leading: LoopEntryIcon(
+                'voice',
+                size: SecondaryRowMetrics.functionGlyph,
+              ),
               title:
                   context.l10n.community_manageCommunityManageVoiceEnterTitle,
               subtitle: context
@@ -332,7 +369,11 @@ class _CommunityManageScreenState extends ConsumerState<CommunityManageScreen> {
           else
             LoopPersonRow(
               key: const ValueKey<String>('community-manage-voice-open'),
-              leading: const LoopEntryIcon('mic'),
+              height: SecondaryRowMetrics.functionRow,
+              leading: LoopEntryIcon(
+                'mic',
+                size: SecondaryRowMetrics.functionGlyph,
+              ),
               title: context.l10n.community_manageCommunityManageVoiceOpenTitle,
               subtitle:
                   context.l10n.community_manageCommunityManageVoiceOpenSubtitle,

@@ -485,7 +485,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                     detailMaxLines: 4,
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    padding: const EdgeInsets.fromLTRB(
+                      LoopSpacing.page,
+                      0,
+                      LoopSpacing.page,
+                      10,
+                    ),
                     child: LoopButton(
                       key: const ValueKey<String>(
                         'voiceroom-media-backstage-retry',
@@ -695,7 +700,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 detailMaxLines: 4,
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  0,
+                  LoopSpacing.page,
+                  10,
+                ),
                 child: LoopButton(
                   key: const ValueKey<String>(
                     'voiceroom-media-backstage-retry',
@@ -1857,7 +1867,12 @@ Future<VoiceRoomMemberCommand?> chooseVoiceRoomMemberCommand(
       children: <Widget>[
         LoopSheetHeading(voiceRoomMemberName(member)),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2143,7 +2158,12 @@ class _ViewerActions extends StatelessWidget {
         );
       }
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          14,
+          LoopSpacing.page,
+          0,
+        ),
         child: LoopButton(
           key: const ValueKey<String>('voiceroom-join'),
           label: state.busy

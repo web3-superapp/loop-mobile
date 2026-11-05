@@ -25,6 +25,7 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_person_row.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/features/social/profile_face_link.dart';
+import 'package:loop_mobile/features/social/secondary_row_metrics.dart';
 
 /// The UI copy for one server-published governance command.
 ///
@@ -321,14 +322,18 @@ class _CommunityMembersScreenState
             // Decision 0127: whose directory this is — the community's face and
             // name in one row — instead of a hero card with an English eyebrow.
             if (community != null && !typing)
+              // S370b · decision 0294: the community row (docs/58 §3.2) —
+              // 86 high, the logo 56 square at r12.
               LoopPersonRow(
                 key: const ValueKey<String>('community-members-owner-row'),
+                height: SecondaryRowMetrics.communityRow,
                 leading: CommunityLogo(
                   key: const ValueKey<String>('community-members-logo'),
                   identity: community.communityId,
                   name: community.name,
                   logoRef: community.logoRef,
-                  size: 40,
+                  size: SecondaryRowMetrics.communityLogo,
+                  radius: SecondaryRowMetrics.communityLogoRadius,
                 ),
                 title: community.name,
                 subtitle: searching
@@ -478,7 +483,7 @@ class _CommunityMembersScreenState
     return groups;
   }
 
-  /// One OKX row (decision 0127): the face at 36, the name with the role
+  /// One OKX row (decision 0127): the face at 48 (S370b), the name with the role
   /// as a small mark, the LOOP ID under it, and 「管理」 on the right when the
   /// server published a command for this row.
   Widget _memberRow({
@@ -506,9 +511,11 @@ class _CommunityMembersScreenState
               entry.profile.publicProfileId != null
         ? () => widget.onOpenProfile!(entry.profile.publicProfileId!)
         : () => unawaited(_openMemberSheet(entry, controller));
+    // S370b · decision 0294: a person row reads as the Figma's conversation
+    // row (类推 docs/58 §3.2): 67 high, the face 48.
     return LoopPersonRow(
       key: ValueKey<String>('member-row-$identity'),
-      height: 60,
+      height: SecondaryRowMetrics.personRow,
       // S239: the face opens the member's page (我 for the reader's own row)
       // even where the row itself opens the governance sheet.
       leading: LoopProfileFaceLink(
@@ -523,7 +530,7 @@ class _CommunityMembersScreenState
         child: LoopProfileAvatar(
           avatarRef: entry.profile.avatarRef,
           alias: entry.profile.displayName,
-          size: 36,
+          size: SecondaryRowMetrics.personFace,
         ),
       ),
       title: entry.isSelf
