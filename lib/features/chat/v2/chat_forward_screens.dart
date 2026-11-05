@@ -1141,6 +1141,5 @@ Widget chatForwardTargetFace(
     members: target.members,
     size: size,
     radius: radius,
-    listRow: true,
   );
 }

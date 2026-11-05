@@ -937,8 +937,9 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
           initialData: state.unreadCount,
           stream: state.unreadCountStream,
           builder: (context, unreadSnapshot) => StreamChannelListTile(
-            // Decision 0260: in the list every group, a community's own
-            // included, is its members' mosaic, and a direct row a circle.
+            // Decision 0290: a community row wears its community's logo,
+            // any other group its members' mosaic (0260), both 48 rounded
+            // squares; a direct row stays a circle.
             avatar: loopGroupChannelFace(
               communityId: communityId,
               logoRef: face?.logoRef,
@@ -949,7 +950,6 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
               ),
               size: chatListAvatarSize,
               radius: chatListAvatarRadius,
-              listRow: true,
             ),
             title: loopGroupChannelListTitle(
               label,
@@ -1020,14 +1020,16 @@ Widget loopGroupChannelListTitle(String label, int? memberCount) {
   );
 }
 
-/// A group conversation's face (decision 0258): the community's own logo
-/// when the conversation is a community channel whose community has one,
-/// otherwise the members' mosaic. Both are the same rounded square.
+/// A group conversation's face (decision 0258): a community channel wears
+/// its community's own logo, every other group its members' mosaic. Both
+/// are the same rounded square, so a group still reads apart from a direct
+/// row's circle.
 ///
-/// [listRow] is a row in a list of conversations — the inbox, forward
-/// targets, search hits — where every group is its members' mosaic so a
-/// group reads apart from a direct row at a glance (decision 0260); the
-/// logo stays on the conversation's own header.
+/// Decision 0290 (需求方 11-05 #4) retires 0260's list-row mosaic for
+/// communities: in the inbox, forward targets, search hits and the room's
+/// header alike, a community is its [CommunityLogo] — the preset or
+/// uploaded `logoRef`, or, when this account has read none, the community's
+/// initials on its id-derived ground, still a rounded square.
 Widget loopGroupChannelFace({
   required String? communityId,
   required String? logoRef,
@@ -1035,10 +1037,9 @@ Widget loopGroupChannelFace({
   required List<GroupMosaicMember> members,
   double size = 40,
   double? radius,
-  bool listRow = false,
 }) {
   final corner = radius ?? LoopRadius.innerValue;
-  if (!listRow && communityId != null && logoRef != null) {
+  if (communityId != null) {
     return GroupMosaicAvatar(
       key: const ValueKey<String>('loop-community-channel-logo'),
       members: members,

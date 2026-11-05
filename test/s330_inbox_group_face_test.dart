@@ -109,7 +109,7 @@ void main() {
   });
 
   testWidgets(
-    'a community row with a logo draws the member mosaic at 48, no logo',
+    'a community row with a logo draws the community logo at 48 (0290)',
     (tester) async {
       final client = StreamChatClient('public-stream-api-key');
       final channel = _channel(
@@ -125,25 +125,21 @@ void main() {
       addTearDown(channel.dispose);
       await _pumpRow(tester, client: client, channel: channel);
 
-      expect(find.byType(GroupMosaicAvatar), findsOneWidget);
-      expect(find.byType(CommunityLogo), findsNothing);
+      final logo = find.byKey(
+        const ValueKey<String>('loop-community-channel-logo'),
+      );
+      expect(logo, findsOneWidget);
+      expect(find.byType(CommunityLogo), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('loop-community-channel-logo')),
+        find.byKey(const ValueKey<String>('group-mosaic-avatar')),
         findsNothing,
       );
-      expect(
-        tester.getSize(find.byType(GroupMosaicAvatar)),
-        const Size.square(48),
-      );
-      // Decision 0112: an alias room's mosaic draws no member picture.
+      expect(tester.getSize(logo), const Size.square(48));
+      // Decision 0112: no member picture is drawn for a community row.
       expect(find.byType(LoopRemoteAvatar), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('group-mosaic-cell-2')),
-        findsOneWidget,
-      );
 
       // The face and the two text lines share one centre line.
-      final face = tester.getCenter(find.byType(GroupMosaicAvatar)).dy;
+      final face = tester.getCenter(logo).dy;
       final top = tester.getTopLeft(find.text('DeFi 早读会')).dy;
       final bottom = tester.getBottomLeft(find.textContaining('晚点聊')).dy;
       expect(face, closeTo((top + bottom) / 2, 1.5));
@@ -230,7 +226,7 @@ void main() {
     expect(find.byType(CommunityLogo), findsNothing);
   });
 
-  testWidgets('a community forward target with a logo wears the mosaic', (
+  testWidgets('a community forward target with a logo wears the logo', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -253,7 +249,11 @@ void main() {
       ),
     );
     expect(find.byType(GroupMosaicAvatar), findsOneWidget);
-    expect(find.byType(CommunityLogo), findsNothing);
+    expect(find.byType(CommunityLogo), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('group-mosaic-avatar')),
+      findsNothing,
+    );
     expect(
       tester.getSize(find.byType(GroupMosaicAvatar)),
       const Size.square(48),

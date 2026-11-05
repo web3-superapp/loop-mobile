@@ -241,11 +241,11 @@ void main() {
     );
   });
 
-  testWidgets('in a list a community with a logo wears the mosaic', (
+  testWidgets('in a list a community with a logo wears the logo', (
     tester,
   ) async {
-    // Decision 0260: a list row tells a group from a direct row by shape
-    // and mosaic, so the logo stays off it.
+    // Decision 0290 (retiring 0260 for communities): a list row draws the
+    // community's own logo, a rounded square at 48.
     await _pump(
       tester,
       loopGroupChannelFace(
@@ -255,24 +255,25 @@ void main() {
         members: _members(4),
         size: chatListAvatarSize,
         radius: chatListAvatarRadius,
-        listRow: true,
       ),
     );
     expect(
-      find.byKey(const ValueKey<String>('loop-group-channel-mosaic')),
+      find.byKey(const ValueKey<String>('loop-community-channel-logo')),
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey<String>('loop-community-channel-logo')),
+      find.byKey(const ValueKey<String>('loop-group-channel-mosaic')),
       findsNothing,
     );
     expect(
-      tester.getSize(find.byKey(const ValueKey<String>('group-mosaic-avatar'))),
+      tester.getSize(find.byKey(const ValueKey<String>('group-mosaic-logo'))),
       const Size.square(48),
     );
   });
 
-  testWidgets('a community without a logo wears the mosaic', (tester) async {
+  testWidgets('a community without a logo wears its initials, not the mosaic', (
+    tester,
+  ) async {
     await _pump(
       tester,
       loopGroupChannelFace(
@@ -283,12 +284,12 @@ void main() {
       ),
     );
     expect(
-      find.byKey(const ValueKey<String>('loop-group-channel-mosaic')),
+      find.byKey(const ValueKey<String>('loop-community-channel-logo')),
       findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey<String>('group-mosaic-avatar')),
-      findsOneWidget,
+      findsNothing,
     );
   });
 

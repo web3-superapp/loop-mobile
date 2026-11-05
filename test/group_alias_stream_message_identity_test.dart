@@ -593,7 +593,7 @@ void main() {
   });
 
   testWidgets(
-    'a community row with a logo wears its member mosaic and its description',
+    'a community row with a logo wears its logo and its description',
     (tester) async {
       final harness = _ChannelHarness.community(
         member: _member(userId: 'stream-sender', accountName: ''),
@@ -614,15 +614,14 @@ void main() {
           StreamChannelListItem(channel: harness.channel),
         ),
       );
-      // Decision 0260: in the list a community is a group like any other,
-      // so its members' mosaic stands where its logo stood.
+      // Decision 0290: in the list a community wears its own logo.
       expect(
         find.byKey(const ValueKey<String>('loop-group-channel-mosaic')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('loop-community-channel-logo')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         find.byKey(
@@ -630,7 +629,7 @@ void main() {
             'community-logo-image-avatar:preset/community-03',
           ),
         ),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         find.byKey(const ValueKey<String>('loop-group-channel-neutral-avatar')),
@@ -643,7 +642,7 @@ void main() {
   );
 
   testWidgets(
-    'a community this account has not read wears its member mosaic and says nobody spoke',
+    'a community this account has not read wears its initials and says nobody spoke',
     (tester) async {
       final harness = _ChannelHarness.community(
         member: _member(userId: 'stream-sender', accountName: ''),
@@ -658,14 +657,14 @@ void main() {
           StreamChannelListItem(channel: harness.channel),
         ),
       );
-      // Decision 0258: no logo of its own, so the members' mosaic.
+      // Decision 0290: no logo read, so the community's initials tile.
       expect(
         find.byKey(const ValueKey<String>('loop-group-channel-mosaic')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('loop-community-channel-logo')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(find.text(loopChannelQuietLabel), findsOneWidget);
       await _disposeHarness(tester, harness);
