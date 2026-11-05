@@ -883,10 +883,9 @@ class _StreamChannelListBodyState
     final directory =
         ref.watch(directChannelDirectoryProvider).value ??
         LoopDirectChannelDirectory.empty();
-    // The community rows draw their members' mosaic like every group
-    // (decision 0260); the community home aggregate is still read once — it
-    // lists every community this account is in — for the quiet row's first
-    // sentence and the opened community conversation's title.
+    // The community home aggregate is read once — it lists every community
+    // this account is in — for each community row's logo (decision 0290),
+    // the quiet row's first sentence and the opened conversation's title.
     final home = ref.watch(communityHomeControllerProvider);
     if (home.phase == CommunityViewPhase.loading && home.value == null) {
       scheduleMicrotask(() {
