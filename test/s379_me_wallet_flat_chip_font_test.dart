@@ -4,9 +4,10 @@
 //    side, 16 above and under), amending 0280's 「no plate」.
 // 2. The chart periods are 12 / 400 (idle) and 12 / 500 (chosen), never
 //    bold; Candles / MA / VOL keep the 13 chip step.
-// 3. The MEME detail head: the whole name (three lines, then one step
-//    smaller, never ellipsed), and 「ticker | address + copy」 with the stage
-//    capsule flush right on one line.
+// 3. The MEME detail head — rewritten by S380 · decision 0304: the symbol
+//    is the heading (three lines, then one step smaller, never ellipsed),
+//    and 「name | address + copy」 with the stage capsule flush right on one
+//    line (test/s380_launch2_head_test.dart has the rest).
 // 4. The wallet card leans toward the finger (LoopTiltCard).
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
@@ -392,10 +393,10 @@ void main() {
     });
   });
 
-  group('MEME detail head', () {
+  group('MEME detail head (S380 · decision 0304)', () {
     Widget head({
-      required String name,
-      String ticker = 'FROG',
+      String name = '猫猫',
+      required String ticker,
       bool countdown = false,
     }) {
       final json = l2DetailJson(stage: 'public', noNextChange: !countdown);
@@ -409,25 +410,26 @@ void main() {
       );
     }
 
-    RenderParagraph nameParagraph(WidgetTester tester) =>
+    RenderParagraph symbolParagraph(WidgetTester tester) =>
         tester.renderObject<RenderParagraph>(
           find.descendant(
-            of: _key('launch2-head-name'),
+            of: _key('launch2-head-ticker'),
             matching: find.byType(RichText),
           ),
         );
 
     for (final width in <double>[390, 360]) {
-      testWidgets('a long name: up to three lines, whole ($width)', (
+      testWidgets('a long symbol: up to three lines, whole ($width)', (
         tester,
       ) async {
-        const name = '猫猫啦咯啦咯啦咯啦咯啦咯啦咯啦咯';
-        await _host(tester, head(name: name), width: width);
-        final text = tester.widget<Text>(_key('launch2-head-name'));
-        expect(text.data, name);
+        const symbol = '猫猫啦咯啦咯啦咯啦咯啦咯啦咯';
+        await _host(tester, head(ticker: symbol), width: width);
+        final text = tester.widget<Text>(_key('launch2-head-ticker'));
+        expect(text.data, symbol);
         expect(text.overflow, isNot(TextOverflow.ellipsis));
         expect(text.style!.fontSize, LoopType.headline.fontSize);
-        final paragraph = nameParagraph(tester);
+        expect(text.style!.color, LoopColors.chalk);
+        final paragraph = symbolParagraph(tester);
         expect(paragraph.didExceedMaxLines, isFalse);
         final lines =
             paragraph.size.height /
@@ -436,42 +438,28 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('a name past three lines steps down, still whole ($width)', (
-        tester,
-      ) async {
-        final name = '猫猫啦咯' * 16;
-        await _host(tester, head(name: name), width: width);
-        final text = tester.widget<Text>(_key('launch2-head-name'));
-        expect(text.data, name);
-        expect(text.style!.fontSize, LoopType.headlineSm.fontSize);
-        expect(text.maxLines, isNull);
-        expect(nameParagraph(tester).didExceedMaxLines, isFalse);
-        expect(tester.takeException(), isNull);
-      });
-
-      testWidgets('ticker | address + copy and the stage on one line, the '
+      testWidgets('name | address + copy and the stage on one line, the '
           'stage flush right ($width)', (tester) async {
         await _host(
           tester,
           head(name: '猫猫啦咯啦咯', ticker: 'AVERYLONGTICKERNAME', countdown: true),
           width: width,
         );
-        final ticker = tester.getRect(_key('launch2-head-ticker'));
+        final name = tester.getRect(_key('launch2-head-name'));
         final address = tester.getRect(_key('launch2-head-address'));
         final copy = tester.getRect(_key('launch2-copy-address'));
         final stage = tester.getRect(_key('launch2-stage-capsule'));
         final line = tester.getRect(_key('launch2-identity'));
-        for (final rect in <Rect>[ticker, address, copy, stage]) {
+        for (final rect in <Rect>[name, address, copy, stage]) {
           expect(rect.top, greaterThanOrEqualTo(line.top - 8));
           expect(rect.bottom, lessThanOrEqualTo(line.bottom + 8));
         }
-        expect(ticker.right, lessThanOrEqualTo(address.left));
+        expect(name.right, lessThanOrEqualTo(address.left));
         expect(address.right, lessThanOrEqualTo(copy.left + 0.01));
         expect(copy.right, lessThanOrEqualTo(stage.left));
         expect(stage.right, closeTo(width - LoopSpacing.page, 0.01));
-        // One line each.
         for (final key in <String>[
-          'launch2-head-ticker',
+          'launch2-head-name',
           'launch2-head-address',
         ]) {
           expect(tester.widget<Text>(_key(key)).maxLines, 1, reason: key);
@@ -479,5 +467,15 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+
+    test('a symbol past three lines steps down', () {
+      final style = Launch2HeadSymbol.styleFor(
+        '猫' * 40,
+        100,
+        TextScaler.noScaling,
+        TextDirection.ltr,
+      );
+      expect(style.fontSize, LoopType.headlineSm.fontSize);
+    });
   });
 }

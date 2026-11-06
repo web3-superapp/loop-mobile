@@ -10,7 +10,6 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_dynamic_pool_widgets.dart';
 import 'package:loop_mobile/features/launch2/launch2_format.dart';
-import 'package:loop_mobile/features/launch2/launch2_hero.dart';
 import 'package:loop_mobile/features/launch2/launch2_models.dart';
 import 'package:loop_mobile/features/launch2/launch2_recent_trades.dart';
 import 'package:loop_mobile/features/launch2/launch2_secondary_metrics.dart';
@@ -50,10 +49,11 @@ String launch2InstanceStampPrefix(Launch2Stage stage) =>
     : LoopL10n.current.launch2_launch2AtmosphereCountdown2;
 
 /// The project page's head (decision 0240, was decision 0166's folio card;
-/// S379 · decision 0303 for the 需求方's 11-06 structure): the logo, the
-/// whole name, and under it 「ticker | address + copy」 with the stage
-/// capsule — carrying the countdown when the stage has one — flush with the
-/// end of the same line. Only the capsule redraws every second.
+/// S380 · decision 0304 for the 需求方's 11-06 18:30 structure, amending
+/// 0303 §3): the logo, the token's symbol beside it as the heading, and
+/// under it 「name | address + copy」 with the stage capsule — carrying the
+/// countdown when the stage has one — flush with the end of the same line.
+/// The page's bar carries no title. Only the capsule redraws every second.
 class Launch2InstanceHead extends StatelessWidget {
   const Launch2InstanceHead({
     required this.detail,
@@ -109,14 +109,14 @@ class Launch2InstanceHead extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                // S379 · decision 0303 (需求方 11-06): the whole name, never
-                // cut — up to three lines at the headline step, one step
-                // smaller past that.
-                Launch2HeadName(name: row.name),
+                // S380 · decision 0304 (需求方 11-06 18:30): the symbol beside
+                // the logo, never cut — up to three lines at the headline
+                // step, one step smaller past that.
+                Launch2HeadSymbol(symbol: loopTickerLabel(row.ticker)),
                 const SizedBox(height: 2),
-                // 「ticker | address + copy」 at the start, the stage capsule
+                // 「name | address + copy」 at the start, the stage capsule
                 // flush with the end: one line that never wraps; the address
-                // gives way first.
+                // gives way first, then the name, never the capsule.
                 ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 28),
                   child: Row(
@@ -127,32 +127,27 @@ class Launch2InstanceHead extends StatelessWidget {
                           builder: (context, line) => Row(
                             children: <Widget>[
                               ConstrainedBox(
-                                // The address gives way first: the ticker keeps
-                                // up to its 120 while there is room for the
-                                // rule and the copy key beside it.
+                                // The name keeps its own width while there is
+                                // room for the rule and the copy key beside
+                                // it; the address takes what is left.
                                 constraints: BoxConstraints(
                                   maxWidth: math.max(
                                     0,
-                                    math.min(
-                                      Launch2HeadName.tickerMaxWidth,
-                                      line.maxWidth -
-                                          LoopTouch.minimum -
-                                          Launch2HeadName.ruleRoom,
-                                    ),
+                                    line.maxWidth -
+                                        LoopTouch.minimum -
+                                        Launch2HeadSymbol.ruleRoom,
                                   ),
                                 ),
                                 child: Text(
-                                  launch2HeroTicker(row.ticker),
+                                  row.name,
                                   key: const ValueKey<String>(
-                                    'launch2-head-ticker',
+                                    'launch2-head-name',
                                   ),
                                   maxLines: 1,
                                   softWrap: false,
                                   overflow: TextOverflow.ellipsis,
-                                  style: LoopType.body2Sm.copyWith(
-                                    color: lit
-                                        ? LoopColors.yellow
-                                        : LoopColors.text2,
+                                  style: LoopType.caption.copyWith(
+                                    color: LoopColors.text2,
                                   ),
                                 ),
                               ),
@@ -220,34 +215,32 @@ class Launch2InstanceHead extends StatelessWidget {
   }
 }
 
-/// The project page's name (S379 · decision 0303, 需求方 11-06): the whole
-/// name at the [LoopType.headline] step over up to [maxLines] lines; a name
+/// The project page's heading (S380 · decision 0304, 需求方 11-06 18:30):
+/// the token's symbol, as [loopTickerLabel] spells it, at the
+/// [LoopType.headline] step in Chalk over up to [maxLines] lines; a symbol
 /// that needs more drops to [LoopType.headlineSm] and keeps every
 /// character — it is never ellipsed.
-class Launch2HeadName extends StatelessWidget {
-  const Launch2HeadName({required this.name, super.key});
+class Launch2HeadSymbol extends StatelessWidget {
+  const Launch2HeadSymbol({required this.symbol, super.key});
 
-  final String name;
+  final String symbol;
 
-  /// Lines at the headline step before the name steps down.
+  /// Lines at the headline step before the symbol steps down.
   static const int maxLines = 3;
 
-  /// The ticker's widest share of the identity line.
-  static const double tickerMaxWidth = 120;
-
-  /// The rule between the ticker and the address with its 8 either side.
+  /// The rule between the name and the address with its 8 either side.
   static const double ruleRoom = 17;
 
-  /// The step [name] takes in [width].
+  /// The step [symbol] takes in [width].
   static TextStyle styleFor(
-    String name,
+    String symbol,
     double width,
     TextScaler scaler,
     TextDirection direction,
   ) {
     final large = LoopType.headline.copyWith(color: LoopColors.chalk);
     final painter = TextPainter(
-      text: TextSpan(text: name, style: large),
+      text: TextSpan(text: symbol, style: large),
       textDirection: direction,
       textScaler: scaler,
       maxLines: maxLines,
@@ -261,14 +254,14 @@ class Launch2HeadName extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final style = styleFor(
-        name,
+        symbol,
         constraints.maxWidth,
         MediaQuery.textScalerOf(context),
         Directionality.of(context),
       );
       return Text(
-        name,
-        key: const ValueKey<String>('launch2-head-name'),
+        symbol,
+        key: const ValueKey<String>('launch2-head-ticker'),
         softWrap: true,
         style: style,
       );

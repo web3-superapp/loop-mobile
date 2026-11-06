@@ -2137,8 +2137,9 @@ void main() {
       // with the countdown.
       expect(find.byType(LoopFolioPrimary), findsNothing);
       expect(find.byType(Launch2InstanceHead), findsOneWidget);
-      expect(_headTicker(tester).data, 'FROG');
-      expect(_headTicker(tester).style?.color, LoopColors.yellow);
+      // S380 · decision 0304: the symbol is the Chalk heading.
+      expect(_headTicker(tester).data, r'$FROG');
+      expect(_headTicker(tester).style?.color, LoopColors.chalk);
       expect(
         tester.widget<Text>(_key('launch2-head-name')).data,
         'Frog Launch',
@@ -2216,7 +2217,7 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('upcoming and paused: the name in Chalk, the ticker in Text2', (
+    testWidgets('upcoming and paused: the symbol in Chalk, the name in Text2', (
       tester,
     ) async {
       await _pump(
@@ -2224,12 +2225,12 @@ void main() {
         const Launch2InstanceScreen(instanceId: l2InstanceA),
         _Fake(details: <Launch2InstanceDetail>[detailOf('upcoming')]),
       );
-      // S379 · decision 0303: the whole name is the Chalk heading; an unlit
-      // ticker sits in Text2 on the identity line.
-      expect(_headTicker(tester).style?.color, LoopColors.text2);
+      // S380 · decision 0304: the symbol is the Chalk heading at every
+      // stage; the name sits in Text2 on the identity line.
+      expect(_headTicker(tester).style?.color, LoopColors.chalk);
       expect(
         tester.widget<Text>(_key('launch2-head-name')).style?.color,
-        LoopColors.chalk,
+        LoopColors.text2,
       );
       expect(_capsuleCountdown(tester), startsWith('Mint in '));
       await _drain(tester);
@@ -2243,7 +2244,7 @@ void main() {
         ),
       );
       expect(_inCapsule('Paused'), findsOneWidget);
-      expect(_headTicker(tester).style?.color, LoopColors.text2);
+      expect(_headTicker(tester).style?.color, LoopColors.chalk);
       await _drain(tester);
     });
 
