@@ -520,7 +520,13 @@ class _Launch2InstanceScreenState extends ConsumerState<Launch2InstanceScreen> {
     return LoopDashboardPage(
       key: ValueKey<String>('launch2-instance-$instanceId'),
       archetype: LoopPageArchetype.record,
+      // S380 · decision 0304 (需求方 11-06 18:30): the bar draws no title
+      // at any width — only the back control and the (i). The symbol is the
+      // head's heading; [title] stays the bar's accessible name.
       title: detail == null ? 'MEME v2' : loopTickerLabel(detail.row.ticker),
+      titleField: const SizedBox.shrink(
+        key: ValueKey<String>('launch2-instance-no-title'),
+      ),
       onBack: widget.onBack,
       updating: state?.refreshing ?? false,
       onRefresh: blocked ? null : () => _reload(instanceId),
