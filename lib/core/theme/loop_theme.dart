@@ -976,6 +976,7 @@ abstract final class LoopTypography {
 /// | `code` | 14 / 400 tnum | textPrimary | 地址 |
 /// | `figureXs` | 13 / 600 tnum | textSecondary | 榜单名次与数值 |
 /// | `chip` / `chipIdle` | 13 / 600 · 13 / 500 | white · textSecondary | 筛选胶囊 |
+/// | `periodChip` / `periodChipIdle` | 12 / 500 · 12 / 400 | white · textSecondary | K 线时间周期胶囊（0303，不加粗） |
 /// | `buttonSm` | 13 / 600 | textPrimary | 邀请卡按钮 |
 /// | `eyebrow` `kicker` | 13 / 500 | textSecondary | 小节标题（置顶 / 最近消息） |
 /// | `codeSm` | 13 / 400 tnum | textPrimary | 邀请链接 |
@@ -1151,6 +1152,22 @@ abstract final class LoopType {
   static final TextStyle chipIdle = _step(
     13,
     FontWeight.w500,
+    color: LoopColors.textSecondary,
+  );
+
+  /// periodChip · 12 / 500 white — the chosen chart period (1m … 1D) under
+  /// a K-line plot. S379 · decision 0303 (需求方 11-06): smaller than the
+  /// chip step and never bold; the Candles / MA / VOL switches keep [chip].
+  static final TextStyle periodChip = _step(
+    12,
+    FontWeight.w500,
+    color: LoopColors.textOnSelected,
+  );
+
+  /// periodChipIdle · 12 / 400 textSecondary — an unchosen chart period.
+  static final TextStyle periodChipIdle = _step(
+    12,
+    FontWeight.w400,
     color: LoopColors.textSecondary,
   );
 

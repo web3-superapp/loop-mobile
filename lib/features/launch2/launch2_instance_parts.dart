@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/gestures.dart' show kTouchSlop;
@@ -48,11 +49,11 @@ String launch2InstanceStampPrefix(Launch2Stage stage) =>
     ? LoopL10n.current.launch2_launch2AtmosphereCountdown
     : LoopL10n.current.launch2_launch2AtmosphereCountdown2;
 
-/// The project page's head (decision 0240, was decision 0166's folio card):
-/// one line and a half — the logo, the ticker and the name, the token
-/// address with its copy key under them, and the stage capsule at the end
-/// carrying the countdown when the stage has one. Only the capsule redraws
-/// every second.
+/// The project page's head (decision 0240, was decision 0166's folio card;
+/// S379 · decision 0303 for the 需求方's 11-06 structure): the logo, the
+/// whole name, and under it 「ticker | address + copy」 with the stage
+/// capsule — carrying the countdown when the stage has one — flush with the
+/// end of the same line. Only the capsule redraws every second.
 class Launch2InstanceHead extends StatelessWidget {
   const Launch2InstanceHead({
     required this.detail,
@@ -73,6 +74,17 @@ class Launch2InstanceHead extends StatelessWidget {
     final stage = launch2InstanceStageLabel(detail);
     Widget capsule(String? countdown) =>
         _StageCapsule(stage: stage, countdown: countdown, lit: lit);
+    final stageEnd = next == null
+        ? capsule(null)
+        : KeyedSubtree(
+            key: const ValueKey<String>('launch2-countdown'),
+            child: Launch2CountdownBuilder(
+              target: next,
+              onElapsed: onElapsed,
+              builder: (context, text) =>
+                  capsule('${launch2InstanceStampPrefix(row.stage)}$text'),
+            ),
+          );
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         LoopSpacing.page,
@@ -81,6 +93,7 @@ class Launch2InstanceHead extends StatelessWidget {
         4,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           MemeLogo(
             symbol: row.ticker,
@@ -93,92 +106,174 @@ class Launch2InstanceHead extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        launch2HeroTicker(row.ticker),
-                        key: const ValueKey<String>('launch2-head-ticker'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.headline.copyWith(
-                          color: lit ? LoopColors.yellow : LoopColors.chalk,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        row.name,
-                        key: const ValueKey<String>('launch2-head-name'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopType.caption.copyWith(
-                          color: LoopColors.text2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  height: 28,
+                // S379 · decision 0303 (需求方 11-06): the whole name, never
+                // cut — up to three lines at the headline step, one step
+                // smaller past that.
+                Launch2HeadName(name: row.name),
+                const SizedBox(height: 2),
+                // 「ticker | address + copy」 at the start, the stage capsule
+                // flush with the end: one line that never wraps; the address
+                // gives way first.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 28),
                   child: Row(
                     key: const ValueKey<String>('launch2-identity'),
                     children: <Widget>[
-                      Flexible(
-                        child: Text(
-                          launch2ShortAddress(row.memeAddress),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopType.codeSm.copyWith(
-                            color: LoopColors.text2,
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, line) => Row(
+                            children: <Widget>[
+                              ConstrainedBox(
+                                // The address gives way first: the ticker keeps
+                                // up to its 120 while there is room for the
+                                // rule and the copy key beside it.
+                                constraints: BoxConstraints(
+                                  maxWidth: math.max(
+                                    0,
+                                    math.min(
+                                      Launch2HeadName.tickerMaxWidth,
+                                      line.maxWidth -
+                                          LoopTouch.minimum -
+                                          Launch2HeadName.ruleRoom,
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  launch2HeroTicker(row.ticker),
+                                  key: const ValueKey<String>(
+                                    'launch2-head-ticker',
+                                  ),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LoopType.body2Sm.copyWith(
+                                    color: lit
+                                        ? LoopColors.yellow
+                                        : LoopColors.text2,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                child: Container(
+                                  key: const ValueKey<String>(
+                                    'launch2-head-rule',
+                                  ),
+                                  width: 1,
+                                  height: 12,
+                                  color: LoopColors.dividerSolid,
+                                ),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  launch2ShortAddress(row.memeAddress),
+                                  key: const ValueKey<String>(
+                                    'launch2-head-address',
+                                  ),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LoopType.codeSm.copyWith(
+                                    color: LoopColors.text2,
+                                  ),
+                                ),
+                              ),
+                              // 44 dp of touch around a 28 dp line.
+                              SizedBox(
+                                width: LoopTouch.minimum,
+                                height: 28,
+                                child: OverflowBox(
+                                  maxHeight: LoopTouch.minimum,
+                                  child: LoopIconButton(
+                                    key: const ValueKey<String>(
+                                      'launch2-copy-address',
+                                    ),
+                                    icon: 'copy',
+                                    label: context
+                                        .l10n
+                                        .launch2_launch2InstancePartsLaunch2CopyAddressLabel,
+                                    color: LoopColors.text2,
+                                    onPressed: onCopy,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      // 44 dp of touch around a 28 dp line.
-                      SizedBox(
-                        width: LoopTouch.minimum,
-                        child: OverflowBox(
-                          maxHeight: LoopTouch.minimum,
-                          child: LoopIconButton(
-                            key: const ValueKey<String>('launch2-copy-address'),
-                            icon: 'copy',
-                            label: context
-                                .l10n
-                                .launch2_launch2InstancePartsLaunch2CopyAddressLabel,
-                            color: LoopColors.text2,
-                            onPressed: onCopy,
-                          ),
-                        ),
-                      ),
+                      const SizedBox(width: 8),
+                      stageEnd,
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          if (next == null)
-            capsule(null)
-          else
-            KeyedSubtree(
-              key: const ValueKey<String>('launch2-countdown'),
-              child: Launch2CountdownBuilder(
-                target: next,
-                onElapsed: onElapsed,
-                builder: (context, text) =>
-                    capsule('${launch2InstanceStampPrefix(row.stage)}$text'),
-              ),
-            ),
         ],
       ),
     );
   }
+}
+
+/// The project page's name (S379 · decision 0303, 需求方 11-06): the whole
+/// name at the [LoopType.headline] step over up to [maxLines] lines; a name
+/// that needs more drops to [LoopType.headlineSm] and keeps every
+/// character — it is never ellipsed.
+class Launch2HeadName extends StatelessWidget {
+  const Launch2HeadName({required this.name, super.key});
+
+  final String name;
+
+  /// Lines at the headline step before the name steps down.
+  static const int maxLines = 3;
+
+  /// The ticker's widest share of the identity line.
+  static const double tickerMaxWidth = 120;
+
+  /// The rule between the ticker and the address with its 8 either side.
+  static const double ruleRoom = 17;
+
+  /// The step [name] takes in [width].
+  static TextStyle styleFor(
+    String name,
+    double width,
+    TextScaler scaler,
+    TextDirection direction,
+  ) {
+    final large = LoopType.headline.copyWith(color: LoopColors.chalk);
+    final painter = TextPainter(
+      text: TextSpan(text: name, style: large),
+      textDirection: direction,
+      textScaler: scaler,
+      maxLines: maxLines,
+    )..layout(maxWidth: width);
+    final fits = !painter.didExceedMaxLines;
+    painter.dispose();
+    return fits ? large : LoopType.headlineSm.copyWith(color: LoopColors.chalk);
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final style = styleFor(
+        name,
+        constraints.maxWidth,
+        MediaQuery.textScalerOf(context),
+        Directionality.of(context),
+      );
+      return Text(
+        name,
+        key: const ValueKey<String>('launch2-head-name'),
+        softWrap: true,
+        style: style,
+      );
+    },
+  );
 }
 
 class _StageCapsule extends StatelessWidget {

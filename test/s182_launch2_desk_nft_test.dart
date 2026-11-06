@@ -2216,7 +2216,7 @@ void main() {
       await _drain(tester);
     });
 
-    testWidgets('upcoming and paused state the heading in Chalk', (
+    testWidgets('upcoming and paused: the name in Chalk, the ticker in Text2', (
       tester,
     ) async {
       await _pump(
@@ -2224,7 +2224,13 @@ void main() {
         const Launch2InstanceScreen(instanceId: l2InstanceA),
         _Fake(details: <Launch2InstanceDetail>[detailOf('upcoming')]),
       );
-      expect(_headTicker(tester).style?.color, LoopColors.chalk);
+      // S379 · decision 0303: the whole name is the Chalk heading; an unlit
+      // ticker sits in Text2 on the identity line.
+      expect(_headTicker(tester).style?.color, LoopColors.text2);
+      expect(
+        tester.widget<Text>(_key('launch2-head-name')).style?.color,
+        LoopColors.chalk,
+      );
       expect(_capsuleCountdown(tester), startsWith('Mint in '));
       await _drain(tester);
       await _pump(
@@ -2237,7 +2243,7 @@ void main() {
         ),
       );
       expect(_inCapsule('Paused'), findsOneWidget);
-      expect(_headTicker(tester).style?.color, LoopColors.chalk);
+      expect(_headTicker(tester).style?.color, LoopColors.text2);
       await _drain(tester);
     });
 

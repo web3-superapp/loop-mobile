@@ -267,11 +267,10 @@ class LoopChartIntervalRow extends StatelessWidget {
                 children: <Widget>[
                   for (final (index, option) in options.indexed) ...<Widget>[
                     if (index > 0) const SizedBox(width: 4),
-                    LoopSeg(
+                    LoopChartPeriod(
                       key: ValueKey<String>(option.keyName),
                       label: option.label,
-                      quiet: true,
-                      compact: true,
+                      fill: false,
                       selected: index == selectedIndex,
                       onSelected: () => onSelected(index),
                     ),
@@ -293,23 +292,40 @@ class LoopChartIntervalRow extends StatelessWidget {
 /// the word (2 / 4 around it) and sits centred in a transparent target the
 /// width of its share and 44 tall. The word shrinks rather than overflows
 /// under a large text scale.
+///
+/// S379 · decision 0303 (需求方 11-06): the period's word is the
+/// [LoopType.periodChip] step — 12 / 500 chosen, 12 / 400 not, never bold —
+/// one step under the Candles / MA / VOL switches' 13; the capsule keeps its
+/// 2 / 4 and the target its 44.
 class LoopChartPeriod extends StatelessWidget {
   const LoopChartPeriod({
     required this.label,
     required this.selected,
     required this.onSelected,
     super.key,
+    this.fill = true,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onSelected;
 
+  /// Take the share of a filled row (the MEME pages). Unset, the period is
+  /// as wide as its word on the quiet chip grounds (the market's scrolling
+  /// row).
+  final bool fill;
+
   @override
   Widget build(BuildContext context) {
+    final ground = fill
+        ? (selected ? LoopColors.purpleSelected : Colors.transparent)
+        : (selected ? LoopColors.chipActive : LoopColors.chipIdle);
+    final ink = fill
+        ? (selected ? LoopColors.onPurple : LoopColors.text2)
+        : (selected ? LoopColors.textOnSelected : LoopColors.text2);
     final chip = LoopCompactChip(
-      expand: true,
-      ground: selected ? LoopColors.purpleSelected : Colors.transparent,
+      expand: fill,
+      ground: ground,
       onTap: () {
         if (!selected) LoopHaptics.selection();
         onSelected();
@@ -320,13 +336,8 @@ class LoopChartPeriod extends StatelessWidget {
           child: Text(
             label,
             maxLines: 1,
-            style:
-                LoopTypography.withWeight(
-                  LoopType.action,
-                  selected ? FontWeight.w700 : FontWeight.w600,
-                ).copyWith(
-                  color: selected ? LoopColors.onPurple : LoopColors.text2,
-                ),
+            style: (selected ? LoopType.periodChip : LoopType.periodChipIdle)
+                .copyWith(color: ink),
           ),
         ),
       ),

@@ -33,14 +33,19 @@ class LoopProfileSectionsBar extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     super.key,
+    this.topGap = LoopSpacing.group,
   });
+
+  /// The room above the strip (S379 · decision 0303: 16 under 我的's wallet
+  /// card; another account's page keeps 24).
+  final double topGap;
 
   final LoopProfileSection selected;
   final ValueChanged<LoopProfileSection> onSelected;
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: LoopSpacing.group),
+    padding: EdgeInsets.only(top: topGap),
     child: LoopTabStrip(
       labels: <String>[
         for (final section in LoopProfileSection.values) section.label,
