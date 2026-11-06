@@ -52,6 +52,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/sharing/system_image_share.dart';
 import 'package:loop_mobile/integrations/sharing/system_text_share.dart';
 import 'package:loop_mobile/l10n/loop_l10n.dart';
+import 'package:loop_mobile/widgets/loop_tilt_card.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_atmosphere.dart';
@@ -377,7 +378,24 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
             MeMessageRequestsEntry(
               onOpen: () => _openProfile('friend-requests'),
             ),
-            if (!blocked)
+            if (!blocked) ...<Widget>[
+              // S379 · decision 0303: the read's age stands over the card,
+              // which holds the figure and the keys together.
+              Padding(
+                padding: const EdgeInsets.only(top: LoopSpacing.segmentGap),
+                child: LoopFreshnessStrip(
+                  key: const ValueKey<String>('wallet-freshness'),
+                  restoredAt: restoredAt,
+                  readAt: balancesController?.valueObservedAt,
+                  refreshing:
+                      (balancesState?.refreshing ?? false) ||
+                      directory.refreshing,
+                  refreshFailed: refreshFailed,
+                  onRetry: () => unawaited(
+                    _refreshWallet(ref, chainClosed ? null : walletId),
+                  ),
+                ),
+              ),
               _totalPlate(
                 balances: balances,
                 balancesLoading: balancesLoading,
@@ -385,32 +403,24 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
                 directoryEmpty: directoryEmpty,
                 walletId: walletId,
                 balancesState: balancesState,
+                // Decision 0095: the keys never wait for a balance.
+                keys: walletId == null
+                    ? null
+                    : _quickActions(
+                        walletId: walletId,
+                        sendGate: sendGate,
+                        swapGate: swapGate,
+                      ),
               ),
+            ],
           ],
         ),
         sections: <Widget>[
-          if (!blocked) ...<Widget>[
-            LoopFreshnessStrip(
-              key: const ValueKey<String>('wallet-freshness'),
-              restoredAt: restoredAt,
-              readAt: balancesController?.valueObservedAt,
-              refreshing:
-                  (balancesState?.refreshing ?? false) || directory.refreshing,
-              refreshFailed: refreshFailed,
-              onRetry: () =>
-                  unawaited(_refreshWallet(ref, chainClosed ? null : walletId)),
-            ),
-            // Decision 0095: the keys never wait for a balance.
-            if (walletId != null)
-              _quickActions(
-                walletId: walletId,
-                sendGate: sendGate,
-                swapGate: swapGate,
-              ),
-          ],
           // S349: the bar another account's page draws (decision 0218).
           LoopProfileSectionsBar(
             key: const ValueKey<String>('me-sections'),
+            // S379 · decision 0303: 16 under the wallet card.
+            topGap: blocked ? LoopSpacing.group : LoopSpacing.segmentGap,
             selected: _section,
             onSelected: (section) => setState(() => _section = section),
           ),
@@ -453,6 +463,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     required LoopCapabilityProjection sendGate,
     required LoopCapabilityProjection swapGate,
   }) => WalletQuickActions(
+    // S379 · decision 0303: inside the wallet card, 18 under the address.
+    padding: const EdgeInsets.only(top: 18),
     onBlocked: _blocked,
     actions: <WalletQuickAction>[
       WalletQuickAction(
@@ -652,9 +664,14 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     );
   }
 
-  /// 总资产 (S353c · decision 0280, docs/58 §5.10): straight on the page,
-  /// no plate — the label and its eye, the white figure with the week's
-  /// trend beside it, the ¥ / 今日盈亏 line and the address.
+  /// 总资产 (S353c · decision 0280, docs/58 §5.10) — the label and its eye,
+  /// the white figure with the week's trend beside it, the ¥ / 今日盈亏 line
+  /// and the address — and the five keys under them.
+  ///
+  /// S379 · decision 0303 (需求方 11-06, amending 0280's 「no plate」): the
+  /// block stands on one card — 12 corner, white 3 %, a 1 px cardEdge rule,
+  /// 16 inside, the page's 20 either side (docs/58 §9). The open net-worth
+  /// chart stays inside it.
   Widget _totalPlate({
     required LoopWalletBalances? balances,
     required bool balancesLoading,
@@ -662,35 +679,70 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     required bool directoryEmpty,
     required String? walletId,
     required LoopChainResourceState<LoopWalletBalances>? balancesState,
+    Widget? keys,
   }) => Padding(
     key: const ValueKey<String>('wallet-total-plate'),
-    // 16 under the person's card; the keys keep their own 18 above them.
-    padding: const EdgeInsets.only(top: LoopSpacing.segmentGap),
-    child: WalletTotalHeader(
-      key: const ValueKey<String>('wallet-folio'),
-      keyPrefix: 'wallet',
-      balances: balances,
-      loading: balancesLoading,
-      unreadText: directoryEmpty
-          ? LoopL10n.current.wallet_readScreensWalletFolioUnreadText
-          : walletId == null && directory.isReady
-          ? LoopL10n.current.wallet_readScreensWalletFolioUnreadText2
-          // Decision 0123: a read that never reached LOOP is the device
-          // being offline, not the figure being unavailable.
-          : directory.phase == LoopChainViewPhase.offline ||
-                balancesState?.phase == LoopChainViewPhase.offline
-          ? LoopL10n.current.wallet_readScreensWalletFolioUnreadText3
-          : LoopL10n.current.wallet_homeUnreadText,
-      address: directory.value?.active?.truncatedAddress,
-      fullAddress: directory.value?.active?.address,
-      environmentTag: ref.watch(loopEnvironmentTagProvider),
-      walletId: walletId,
-      // S349 (需求方 11-03): 钱包管理 beside the address, in place of the
-      // 我的钱包 row.
-      addressTrailing: WalletManagePill(
-        key: const ValueKey<String>('wallet-manage-action'),
-        onPressed: () => _openProfile('wallets'),
+    padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+    // S379 · decision 0303: the card leans toward the finger.
+    child: LoopTiltCard(
+      child: DecoratedBox(
+        key: walletTotalCardKey,
+        decoration: walletTotalCardDecoration,
+        child: Padding(
+          key: walletTotalCardInsetKey,
+          padding: const EdgeInsets.all(walletTotalCardInset),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _totalHeader(
+                balances: balances,
+                balancesLoading: balancesLoading,
+                directory: directory,
+                directoryEmpty: directoryEmpty,
+                walletId: walletId,
+                balancesState: balancesState,
+              ),
+              ?keys,
+            ],
+          ),
+        ),
       ),
+    ),
+  );
+
+  Widget _totalHeader({
+    required LoopWalletBalances? balances,
+    required bool balancesLoading,
+    required LoopChainResourceState<LoopWalletDirectory> directory,
+    required bool directoryEmpty,
+    required String? walletId,
+    required LoopChainResourceState<LoopWalletBalances>? balancesState,
+  }) => WalletTotalHeader(
+    key: const ValueKey<String>('wallet-folio'),
+    padding: EdgeInsets.zero,
+    keyPrefix: 'wallet',
+    balances: balances,
+    loading: balancesLoading,
+    unreadText: directoryEmpty
+        ? LoopL10n.current.wallet_readScreensWalletFolioUnreadText
+        : walletId == null && directory.isReady
+        ? LoopL10n.current.wallet_readScreensWalletFolioUnreadText2
+        // Decision 0123: a read that never reached LOOP is the device
+        // being offline, not the figure being unavailable.
+        : directory.phase == LoopChainViewPhase.offline ||
+              balancesState?.phase == LoopChainViewPhase.offline
+        ? LoopL10n.current.wallet_readScreensWalletFolioUnreadText3
+        : LoopL10n.current.wallet_homeUnreadText,
+    address: directory.value?.active?.truncatedAddress,
+    fullAddress: directory.value?.active?.address,
+    environmentTag: ref.watch(loopEnvironmentTagProvider),
+    walletId: walletId,
+    // S349 (需求方 11-03): 钱包管理 beside the address, in place of the
+    // 我的钱包 row.
+    addressTrailing: WalletManagePill(
+      key: const ValueKey<String>('wallet-manage-action'),
+      onPressed: () => _openProfile('wallets'),
     ),
   );
 

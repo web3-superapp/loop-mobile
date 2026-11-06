@@ -70,7 +70,13 @@ void main() {
       for (final name in _intervals) {
         final chip = _key('token-interval-$name');
         expect(chip, findsOneWidget, reason: name);
-        expect(tester.widget<LoopSeg>(chip).compact, isTrue, reason: name);
+        // S379 · decision 0303: the period is a LoopChartPeriod on the
+        // compact capsule.
+        expect(
+          tester.widget<LoopChartPeriod>(chip).fill,
+          isFalse,
+          reason: name,
+        );
         _expectTight(tester, chip, name);
         _expectTarget(tester, chip, name);
       }
@@ -79,9 +85,12 @@ void main() {
         _expectTight(tester, chip, toggle);
         _expectTarget(tester, chip, toggle);
       }
-      // The word keeps the 13 pt chip step.
+      // S379 · decision 0303: the period is 12 (never bold); the switches
+      // keep the 13 pt chip step.
       final word = tester.widget<RichText>(_wordOf(_key('token-interval-1h')));
-      expect(word.text.style?.fontSize, 13);
+      expect(word.text.style?.fontSize, 12);
+      final vol = tester.widget<RichText>(_wordOf(_key('token-chart-vol')));
+      expect(vol.text.style?.fontSize, 13);
     });
 
     testWidgets('the chosen ground and the r8 corner are unchanged', (
@@ -121,7 +130,7 @@ void main() {
       await tester.tapAt(Offset(capsule.center.dx, target.top + 2));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<LoopSeg>(_key('token-interval-4h')).selected,
+        tester.widget<LoopChartPeriod>(_key('token-interval-4h')).selected,
         isTrue,
       );
       expect(

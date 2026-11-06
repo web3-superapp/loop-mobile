@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/market/loop_chart_toolbar.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_screen.dart';
 import 'package:loop_mobile/features/market/market_secondary_screens.dart';
@@ -135,11 +136,13 @@ void main() {
         const TokenDetailScreen(assetId: s5WbnbAssetId),
         market: FakeMarketReadGateway(),
       );
-      final period = tester.widget<LoopSeg>(key('token-interval-1h'));
-      expect(period.quiet, isTrue);
+      // S379 · decision 0303: a period is a LoopChartPeriod (the quiet
+      // chip grounds, its own 12 pt step).
+      final period = tester.widget<LoopChartPeriod>(key('token-interval-1h'));
+      expect(period.fill, isFalse);
       expect(period.selected, isTrue);
       expect(
-        tester.widget<LoopSeg>(key('token-interval-1d')).selected,
+        tester.widget<LoopChartPeriod>(key('token-interval-1d')).selected,
         isFalse,
       );
       for (final toggle in const <String>[

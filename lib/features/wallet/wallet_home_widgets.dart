@@ -75,6 +75,24 @@ final walletNetWorthRangeProvider =
       WalletNetWorthRangeChoice.new,
     );
 
+/// 我的's wallet card (S379 · decision 0303, 需求方 11-06): the total, the
+/// address line and the five keys on one card — docs/58 §9's card: 12
+/// corner, white 3 %, a 1 px cardEdge rule.
+const BoxDecoration walletTotalCardDecoration = BoxDecoration(
+  color: LoopColors.white3,
+  borderRadius: LoopRadius.card,
+  border: Border.fromBorderSide(BorderSide(color: LoopColors.cardEdge)),
+);
+
+/// The room inside [walletTotalCardDecoration] on every side.
+const double walletTotalCardInset = 16;
+
+/// The card's drawn box (a test's handle).
+const Key walletTotalCardKey = ValueKey<String>('wallet-total-card');
+
+/// The card's inner padding (a test's handle).
+const Key walletTotalCardInsetKey = ValueKey<String>('wallet-total-card-inset');
+
 /// What a masked amount prints.
 const String walletMaskedFigure = '****';
 
@@ -154,7 +172,21 @@ class WalletTotalHeader extends ConsumerStatefulWidget {
     this.environmentTag,
     this.walletId,
     this.addressTrailing,
+    this.padding = defaultPadding,
   });
+
+  /// The header's own room on a flat page: the page edge either side and 2
+  /// under it.
+  static const EdgeInsets defaultPadding = EdgeInsets.fromLTRB(
+    LoopSpacing.page,
+    0,
+    LoopSpacing.page,
+    2,
+  );
+
+  /// Around the header (S379 · decision 0303: zero inside 我的's wallet
+  /// card, whose own 16 stands in for it).
+  final EdgeInsets padding;
 
   final String keyPrefix;
   final LoopWalletBalances? balances;
@@ -455,12 +487,7 @@ class _WalletTotalHeaderState extends ConsumerState<WalletTotalHeader> {
 
     return Padding(
       key: ValueKey<String>('$keyPrefix-total-header'),
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        0,
-        LoopSpacing.page,
-        2,
-      ),
+      padding: widget.padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -780,10 +807,24 @@ class WalletQuickActions extends StatelessWidget {
     required this.actions,
     required this.onBlocked,
     super.key,
+    this.padding = defaultPadding,
   });
 
   final List<WalletQuickAction> actions;
   final void Function(String reason) onBlocked;
+
+  /// The row's room on a flat page: the page edge either side, 18 above, 6
+  /// under.
+  static const EdgeInsets defaultPadding = EdgeInsets.fromLTRB(
+    LoopSpacing.page,
+    18,
+    LoopSpacing.page,
+    6,
+  );
+
+  /// Around the row (S379 · decision 0303: inside 我的's wallet card only
+  /// the 18 above it stays).
+  final EdgeInsets padding;
 
   /// The glyph's side (§5.11).
   static const double glyphSize = 24;
@@ -795,12 +836,7 @@ class WalletQuickActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       key: const ValueKey<String>('wallet-quick-actions'),
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        18,
-        LoopSpacing.page,
-        6,
-      ),
+      padding: padding,
       // Top-aligned, so a word that takes a second line never moves its
       // glyph; the rules sit level with the glyphs and single-line words.
       child: Row(
